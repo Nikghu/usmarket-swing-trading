@@ -12,11 +12,11 @@ AgentQT is a full development operating system built on top of Claude Code — b
 
 ### Built on Industry-Standard Engineering Principles
 
-AgentQT encodes three well-established industry frameworks into Claude's workflow:
+AgentQT encodes the Waterfall SDLC — one of the most proven and widely adopted models in enterprise and safety-critical software engineering — directly into Claude's workflow.
 
-**1. Waterfall SDLC (Software Development Life Cycle)**
+**Waterfall SDLC (Software Development Life Cycle)**
 
-The Waterfall model — defined in the 1970s and still the backbone of regulated, safety-critical, and enterprise software — divides development into sequential, non-overlapping phases where each phase must be completed and signed off before the next begins:
+The Waterfall model — defined in the 1970s and still the backbone of regulated, safety-critical, and enterprise software — divides development into sequential, non-overlapping phases where each phase must be completed and signed off before the next begins. Every requirement, design decision, and test case is documented before code is written, creating a clear audit trail from business objective to deployed software.
 
 ```
 Requirements → System Design → Implementation → Testing → Deployment → Maintenance
@@ -36,34 +36,9 @@ AgentQT maps this model directly onto every feature:
 
 The key discipline borrowed from Waterfall: **no phase can be skipped, and each phase produces a document that the next phase depends on.** The `phase-gate` agent enforces this mechanically — it will block code generation if any upstream artifact is missing or unapproved.
 
-**2. Requirements Traceability (IEEE 830 / ISO/IEC 29148)**
-
-IEEE 830 (Software Requirements Specifications) and its modern successor ISO/IEC 29148 define the standard for writing, numbering, and linking requirements so that every implementation decision can be traced back to a documented need. The core tool is the **Requirements Traceability Matrix (RTM)**.
-
-AgentQT implements a full RTM in `TRACE.md` per tool:
-
-```
-FO-SCR-001 → SRD-SCR-001.003 → DD-SCR-001.003.D01 → MD-SCR-001.003.M01 → UT-SCR-001.003.M01.T02
-```
-
-Every source file carries its Module ID in the header. Every test carries its UTCD ID in its docstring. The `artifact-validator` agent checks these chains after every write — a broken parent reference is a hard failure, not a warning.
-
-**3. V-Model (Verification & Validation)**
-
-The V-Model extends Waterfall by pairing each development phase with a corresponding test phase on the other side of the "V":
-
-```
-Requirements ←――――――――――→ Acceptance Tests
-  System Design ←――――――→ Integration Tests
-    Module Design ←――――→ Unit Tests
-          Implementation
-```
-
-AgentQT reflects this: UTCD test cases are defined alongside the SRD and DD (not after the code), the `test-writer` agent traces every test back to a specific SRD requirement ID, and the coverage gate enforces ≥ 80% line coverage (≥ 90% for Must-priority requirements).
-
 ### What AgentQT Adds on Top
 
-These industry models were designed for human teams following paper-based processes. AgentQT makes them executable by an AI agent:
+The Waterfall model was designed for human teams following paper-based processes. AgentQT makes it executable by an AI agent:
 
 - **11 specialized sub-agents** enforce each phase gate automatically — no human has to remember the process
 - **12 slash commands** run full pipelines (FO through Revision Note) in one invocation
