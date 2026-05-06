@@ -67,19 +67,6 @@ The framework lives entirely in `.claude/` and is portable — drop it into any 
 
 ---
 
-## Framework Architecture
-
-The `.claude/` folder is the framework:
-
-| Layer | Files | Purpose |
-|---|---|---|
-| **Rules** | `.claude/rules/*.md` | Always-on constraints loaded into every session: code style, artifact conventions, testing standards, traceability |
-| **Agents** | `.claude/agents/*.md` | 11 specialized sub-agents with fixed model assignments and narrow, non-overlapping scopes |
-| **Commands** | `.claude/commands/*.md` | 12 slash commands that orchestrate full feature pipelines from objective to revision note |
-| **Hooks** | `.claude/hooks/*.py/.ps1` | Automatic side-effects: code index refresh after every `.py` edit, review reminders |
-
----
-
 ## The Artifact Chain
 
 Every feature follows a mandatory, validated pipeline before a single line of code is written:
@@ -96,26 +83,6 @@ FO → SRD → DD → MD → UTCD → Code → Tests → RN
 - `artifact-validator` checks ID chains and parent references after every phase — GO/NO-GO gate
 - `phase-gate` verifies all SRDs are Approved and test cases exist before implementation starts
 - `session-finalizer` auto-syncs `TRACE.md`, `CONTEXT.md`, and `DEVLOG.md` at session end
-
----
-
-## The Agent Roster
-
-Each agent has a fixed model, a fixed scope, and fires only at the right moment in the pipeline:
-
-| Agent | Model | Role |
-|---|---|---|
-| `prompt-evaluator` | Sonnet | Classifies and reframes every dev prompt before any file is read |
-| `duplicate-detector` | Haiku | Scans existing artifacts before writing new ones — prevents re-inventing |
-| `artifact-validator` | Haiku | ID chain integrity check after every artifact write |
-| `phase-gate` | Haiku | Pre-code readiness gate: SRDs Approved? UTCD complete? |
-| `pyqt-architect` | Sonnet | GUI design decisions — panels, signals, layout — before any code |
-| `pyqt-code-writer` | Sonnet | Writes new PyQt6 files from architect blueprint |
-| `pyqt-code-reviewer` | Sonnet | Post-code gate: thread safety, security, quality — no GUI file ships without this |
-| `pyqt-code-simplifier` | Sonnet | Complexity reduction — only when reviewer signals MEDIUM+ complexity |
-| `code-reviewer` | Sonnet | Same post-code gate for all non-GUI Python modules |
-| `test-writer` | Sonnet | Implements UTCD test cases with full ID traceability |
-| `session-finalizer` | Haiku | TRACE.md + CONTEXT.md + DEVLOG sync at every session end |
 
 ---
 
