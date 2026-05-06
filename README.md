@@ -8,7 +8,7 @@
 
 ## What Is AgentQT?
 
-Most Claude Code setups are a single `CLAUDE.md` file with a few rules. AgentQT is a full development operating system built on top of Claude Code — but its foundations are not new. They are borrowed directly from decades of proven software engineering practice.
+AgentQT is a full development operating system built on top of Claude Code — but its foundations are not new. They are borrowed directly from decades of proven software engineering practice.
 
 ### Built on Industry-Standard Engineering Principles
 
