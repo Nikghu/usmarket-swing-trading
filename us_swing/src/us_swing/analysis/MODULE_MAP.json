@@ -1,0 +1,401 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "analysis",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\analysis",
+  "tool_code": "ANA",
+  "files": {
+    "__init__.py": {},
+    "candle_builder.py": {
+      "module_id": "MD-ANA-001.001.M01",
+      "srd_id": "SRD-ANA-001.002",
+      "classes": [
+        {
+          "name": "CandleBuilder",
+          "docstring": "Aggregates 5-second bars into multi-timeframe OHLCV candles.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        timeframes: list[str],\n        on_candle_closed: Callable[[str, str, OHLCVBar], None] | None = None,\n    ) -> None",
+              "line_start": 41,
+              "line_end": 58
+            },
+            {
+              "name": "register_callback",
+              "signature": "def register_callback(\n        self, on_candle_closed: Callable[[str, str, OHLCVBar], None]\n    ) -> None",
+              "docstring": "Replace the candle-closed callback (e.g. wired in by LiveEngine).",
+              "line_start": 62,
+              "line_end": 66
+            },
+            {
+              "name": "add_bar",
+              "signature": "def add_bar(self, bar: RealtimeBar) -> None",
+              "docstring": "Process one 5-second bar, filling gaps and closing completed candles.",
+              "line_start": 68,
+              "line_end": 93
+            },
+            {
+              "name": "get_buffer",
+              "signature": "def get_buffer(self, symbol: str, tf: str) -> list[OHLCVBar]",
+              "docstring": "Return a copy of the completed candle list for (symbol, tf).",
+              "line_start": 95,
+              "line_end": 97
+            },
+            {
+              "name": "reset",
+              "signature": "def reset(self, symbol: str) -> None",
+              "docstring": "Clear all in-progress and completed buffers for *symbol*.",
+              "line_start": 99,
+              "line_end": 103
+            },
+            {
+              "name": "_ensure_symbol",
+              "signature": "def _ensure_symbol(self, symbol: str) -> None",
+              "line_start": 107,
+              "line_end": 110
+            },
+            {
+              "name": "_process_bar",
+              "signature": "def _process_bar(self, bar: RealtimeBar) -> None",
+              "docstring": "Append *bar* to all TF buffers; emit completed candles.",
+              "line_start": 112,
+              "line_end": 124
+            },
+            {
+              "name": "_aggregate",
+              "signature": "def _aggregate(\n        symbol: str, tf: str, bars: list[RealtimeBar]\n    ) -> OHLCVBar",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 127,
+              "line_end": 139
+            },
+            {
+              "name": "_noop",
+              "signature": "def _noop(symbol: str, tf: str, bar: OHLCVBar) -> None",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 142,
+              "line_end": 143
+            }
+          ],
+          "line_start": 31,
+          "line_end": 143
+        }
+      ],
+      "constants": [
+        "_BAR_SECONDS = 5",
+        "_TF_SECONDS: dict[str, int] = {"
+      ]
+    },
+    "db_persister.py": {
+      "module_id": "MD-ANA-001.001.M03",
+      "srd_id": "SRD-ANA-001.006",
+      "classes": [
+        {
+          "name": "DatabasePersister",
+          "docstring": "Queues completed candles for async bulk insert.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, db: \"DatabaseManager\") -> None",
+              "line_start": 35,
+              "line_end": 44
+            },
+            {
+              "name": "persist_candle",
+              "signature": "def persist_candle(self, symbol: str, timeframe: str, bar: OHLCVBar) -> None",
+              "docstring": "Enqueue a completed candle for async write (non-blocking).",
+              "line_start": 48,
+              "line_end": 50
+            },
+            {
+              "name": "stop",
+              "signature": "def stop(self) -> None",
+              "docstring": "Send sentinel to writer, flush remaining items, and join thread.",
+              "line_start": 52,
+              "line_end": 55
+            },
+            {
+              "name": "_writer_loop",
+              "signature": "def _writer_loop(self) -> None",
+              "docstring": "Drain queue every _DRAIN_INTERVAL and bulk-insert to DB.",
+              "line_start": 59,
+              "line_end": 85
+            },
+            {
+              "name": "_flush",
+              "signature": "def _flush(self, items: list[tuple[str, str, OHLCVBar]]) -> None",
+              "docstring": "Group items by (symbol, timeframe) and bulk-insert.",
+              "line_start": 87,
+              "line_end": 103
+            }
+          ],
+          "line_start": 28,
+          "line_end": 103
+        }
+      ],
+      "constants": [
+        "_DRAIN_INTERVAL = 5.0"
+      ]
+    },
+    "exit_manager.py": {
+      "module_id": "MD-ANA-002.001.M04",
+      "srd_id": "SRD-ANA-002.005",
+      "classes": [
+        {
+          "name": "ExitManager",
+          "docstring": "Evaluates exit conditions for open positions.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self) -> None",
+              "line_start": 28,
+              "line_end": 30
+            },
+            {
+              "name": "evaluate",
+              "signature": "def evaluate(\n        self,\n        symbol: str,\n        bar: OHLCVBar,\n        position: OpenPosition,\n        bar_cache: dict[str, list[OHLCVBar]],\n        config: \"StrategyConfig\",\n    ) -> TradeSignal | None",
+              "docstring": "Check stop-loss, target, and trailing-stop in priority order.",
+              "line_start": 32,
+              "line_end": 82
+            },
+            {
+              "name": "update_trailing_stop",
+              "signature": "def update_trailing_stop(\n        self,\n        symbol: str,\n        bar: OHLCVBar,\n        position: OpenPosition,\n        bar_cache: dict[str, list[OHLCVBar]],\n        config: \"StrategyConfig\",\n    ) -> None",
+              "docstring": "Advance trailing stop upward if price moves above activation threshold.",
+              "line_start": 84,
+              "line_end": 132
+            }
+          ],
+          "line_start": 22,
+          "line_end": 132
+        }
+      ]
+    },
+    "indicators.py": {
+      "module_id": "MD-ANA-001.001.M04",
+      "srd_id": "SRD-SCR-001.002",
+      "top_level_functions": [
+        {
+          "name": "ema",
+          "signature": "def ema(bars: list[OHLCVBar], period: int) -> list[float]",
+          "docstring": "Compute the full EMA series for bar closes.",
+          "line_start": 16,
+          "line_end": 34
+        },
+        {
+          "name": "ema_value",
+          "signature": "def ema_value(bars: list[OHLCVBar], period: int) -> float",
+          "docstring": "Return the most recent EMA value.",
+          "line_start": 37,
+          "line_end": 48
+        },
+        {
+          "name": "atr",
+          "signature": "def atr(bars: list[OHLCVBar], period: int) -> float",
+          "docstring": "Average True Range (Wilder's definition) over the last *period* bars.",
+          "line_start": 51,
+          "line_end": 72
+        },
+        {
+          "name": "rsi",
+          "signature": "def rsi(bars: list[OHLCVBar], period: int) -> float",
+          "docstring": "Relative Strength Index.",
+          "line_start": 75,
+          "line_end": 99
+        }
+      ]
+    },
+    "live_engine.py": {
+      "module_id": "MD-ANA-001.001.M02",
+      "srd_id": "SRD-ANA-001.001",
+      "classes": [
+        {
+          "name": "LiveEngine",
+          "docstring": "Orchestrates realtime bar ingestion, candle building, and signal dispatch.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        ibkr_client: \"IBKRClient\",\n        candle_builder: \"CandleBuilder\",\n        strategy_engines: list[\"StrategyEngine\"],\n        db_persister: \"DatabasePersister\",\n    ) -> None",
+              "line_start": 40,
+              "line_end": 56
+            },
+            {
+              "name": "start",
+              "signature": "def start(self, symbols: list[str]) -> None",
+              "docstring": "Subscribe to realtime bars for the given symbol list.",
+              "line_start": 60,
+              "line_end": 97
+            },
+            {
+              "name": "stop",
+              "signature": "def stop(self) -> None",
+              "docstring": "Unsubscribe all symbols and stop the DB persister.",
+              "line_start": 99,
+              "line_end": 108
+            },
+            {
+              "name": "on_realtime_bar",
+              "signature": "def on_realtime_bar(self, bar: RealtimeBar) -> None",
+              "docstring": "Callback registered with IBKRClient \u2014 routes bar to CandleBuilder.",
+              "line_start": 110,
+              "line_end": 112
+            },
+            {
+              "name": "_on_candle_closed",
+              "signature": "def _on_candle_closed(self, symbol: str, tf: str, bar: OHLCVBar) -> None",
+              "docstring": "Registered as CandleBuilder callback.",
+              "line_start": 116,
+              "line_end": 131
+            }
+          ],
+          "line_start": 26,
+          "line_end": 131
+        }
+      ],
+      "constants": [
+        "_MAX_SUBSCRIPTIONS = 20"
+      ]
+    },
+    "breakout.py": {
+      "module_id": "MD-ANA-002.001.M02",
+      "srd_id": "SRD-ANA-002.002",
+      "classes": [
+        {
+          "name": "BreakoutStrategy",
+          "docstring": "Multi-timeframe breakout entry strategy.",
+          "methods": [
+            {
+              "name": "evaluate",
+              "signature": "def evaluate(\n        self,\n        symbol: str,\n        bar_cache: dict[str, list[OHLCVBar]],\n        config: \"StrategyConfig\",\n    ) -> TradeSignal | None",
+              "docstring": "Evaluate breakout entry for *symbol*.",
+              "line_start": 29,
+              "line_end": 80
+            }
+          ],
+          "line_start": 24,
+          "line_end": 80
+        }
+      ]
+    },
+    "pullback.py": {
+      "module_id": "MD-ANA-002.001.M03",
+      "srd_id": "SRD-ANA-002.003",
+      "classes": [
+        {
+          "name": "PullbackStrategy",
+          "docstring": "EMA-21 pullback-recovery entry strategy.",
+          "methods": [
+            {
+              "name": "evaluate",
+              "signature": "def evaluate(\n        self,\n        symbol: str,\n        bar_cache: dict[str, list[OHLCVBar]],\n        config: \"StrategyConfig\",\n    ) -> TradeSignal | None",
+              "docstring": "Evaluate pullback entry for *symbol*.",
+              "line_start": 30,
+              "line_end": 81
+            }
+          ],
+          "line_start": 25,
+          "line_end": 81
+        }
+      ],
+      "constants": [
+        "_MIN_1H_BARS = 21",
+        "_MIN_5M_BARS = 22"
+      ]
+    },
+    "strategy_engine.py": {
+      "module_id": "MD-ANA-002.001.M01",
+      "srd_id": "SRD-ANA-002.001",
+      "classes": [
+        {
+          "name": "PositionTrackerProtocol",
+          "docstring": "Minimal interface StrategyEngine needs from EXE's PositionTracker.",
+          "methods": [
+            {
+              "name": "has_open",
+              "signature": "def has_open(self, user_id: int, symbol: str) -> bool",
+              "docstring": "Return True if *user_id* has an open position in *symbol*.",
+              "line_start": 28,
+              "line_end": 30
+            }
+          ],
+          "line_start": 25,
+          "line_end": 30
+        },
+        {
+          "name": "StrategyProtocol",
+          "docstring": "Interface all strategy plugins must satisfy.",
+          "methods": [
+            {
+              "name": "evaluate",
+              "signature": "def evaluate(\n        self,\n        symbol: str,\n        bar_cache: dict[str, list[OHLCVBar]],\n        config: \"StrategyConfig\",\n    ) -> TradeSignal | None",
+              "docstring": "Evaluate signal for *symbol* from the given bar cache.",
+              "line_start": 37,
+              "line_end": 44
+            }
+          ],
+          "line_start": 34,
+          "line_end": 44
+        },
+        {
+          "name": "StrategyConfig",
+          "docstring": "Per-user strategy parameters loaded from settings_json.",
+          "class_vars": [
+            "breakout_enabled: bool",
+            "pullback_enabled: bool",
+            "atr_multiplier: float",
+            "r_multiple: float",
+            "trail_multiplier: float",
+            "activation_r: float",
+            "breakout_tf: str",
+            "breakout_lookback: int",
+            "cache_size: int"
+          ],
+          "methods": [
+            {
+              "name": "from_user_settings",
+              "signature": "def from_user_settings(cls, settings: dict) -> \"StrategyConfig\"",
+              "docstring": "Build a StrategyConfig from a parsed settings dict.",
+              "decorators": [
+                "@classmethod"
+              ],
+              "line_start": 67,
+              "line_end": 82
+            },
+            {
+              "name": "validate",
+              "signature": "def validate(self) -> None",
+              "docstring": "Raise ValueError for any out-of-range field.",
+              "line_start": 84,
+              "line_end": 93
+            }
+          ],
+          "line_start": 50,
+          "line_end": 93
+        },
+        {
+          "name": "StrategyEngine",
+          "docstring": "Evaluates all enabled strategies on each candle close.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        user_id: int,\n        config: StrategyConfig | None = None,\n        position_tracker: PositionTrackerProtocol | None = None,\n    ) -> None",
+              "line_start": 108,
+              "line_end": 129
+            },
+            {
+              "name": "on_candle_closed",
+              "signature": "def on_candle_closed(\n        self, symbol: str, tf: str, bar: OHLCVBar\n    ) -> TradeSignal | None",
+              "docstring": "Update bar cache and evaluate all enabled strategies.",
+              "line_start": 131,
+              "line_end": 179
+            }
+          ],
+          "line_start": 98,
+          "line_end": 179
+        }
+      ]
+    }
+  }
+}

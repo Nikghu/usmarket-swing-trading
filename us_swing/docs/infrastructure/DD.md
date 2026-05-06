@@ -1,0 +1,434 @@
+# Design Document — Infrastructure (INF)
+
+**Document ID:** DD-INF
+**Version:** 1.1.0
+**Traces To:** SRD-INF v1.1.0
+**Status:** Draft
+**Last Updated:** 2026-03-06
+**Project:** US Swing Trading System
+
+---
+
+## DD-INF-001.001.D01 — IBKRClient Interface Design
+
+**Parent SRD:** SRD-INF-001.001, SRD-INF-001.002, SRD-INF-001.003, SRD-INF-001.004, SRD-INF-001.005
+- **Status:** Approved
+
+### Component Overview
+
+`IBKRClient` wraps `ib_insync.IB`, providing a typed async interface to the broker. It is the single point of contact for all IBKR API calls. All other components receive it via dependency injection.
+
+### Public Interface
+
+```python
+class IBKRClient:
+    # Lifecycle
+    async def connect(host: str, port: int, client_id: int, timeout: float = 5.0) -> None
+    async def disconnect() -> None
+    def is_connected() -> bool
+
+    # Connection state observable
+    def on_status_change(callback: Callable[[ConnectionStatus], None]) -> None
+
+    # Historical data
+    async def req_historical_data(
+        symbol: str,
+        end_datetime: datetime,
+        duration: str,          # e.g. "1 Y", "5 D"
+        bar_size: str,          # e.g. "1 min", "1 day"
+    ) -> list[OHLCVBar]
+
+    # Real-time bars
+    def subscribe_realtime_bars(symbol: str, bar_size: int = 5) -> None
+    def unsubscribe_realtime_bars(symbol: str) -> None
+    def on_realtime_bar(callback: Callable[[RealtimeBar], None]) -> None
+
+    # Orders
+    async def place_order(contract: Contract, order: Order) -> int  # returns orderId
+    async def cancel_order(order_id: int) -> None
+    async def cancel_all_orders() -> None
+    async def close_all_positions() -> None
+
+    # Account
+    async def get_account_summary() -> AccountState
+    async def get_open_positions() -> list[IBKRPosition]
+```
+
+### Data Flow
+
+```
+Config (host/port/clientId)
+        │
+        ▼
+  IBKRClient.connect()
+        │
+        ├─► IB.connectAsync()  ──► TCP/Socket ──► IBKR Gateway
+        │
+        ├─► IB.reqAccountSummary()  [validate]
+        │
+        └─► register disconnect handler ──► auto-reconnect loop
+```
+
+### Pacing Queue Design
+
+- `PacingQueue`: asyncio-based FIFO queue
+- Slot counter: 50 requests per 600 s rolling window
+- Each `req_historical_data()` call acquires a slot before dispatching
+- Expired slots are released by a background cleanup task every 10 s
+
+### Reconnect Backoff Table
+
+| Attempt | Delay (s) |
+|---|---|
+| 1 | 2 |
+| 2 | 4 |
+| 3 | 8 |
+| 4 | 16 |
+| 5–10 | 60 (cap) |
+
+---
+
+## DD-INF-002.001.D01 — UniverseManager Interface Design
+
+**Parent SRD:** SRD-INF-002.001 — SRD-INF-002.004
+
+### Public Interface
+
+```python
+@dataclass
+class UniverseRecord:
+    symbol: str    # 1–5 uppercase alpha
+    name:   str
+    sector: str
+
+class UniverseManager:
+    def __init__(db: DatabaseManager, config: UniverseConfig) -> None
+
+    def load_universe() -> list[UniverseRecord]
+    async def refresh_universe() -> RefreshResult  # {added, removed, total}
+    async def schedule_refresh() -> None            # starts asyncio PeriodicTask
+```
+
+### Refresh Data Source
+
+- Primary: Wikipedia S&P 500 table via `pandas.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")`
+- Returns DataFrame with columns: `Symbol`, `Security`, `GICS Sector`
+- Upsert SQL: `INSERT ... ON CONFLICT(symbol) DO UPDATE SET name=..., sector=...`
+
+---
+
+## DD-INF-003.001.D01 — HistoricalDataEngine Interface Design
+
+**Parent SRD:** SRD-INF-003.001 — SRD-INF-003.005
+
+### Public Interface
+
+```python
+@dataclass
+class OHLCVBar:
+    symbol:   str
+    datetime: datetime
+    open:     float
+    high:     float
+    low:      float
+    close:    float
+    volume:   int
+    timeframe: str   # '1m', '1d', '1w', '3m', '5m', '15m', '1h', '4h'
+
+class HistoricalDataEngine:
+    def __init__(client: IBKRClient, db: DatabaseManager, config: DataConfig) -> None
+
+    async def bootstrap_symbol(symbol: str) -> BootstrapResult
+    async def bootstrap_all(universe: list[UniverseRecord], max_concurrent: int = 5) -> None
+    async def update_missing_data(symbol: str) -> UpdateResult
+    def aggregate_timeframe(
+        symbol: str,
+        target_tf: Literal['3m','5m','15m','1h','4h'],
+        bars_1m: list[OHLCVBar]
+    ) -> list[OHLCVBar]
+```
+
+### Aggregation Algorithm
+
+```
+group source bars by floor(bar.datetime / target_seconds)
+for each group:
+    bar = OHLCVBar(
+        open   = group[0].open,
+        high   = max(b.high for b in group),
+        low    = min(b.low  for b in group),
+        close  = group[-1].close,
+        volume = sum(b.volume for b in group),
+    )
+```
+
+### Bootstrap Sequence
+
+```
+for symbol in universe (max_concurrent async):
+    1. fetch 1y 1m bars from IBKR  [paced]
+    2. fetch 1y 1d bars from IBKR  [paced]
+    3. fetch 1y 1w bars from IBKR  [paced]
+    4. db.insert_bars(symbol, '1m', bars_1m)
+    5. db.insert_bars(symbol, '1d', bars_1d)
+    6. db.insert_bars(symbol, '1w', bars_1w)
+    7. log progress
+```
+
+---
+
+## DD-INF-004.001.D01 — DatabaseManager Interface Design
+
+**Parent SRD:** SRD-INF-004.001 — SRD-INF-004.006
+
+### Public Interface
+
+```python
+class DatabaseManager:
+    def __init__(database_url: str) -> None
+
+    # Schema
+    def create_schema() -> None
+    def drop_schema() -> None   # test only
+
+    # Bars
+    def insert_bars(symbol: str, timeframe: str, bars: list[OHLCVBar]) -> int  # rows inserted
+    def fetch_bars(symbol: str, timeframe: str, start: datetime, end: datetime) -> list[OHLCVBar]
+    def get_last_timestamp(symbol: str, timeframe: str) -> datetime | None
+
+    # Universe
+    def upsert_universe(records: list[UniverseRecord]) -> None
+    def fetch_universe() -> list[UniverseRecord]
+
+    # Watchlist
+    def upsert_watchlist(symbols: list[str], date: date) -> None
+    def fetch_watchlist(date: date) -> list[str]
+
+    # Trades / Positions
+    def insert_trade(trade: TradeRecord) -> None
+    def update_trade_exit(trade_id: int, exit_time: datetime, exit_price: float, pnl: float) -> None
+    def upsert_position(pos: PositionRecord) -> None
+    def delete_position(user_id: int, symbol: str) -> None
+    def fetch_open_positions(user_id: int) -> list[PositionRecord]
+
+    # Users
+    def insert_user(user: UserRecord) -> int  # returns user_id
+    def fetch_user(user_id: int) -> UserRecord | None
+    def update_user(user_id: int, **fields) -> None
+    def delete_user(user_id: int) -> None
+    def fetch_all_users() -> list[UserRecord]
+```
+
+### Schema DDL (simplified)
+
+```sql
+CREATE TABLE IF NOT EXISTS universe (
+    symbol TEXT PRIMARY KEY,
+    name   TEXT NOT NULL,
+    sector TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS price_1m (
+    symbol   TEXT NOT NULL,
+    datetime TEXT NOT NULL,  -- ISO 8601 UTC
+    open     REAL, high REAL, low REAL, close REAL, volume INTEGER,
+    PRIMARY KEY (symbol, datetime)
+);
+-- price_1d, price_1w: identical structure
+
+CREATE TABLE IF NOT EXISTS watchlist (
+    date   TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    PRIMARY KEY (date, symbol)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username        TEXT NOT NULL UNIQUE,
+    display_name    TEXT NOT NULL,
+    ibkr_client_id  INTEGER NOT NULL UNIQUE,
+    settings_json   TEXT DEFAULT '{}',
+    mode            TEXT NOT NULL DEFAULT 'paper'  -- 'paper' or 'live'
+);
+
+CREATE TABLE IF NOT EXISTS trades (
+    trade_id    TEXT PRIMARY KEY,   -- IBKR orderId as string
+    user_id     INTEGER NOT NULL REFERENCES users(user_id),
+    symbol      TEXT NOT NULL,
+    entry_time  TEXT,
+    entry_price REAL,
+    exit_time   TEXT,
+    exit_price  REAL,
+    quantity    INTEGER,
+    pnl         REAL,
+    mode        TEXT NOT NULL DEFAULT 'paper',  -- 'paper' or 'live'
+    status      TEXT DEFAULT 'SUBMITTED'
+);
+CREATE INDEX IF NOT EXISTS idx_trades_user_symbol ON trades(user_id, symbol);
+
+CREATE TABLE IF NOT EXISTS positions (
+    symbol        TEXT NOT NULL,
+    user_id       INTEGER NOT NULL REFERENCES users(user_id),
+    quantity      INTEGER,
+    average_price REAL,
+    stop_loss     REAL,
+    target_price  REAL,
+    trailing_stop REAL,
+    mode          TEXT NOT NULL DEFAULT 'paper',  -- 'paper' or 'live'
+    state         TEXT NOT NULL DEFAULT 'NEW',    -- NEW / PARTIAL_ENTRY / OPEN / PARTIAL_EXIT / CLOSED
+    PRIMARY KEY (user_id, symbol)
+);
+```
+
+---
+
+## DD-INF-005.001.D01 — Logging & Health Check Design
+
+**Parent SRD:** SRD-INF-005.001 — SRD-INF-005.005
+
+### Logging Architecture
+
+```
+Root Logger (INFO)
+    ├── RotatingFileHandler  → logs/us_swing_YYYY-MM-DD.log   (daily rotation, 30-day retention)
+    ├── StreamHandler        → stderr (WARNING+)
+    └── AlertHandler         → AlertDispatcher
+            ├── console  (always on)
+            ├── FileAppendHandler → logs/alerts.log
+            └── WebhookHandler   → configurable URL (POST JSON)
+```
+
+### Health Check Response Schema
+
+```json
+{
+  "broker_connected": true,
+  "last_update": "2026-03-05T09:30:00Z",
+  "universe_count": 503,
+  "open_positions": 2,
+  "db_reachable": true,
+  "uptime_seconds": 3600
+}
+```
+
+---
+
+## DD-INF-006.001.D01 — UserManager Interface Design
+
+**Parent SRD:** SRD-INF-006.001 — SRD-INF-006.007
+
+### Public Interface
+
+```python
+@dataclass
+class UserProfile:
+    user_id:         int
+    username:        str
+    display_name:    str
+    ibkr_client_id:  int
+    mode:            str             # 'paper' or 'live'
+    risk_config:     RiskConfig
+    strategy_config: dict            # parsed from settings_json
+    screener_config: dict            # parsed from settings_json
+
+class UserManager:
+    def __init__(db: DatabaseManager) -> None
+
+    def create_user(username: str, display_name: str, ibkr_client_id: int, mode: str = 'paper') -> UserProfile
+    def get_user(user_id: int) -> UserProfile
+    def update_user(user_id: int, **kwargs) -> UserProfile
+    def delete_user(user_id: int) -> None
+    def list_users() -> list[UserProfile]
+    def switch_mode(user_id: int, new_mode: str, confirm_token: str | None = None) -> UserProfile
+```
+
+### Settings JSON Schema
+
+```json
+{
+  "risk_per_trade_pct": 1.0,
+  "max_position_value": 10000,
+  "max_allocation_pct": 50.0,
+  "max_daily_loss_pct": 2.0,
+  "default_order_type": "MKT",
+  "strategy_config": {
+    "breakout_enabled": true,
+    "pullback_enabled": true
+  },
+  "screener_config": {
+    "volatility_enabled": true,
+    "rsi_enabled": true,
+    "rsi_min": 30,
+    "rsi_max": 70
+  }
+}
+```
+
+### Mode Switch Flow
+
+```
+switch_mode(user_id, "live", confirm_token):
+    if new_mode == "live" and confirm_token != expected_token:
+        raise ConfirmationRequiredError("Live mode requires confirmation")
+    db.update_user(user_id, mode=new_mode)
+    log INFO: f"User {user_id} switched to {new_mode} mode"
+```
+
+---
+
+## DD-INF-007.001.D01 — DataProvider Interface Design
+
+**Parent SRD:** SRD-INF-007.001 — SRD-INF-007.005
+
+### Provider Protocol
+
+```python
+class DataProvider(Protocol):
+    async def req_historical_data(
+        symbol: str,
+        end_datetime: datetime,
+        duration: str,
+        bar_size: str,
+    ) -> list[OHLCVBar]: ...
+
+    def subscribe_realtime_bars(symbol: str, bar_size: int = 5) -> None: ...
+    def unsubscribe_realtime_bars(symbol: str) -> None: ...
+    def on_realtime_bar(callback: Callable[[RealtimeBar], None]) -> None: ...
+```
+
+### IBKRProvider
+
+```python
+class IBKRProvider:
+    """Delegates all calls to IBKRClient. Production provider."""
+    def __init__(client: IBKRClient) -> None
+    # All protocol methods delegate to self._client
+```
+
+### DummyProvider
+
+```python
+class DummyProvider:
+    """Synthetic data provider for development/testing."""
+    def __init__(seed: int = 42, base_price: float = 100.0, volatility: float = 0.02) -> None
+
+    async def req_historical_data(...) -> list[OHLCVBar]:
+        # Generate random-walk OHLCV bars with deterministic seed
+        # Ensures: open <= high, low <= open, low <= close <= high, volume >= 0
+
+    def subscribe_realtime_bars(symbol, bar_size=5):
+        # Start asyncio timer emitting synthetic 5s bars
+```
+
+### Factory
+
+```python
+def create_provider(config: AppConfig) -> DataProvider:
+    match config.data_provider:
+        case "ibkr":
+            return IBKRProvider(IBKRClient(config.broker))
+        case "dummy":
+            return DummyProvider(seed=config.dummy_seed)
+        case _:
+            raise ConfigurationError(f"Unknown provider: {config.data_provider}")
+```

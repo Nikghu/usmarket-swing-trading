@@ -1,0 +1,627 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "data",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\data",
+  "tool_code": "INF",
+  "files": {
+    "__init__.py": {},
+    "engine.py": {
+      "module_id": "MD-INF-003.001.M01",
+      "srd_id": "SRD-INF-003.001",
+      "classes": [
+        {
+          "name": "BootstrapResult",
+          "class_vars": [
+            "symbol: str",
+            "bars_1m: int",
+            "bars_1d: int",
+            "bars_1w: int"
+          ],
+          "line_start": 46,
+          "line_end": 50
+        },
+        {
+          "name": "UpdateResult",
+          "class_vars": [
+            "symbol: str",
+            "timeframe: str",
+            "inserted: int"
+          ],
+          "line_start": 54,
+          "line_end": 57
+        },
+        {
+          "name": "HistoricalDataEngine",
+          "docstring": "Orchestrates OHLCV data download, storage, and in-process aggregation.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\r\n        self,\r\n        provider: DataProvider,\r\n        db: DatabaseManager,\r\n        cfg: DataConfig,\r\n    ) -> None",
+              "line_start": 69,
+              "line_end": 77
+            },
+            {
+              "name": "bootstrap_symbol",
+              "signature": "def bootstrap_symbol(self, symbol: str) -> BootstrapResult",
+              "docstring": "Fetch one year of 1m / 1d / 1w bars from the provider and store them.",
+              "line_start": 81,
+              "line_end": 103
+            },
+            {
+              "name": "bootstrap_all",
+              "signature": "def bootstrap_all(\r\n        self,\r\n        universe: list[UniverseRecord],\r\n        max_concurrent: int | None = None,\r\n    ) -> None",
+              "docstring": "Bootstrap all symbols with bounded concurrency.",
+              "line_start": 105,
+              "line_end": 124
+            },
+            {
+              "name": "update_missing_data",
+              "signature": "def update_missing_data(self, symbol: str) -> list[UpdateResult]",
+              "docstring": "Fetch only bars newer than the last stored timestamp for each TF.",
+              "line_start": 128,
+              "line_end": 155
+            },
+            {
+              "name": "aggregate_timeframe",
+              "signature": "def aggregate_timeframe(\r\n        self,\r\n        symbol: str,\r\n        target_tf: DerivedTimeframe,\r\n        bars_1m: list[OHLCVBar],\r\n    ) -> list[OHLCVBar]",
+              "docstring": "Synthesise a higher-timeframe bar series from 1m bars.",
+              "line_start": 159,
+              "line_end": 205
+            },
+            {
+              "name": "assert_candle_consistency",
+              "signature": "def assert_candle_consistency(\r\n        self,\r\n        live_bar: OHLCVBar,\r\n        historical_bar: OHLCVBar,\r\n    ) -> None",
+              "docstring": "Assert that a live-built bar equals its stored historical counterpart.",
+              "line_start": 209,
+              "line_end": 226
+            }
+          ],
+          "line_start": 60,
+          "line_end": 226
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "create_provider",
+          "signature": "def create_provider(cfg: DataConfig) -> DataProvider",
+          "docstring": "Factory: return the correct DataProvider based on config.",
+          "line_start": 229,
+          "line_end": 249
+        }
+      ],
+      "constants": [
+        "_TF_TO_BAR_SIZE: dict[str, str] = {",
+        "_TF_MINUTES: dict[str, int] = {"
+      ]
+    },
+    "market_calendar.py": {
+      "top_level_functions": [
+        {
+          "name": "get_exchange_status",
+          "signature": "def get_exchange_status(now_et: datetime.datetime) -> str",
+          "docstring": "Return the current US equity market session state.",
+          "line_start": 38,
+          "line_end": 58
+        }
+      ],
+      "constants": [
+        "ET: ZoneInfo = ZoneInfo(\"America/New_York\")",
+        "NYSE_HOLIDAYS: frozenset[tuple[int, int]] = frozenset(["
+      ]
+    },
+    "models.py": {
+      "module_id": "MD-INF-004.001.M03",
+      "srd_id": "SRD-INF-001.001",
+      "classes": [
+        {
+          "name": "ConnectionStatus",
+          "docstring": "IBKR broker connection state machine states.",
+          "line_start": 21,
+          "line_end": 25
+        },
+        {
+          "name": "PositionState",
+          "docstring": "Lifecycle state of an open position.",
+          "line_start": 28,
+          "line_end": 34
+        },
+        {
+          "name": "TradingMode",
+          "docstring": "Paper vs live execution mode.",
+          "line_start": 37,
+          "line_end": 40
+        },
+        {
+          "name": "OHLCVBar",
+          "docstring": "One candlestick bar for a single symbol and timeframe.",
+          "class_vars": [
+            "symbol: str",
+            "datetime: datetime",
+            "open: float",
+            "high: float",
+            "low: float",
+            "close: float",
+            "volume: int",
+            "timeframe: str"
+          ],
+          "line_start": 46,
+          "line_end": 59
+        },
+        {
+          "name": "UniverseRecord",
+          "docstring": "One S&P 500 constituent entry.",
+          "class_vars": [
+            "symbol: str",
+            "name: str",
+            "sector: str"
+          ],
+          "line_start": 65,
+          "line_end": 69
+        },
+        {
+          "name": "AccountState",
+          "docstring": "Snapshot of an IBKR / paper account at a point in time.",
+          "class_vars": [
+            "user_id: int",
+            "equity: float",
+            "start_of_day_equity: float",
+            "open_position_value: float",
+            "daily_pnl: float",
+            "excess_liquidity: float",
+            "total_cash_value: float",
+            "gross_position_value: float"
+          ],
+          "methods": [
+            {
+              "name": "available_capital",
+              "signature": "def available_capital(self) -> float",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 87,
+              "line_end": 88
+            },
+            {
+              "name": "capital_utilisation_pct",
+              "signature": "def capital_utilisation_pct(self) -> float",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 91,
+              "line_end": 97
+            }
+          ],
+          "line_start": 75,
+          "line_end": 97
+        },
+        {
+          "name": "PositionRecord",
+          "docstring": "Persisted position row (maps 1:1 to the ``positions`` DB table).",
+          "class_vars": [
+            "symbol: str",
+            "user_id: int",
+            "quantity: int",
+            "average_price: float",
+            "stop_loss: float",
+            "target_price: float",
+            "mode: str",
+            "state: str",
+            "trailing_stop: float"
+          ],
+          "line_start": 103,
+          "line_end": 113
+        },
+        {
+          "name": "OpenPosition",
+          "docstring": "Runtime-enriched position view used by the GUI and engine.",
+          "class_vars": [
+            "filled_quantity: int",
+            "total_quantity: int",
+            "current_price: float",
+            "strategy_id: str",
+            "entry_time: datetime"
+          ],
+          "methods": [
+            {
+              "name": "unrealised_pnl",
+              "signature": "def unrealised_pnl(self) -> float",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 129,
+              "line_end": 130
+            },
+            {
+              "name": "pnl_pct",
+              "signature": "def pnl_pct(self) -> float",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 133,
+              "line_end": 136
+            },
+            {
+              "name": "days_held",
+              "signature": "def days_held(self) -> int",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 139,
+              "line_end": 140
+            },
+            {
+              "name": "position_value",
+              "signature": "def position_value(self) -> float",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 143,
+              "line_end": 144
+            }
+          ],
+          "line_start": 117,
+          "line_end": 144
+        },
+        {
+          "name": "TradeRecord",
+          "docstring": "Completed or in-flight trade (maps to the ``trades`` DB table).",
+          "class_vars": [
+            "trade_id: str",
+            "user_id: int",
+            "symbol: str",
+            "side: str",
+            "quantity: int",
+            "entry_price: float",
+            "mode: str",
+            "strategy_id: str",
+            "entry_time: datetime",
+            "exit_price: float | None",
+            "exit_time: datetime | None",
+            "pnl: float | None",
+            "status: str"
+          ],
+          "line_start": 150,
+          "line_end": 164
+        },
+        {
+          "name": "IBKRPosition",
+          "docstring": "Raw position data returned by IBKR account queries.",
+          "class_vars": [
+            "symbol: str",
+            "quantity: int",
+            "average_price: float",
+            "market_value: float"
+          ],
+          "line_start": 170,
+          "line_end": 175
+        },
+        {
+          "name": "IBKRFill",
+          "docstring": "Single execution fill from IBKR.",
+          "class_vars": [
+            "order_id: int",
+            "symbol: str",
+            "filled_quantity: int",
+            "fill_price: float",
+            "fill_time: datetime"
+          ],
+          "line_start": 179,
+          "line_end": 185
+        },
+        {
+          "name": "RealtimeBar",
+          "docstring": "5-second realtime bar from IBKR (or synthetic from DummyProvider).",
+          "class_vars": [
+            "symbol: str",
+            "datetime: datetime",
+            "open: float",
+            "high: float",
+            "low: float",
+            "close: float",
+            "volume: int"
+          ],
+          "line_start": 189,
+          "line_end": 197
+        },
+        {
+          "name": "UserRecord",
+          "docstring": "Raw DB row from the ``users`` table.  Used only by DatabaseManager.",
+          "class_vars": [
+            "user_id: int",
+            "username: str",
+            "display_name: str",
+            "ibkr_client_id: int",
+            "settings_json: str",
+            "mode: str"
+          ],
+          "line_start": 203,
+          "line_end": 210
+        },
+        {
+          "name": "UserProfile",
+          "docstring": "Enriched user view with parsed settings.  Used by UserManager and GUI.",
+          "class_vars": [
+            "user_id: int",
+            "username: str",
+            "display_name: str",
+            "ibkr_client_id: int",
+            "mode: str",
+            "risk_config: \"RiskConfig\"",
+            "strategy_config: dict",
+            "screener_config: dict"
+          ],
+          "line_start": 214,
+          "line_end": 227
+        },
+        {
+          "name": "RiskConfig",
+          "docstring": "Per-user risk parameters (parsed from ``settings_json``).",
+          "class_vars": [
+            "risk_per_trade_pct: float",
+            "max_position_value: float",
+            "max_allocation_pct: float",
+            "max_daily_loss_pct: float",
+            "default_order_type: str",
+            "confirm_orders: bool"
+          ],
+          "line_start": 231,
+          "line_end": 238
+        },
+        {
+          "name": "ScreenerResult",
+          "docstring": "Output row from the screener engine.",
+          "class_vars": [
+            "symbol: str",
+            "name: str",
+            "sector: str",
+            "composite_score: float",
+            "rsi_pass: bool",
+            "volume_pass: bool",
+            "trend_pass: bool",
+            "breakout_pass: bool",
+            "pullback_pass: bool"
+          ],
+          "line_start": 244,
+          "line_end": 254
+        },
+        {
+          "name": "FilteredStockEntry",
+          "docstring": "A stock that passed a screener preset run, enriched with preset metadata.",
+          "class_vars": [
+            "symbol: str",
+            "score: float",
+            "trading_styles: list[str]",
+            "assigned_users: list[str]",
+            "screener_name: str",
+            "run_type: str",
+            "date: str"
+          ],
+          "line_start": 258,
+          "line_end": 270
+        },
+        {
+          "name": "TradeSignal",
+          "docstring": "A strategy-generated trade signal awaiting execution review.",
+          "class_vars": [
+            "symbol: str",
+            "side: str",
+            "strategy_id: str",
+            "score: float",
+            "entry_price: float",
+            "stop_loss: float",
+            "target_price: float",
+            "recommended_qty: int",
+            "generated_at: datetime"
+          ],
+          "line_start": 274,
+          "line_end": 284
+        },
+        {
+          "name": "MarketWatchItem",
+          "docstring": "A single Market Watch entry \u2014 index or symbol with live quote data.",
+          "class_vars": [
+            "symbol: str",
+            "display_name: str",
+            "ltp: float",
+            "change_pct: float",
+            "prev_close: float"
+          ],
+          "line_start": 288,
+          "line_end": 294
+        },
+        {
+          "name": "WatchlistItem",
+          "docstring": "A single Watchlist entry \u2014 user-added stock symbol with full live quote data.",
+          "class_vars": [
+            "symbol: str",
+            "ltp: float",
+            "prev_close: float",
+            "change: float",
+            "change_pct: float",
+            "day_open: float",
+            "day_high: float",
+            "day_low: float",
+            "volume: int",
+            "year_high: float",
+            "year_low: float",
+            "market_cap: float"
+          ],
+          "line_start": 298,
+          "line_end": 311
+        }
+      ]
+    },
+    "dummy_provider.py": {
+      "module_id": "MD-INF-007.001.M02",
+      "srd_id": "SRD-INF-007.003",
+      "classes": [
+        {
+          "name": "DummyProvider",
+          "docstring": "Synthetic data provider for development and testing.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\r\n        self,\r\n        seed: int = 42,\r\n        base_price: float = 200.0,\r\n        volatility: float = 0.02,\r\n        realtime_interval_s: float = _DEFAULT_REALTIME_INTERVAL_S,\r\n    ) -> None",
+              "line_start": 38,
+              "line_end": 51
+            },
+            {
+              "name": "req_historical_data",
+              "signature": "def req_historical_data(\r\n        self,\r\n        symbol: str,\r\n        end_datetime: datetime,\r\n        duration: str,\r\n        bar_size: str,\r\n    ) -> list[OHLCVBar]",
+              "docstring": "Return a synthetic OHLCV bar series deterministic on (seed, symbol).",
+              "line_start": 55,
+              "line_end": 76
+            },
+            {
+              "name": "subscribe_realtime_bars",
+              "signature": "def subscribe_realtime_bars(self, symbol: str, bar_size: int = 5) -> None",
+              "line_start": 78,
+              "line_end": 84
+            },
+            {
+              "name": "unsubscribe_realtime_bars",
+              "signature": "def unsubscribe_realtime_bars(self, symbol: str) -> None",
+              "line_start": 86,
+              "line_end": 90
+            },
+            {
+              "name": "on_realtime_bar",
+              "signature": "def on_realtime_bar(self, callback: Callable[[RealtimeBar], None]) -> None",
+              "line_start": 92,
+              "line_end": 93
+            },
+            {
+              "name": "_parse_request",
+              "signature": "def _parse_request(duration: str, bar_size: str) -> tuple[int, timedelta]",
+              "docstring": "Convert IBKR-style duration/bar_size strings \u2192 (n_bars, timedelta).",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 98,
+              "line_end": 125
+            },
+            {
+              "name": "_next_price",
+              "signature": "def _next_price(self, rng: random.Random, price: float, tf: str) -> float",
+              "docstring": "Geometric Brownian Motion step scaled to the timeframe.",
+              "line_start": 127,
+              "line_end": 131
+            },
+            {
+              "name": "_make_bar",
+              "signature": "def _make_bar(\r\n        self, rng: random.Random, symbol: str, dt: datetime, close: float, tf: str\r\n    ) -> OHLCVBar",
+              "line_start": 133,
+              "line_end": 150
+            },
+            {
+              "name": "_emit_loop",
+              "signature": "def _emit_loop(self, symbol: str) -> None",
+              "line_start": 152,
+              "line_end": 172
+            },
+            {
+              "name": "_bar_size_to_tf",
+              "signature": "def _bar_size_to_tf(bar_size: str) -> str",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 175,
+              "line_end": 181
+            }
+          ],
+          "line_start": 28,
+          "line_end": 181
+        }
+      ],
+      "constants": [
+        "_MINUTES_PER_SESSION = 390",
+        "_DEFAULT_REALTIME_INTERVAL_S = 5.0"
+      ]
+    },
+    "ibkr_provider.py": {
+      "module_id": "MD-INF-007.001.M01",
+      "srd_id": "SRD-INF-007.001",
+      "classes": [
+        {
+          "name": "IBKRProvider",
+          "docstring": "Production DataProvider backed by a live IBKR connection.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, client: IBKRClient) -> None",
+              "line_start": 27,
+              "line_end": 28
+            },
+            {
+              "name": "req_historical_data",
+              "signature": "def req_historical_data(\r\n        self,\r\n        symbol: str,\r\n        end_datetime: datetime,\r\n        duration: str,\r\n        bar_size: str,\r\n    ) -> list[OHLCVBar]",
+              "line_start": 30,
+              "line_end": 43
+            },
+            {
+              "name": "subscribe_realtime_bars",
+              "signature": "def subscribe_realtime_bars(self, symbol: str, bar_size: int = 5) -> None",
+              "line_start": 45,
+              "line_end": 46
+            },
+            {
+              "name": "unsubscribe_realtime_bars",
+              "signature": "def unsubscribe_realtime_bars(self, symbol: str) -> None",
+              "line_start": 48,
+              "line_end": 49
+            },
+            {
+              "name": "on_realtime_bar",
+              "signature": "def on_realtime_bar(self, callback: Callable[[RealtimeBar], None]) -> None",
+              "line_start": 51,
+              "line_end": 52
+            }
+          ],
+          "line_start": 20,
+          "line_end": 52
+        }
+      ]
+    },
+    "protocol.py": {
+      "srd_id": "SRD-INF-007.001",
+      "classes": [
+        {
+          "name": "DataProvider",
+          "docstring": "Interface contract for all OHLCV data sources.",
+          "methods": [
+            {
+              "name": "req_historical_data",
+              "signature": "def req_historical_data(\r\n        self,\r\n        symbol: str,\r\n        end_datetime: datetime,\r\n        duration: str,\r\n        bar_size: str,\r\n    ) -> list[OHLCVBar]",
+              "docstring": "Fetch historical bars for the given symbol and time range.",
+              "line_start": 21,
+              "line_end": 28
+            },
+            {
+              "name": "subscribe_realtime_bars",
+              "signature": "def subscribe_realtime_bars(self, symbol: str, bar_size: int = 5) -> None",
+              "docstring": "Begin streaming realtime 5-second bars for ``symbol``.",
+              "line_start": 30,
+              "line_end": 31
+            },
+            {
+              "name": "unsubscribe_realtime_bars",
+              "signature": "def unsubscribe_realtime_bars(self, symbol: str) -> None",
+              "docstring": "Stop streaming realtime bars for ``symbol``.",
+              "line_start": 33,
+              "line_end": 34
+            },
+            {
+              "name": "on_realtime_bar",
+              "signature": "def on_realtime_bar(self, callback: Callable[[RealtimeBar], None]) -> None",
+              "docstring": "Register a callback invoked for each new realtime bar.",
+              "line_start": 36,
+              "line_end": 37
+            }
+          ],
+          "line_start": 18,
+          "line_end": 37
+        }
+      ]
+    }
+  }
+}

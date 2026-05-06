@@ -1,0 +1,75 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Installer Generator — Example Configuration
+# Copy this file to your project root, rename it config.yaml, and edit.
+# Launch the GUI:  python -m installer
+# ──────────────────────────────────────────────────────────────────────────────
+
+app:
+  name: "MyApplication"
+  version: "1.0.0"
+  publisher: "My Company Ltd."
+  description: "Brief description shown in Add/Remove Programs."
+  exe_name: "MyApp.exe"           # main executable inside source_dir
+  icon: "assets/icon.ico"         # path relative to this config file
+  license: "assets/license.txt"   # shown on the installer licence screen
+  # app_id is auto-generated on first save; keep it stable across releases
+  # app_id: "A1B2C3D4-..."
+
+paths:
+  source_dir: "dist/MyApplication/"  # set automatically after ▶ PyArmor + PyInstaller
+  output_dir: "installer_output/"    # where the finished installer .exe is written
+  default_install_dir: "{autopf}\\MyApplication"   # {autopf} = Program Files (auto 32/64-bit)
+
+shortcuts:
+  desktop: true
+  start_menu: true
+  start_menu_folder: "MyApplication"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Packaging: PyArmor obfuscation + PyInstaller bundling
+# Run via the Package tab → ▶ PyArmor + PyInstaller  (F4)
+# ──────────────────────────────────────────────────────────────────────────────
+package:
+  enabled: true
+
+  # Path to your application entry-point script
+  entry_script: "run_gui.py"
+
+  # PyInstaller bundling ————————————————————————————————————————————————
+  pyinstaller_onedir: true               # true = folder, false = single .exe
+  pyinstaller_windowed: true             # no console window
+  extra_paths: "src"                     # where PyInstaller finds your package
+  pyinstaller_extra_args: ""             # e.g. "--collect-all PyQt6"
+
+update:
+  enabled: false                      # set true to embed the auto-updater
+
+  # ── GitHub Releases (recommended — free, no server needed) ─────────────────────
+  # Set github_repo and leave check_url empty.
+  # The updater calls https://api.github.com/repos/<owner>/<repo>/releases/latest
+  # and downloads the first release asset whose filename contains github_asset_pattern.
+  # Upload a '<installer>.sha256' asset alongside each release for checksum verification.
+  github_repo: ""                     # e.g. "acme/myapp"
+  github_asset_pattern: "_Setup.exe" # substring match on the release asset filename
+
+  # ── Custom manifest (when github_repo is empty) ──────────────────────────
+  # Host a JSON file on any HTTPS server with the schema shown in README.md.
+  check_url: ""                       # e.g. "https://example.com/updates/manifest.json"
+
+  interval_hours: 24                  # how often to poll (minimum 1)
+  verify_checksum: true               # SHA-256 integrity check (strongly recommended)
+  verify_signature: false             # RSA-PSS signature (requires public.pem in app dir)
+
+protection:
+  packer: "nuitka"    # "nuitka" → compile to native binary (high protection)
+                      # "pyinstaller" → bundle (low protection, easy to unpack)
+                      # "none" → no packing step (you handle it yourself)
+  upx: false          # compress binary with UPX after packing
+
+installer:
+  generator: "inno_setup"   # "inno_setup" (recommended) | "nsis"
+  inno_setup_path: 'C:\Users\Niket32\AppData\Local\Programs\Inno Setup 6\ISCC.exe'
+  nsis_path: 'C:\Program Files (x86)\NSIS\makensis.exe'
+  silent_install_support: true    # /SILENT and /VERYSILENT flags work automatically
+  log_install: true               # writes setup log; pass /LOG=<path> at runtime
+  rollback_on_failure: true       # Inno Setup rolls back automatically on error

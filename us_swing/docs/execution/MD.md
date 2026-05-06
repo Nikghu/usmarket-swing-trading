@@ -1,0 +1,95 @@
+# Module Decomposition — Execution & Risk Management (EXE)
+
+**Document ID:** MD-EXE
+**Version:** 1.1.0
+**Traces To:** SRD-EXE v1.1.0 / DD-EXE v1.1.0
+**Status:** Draft
+**Last Updated:** 2026-03-06
+**Project:** US Swing Trading System
+
+---
+
+## EXE Modules
+
+| ID | Parent SRD | File | Responsibility | Public API | Deps | MCP | Status |
+|---|---|---|---|---|---|---|---|
+| MD-EXE-001.001.M01 | SRD-EXE-001.001–002, SRD-EXE-005.004 | `src/us_swing/execution/risk_manager.py` | `RiskManager` — signal validation, position size calculation, capital availability check, `RiskConfig` dataclass | `validate_signal(signal, account_state, cb_active) -> ValidationResult`, `can_enter_new(signal, account_state, user_id) -> bool`, `calculate_position_size(signal, account_state) -> int` | `data/models.py`, `config/settings.py` | No | Draft |
+| MD-EXE-001.001.M02 | SRD-EXE-001.003–006, SRD-EXE-002.003, SRD-EXE-004.005, SRD-EXE-005.005 | `src/us_swing/execution/execution_engine.py` | `ExecutionEngine` — submit entry/exit orders, handle fills, route to paper/live, user qty override, update DB and PositionTracker | `submit_signal(signal, account_state, quantity_override=None) -> int \| None`, `exit_position(symbol) -> int \| None`, `handle_order_fill(fill)` | `broker/client.py`, `risk_manager.py`, `position_tracker.py`, `paper_engine.py`, `db/manager.py`, `data/models.py` | No | Draft |
+| MD-EXE-002.001.M01 | SRD-EXE-002.001–005, SRD-EXE-005.001–003, SRD-EXE-005.006 | `src/us_swing/execution/position_tracker.py` | `PositionTracker` — thread-safe in-memory + DB-mirrored open position state with state machine, per-user scoping, startup restore | `open(pos)`, `close(user_id, symbol) -> OpenPosition`, `update_stop(user_id, symbol, new_stop)`, `update_state(user_id, symbol, new_state, filled_qty=None)`, `has_open(user_id, symbol) -> bool`, `get_all(user_id=None) -> list[OpenPosition]`, `load_from_db(user_id)`, `reconcile(ibkr_positions) -> list[str]` | `db/manager.py`, `data/models.py`, `threading` | No | Draft |
+| MD-EXE-003.001.M01 | SRD-EXE-003.001–002 | `src/us_swing/execution/circuit_breaker.py` | `DailyPnLTracker` and `CircuitBreaker` — track daily realised PnL, evaluate breach condition | `DailyPnLTracker.add(pnl)`, `DailyPnLTracker.reset()`, `DailyPnLTracker.daily_pnl`, `CircuitBreaker.check(daily_pnl, equity) -> bool` | `data/models.py`, `threading` | No | Draft |
+| MD-EXE-003.001.M02 | SRD-EXE-003.003–006 | `src/us_swing/execution/emergency.py` | `EmergencyShutdown` — cancel orders, close positions, halt engine, log CRITICAL, write shutdown JSON. Callable via CLI, SIGTERM, or GUI button. | `run(reason: str)` async | `broker/client.py`, `execution_engine.py`, `position_tracker.py`, `analysis/live_engine.py`, `monitoring/alerts.py`, `pathlib` | No | Draft |
+| MD-EXE-004.001.M01 | SRD-EXE-004.001–004 | `src/us_swing/execution/paper_engine.py` | `PaperEngine` — simulated order filling for paper mode. Market orders fill at current price; limit orders fill on price cross. Uses live `DataProvider` for price reference. | `simulate_fill(signal, quantity, order_type) -> PaperFill`, `simulate_exit(symbol) -> PaperFill` | `data/providers/*`, `position_tracker.py`, `db/manager.py`, `data/models.py` | No | Draft |
+| MD-EXE-004.001.M02 | SRD-EXE-004.005 | `src/us_swing/execution/execution_router.py` | `ExecutionRouter` — routes signals to `PaperEngine` or `ExecutionEngine` based on active user's mode. Mode is checked per-signal, not cached. | `route_signal(user_id, signal, **kwargs) -> int \| None` | `execution_engine.py`, `paper_engine.py`, `user/manager.py` | No | Draft |
+
+---
+
+## Module Dependency Graph
+
+```
+data/models.py
+
+execution/risk_manager.py     ← data/models.py, config/settings.py
+execution/position_tracker.py ← db/manager.py, data/models.py, threading
+execution/circuit_breaker.py  ← data/models.py, threading
+execution/paper_engine.py     ← data/providers/*, position_tracker.py, db/manager.py
+execution/execution_engine.py ← broker/client.py, risk_manager.py, position_tracker.py, paper_engine.py, db/manager.py
+execution/execution_router.py ← execution_engine.py, paper_engine.py, user/manager.py
+execution/emergency.py        ← broker/client.py, execution_engine.py, position_tracker.py,
+                                 analysis/live_engine.py, monitoring/alerts.py
+```
+
+---
+
+## Full Project Module Map (All Tools)
+
+```
+src/us_swing/
+├── __init__.py
+├── __main__.py                        # CLI: `python -m us_swing [run|health|kill]`
+├── config/
+│   └── settings.py                    # MD-INF-001.001.M03
+├── user/
+│   └── manager.py                     # MD-INF-006.001.M01
+├── data/
+│   ├── models.py                      # MD-INF-004.001.M03  (shared across all tools)
+│   └── providers/
+│       ├── ibkr_provider.py           # MD-INF-007.001.M01
+│       └── dummy_provider.py          # MD-INF-007.001.M02
+├── broker/
+│   ├── client.py                      # MD-INF-001.001.M01
+│   └── pacing.py                      # MD-INF-001.001.M02
+├── db/
+│   ├── schema.py                      # MD-INF-004.001.M02
+│   └── manager.py                     # MD-INF-004.001.M01
+├── universe/
+│   └── manager.py                     # MD-INF-002.001.M01
+├── data_engine/
+│   └── engine.py                      # MD-INF-003.001.M01
+├── monitoring/
+│   ├── logging_setup.py               # MD-INF-005.001.M01
+│   ├── alerts.py                      # MD-INF-005.001.M02
+│   └── health.py                      # MD-INF-005.001.M03
+├── screener/
+│   ├── config.py                      # MD-SCR-001.001.M03
+│   ├── filters.py                     # MD-SCR-001.001.M02
+│   ├── engine.py                      # MD-SCR-001.001.M01
+│   └── watchlist.py                   # MD-SCR-002.001.M01
+├── analysis/
+│   ├── indicators.py                  # MD-ANA-001.001.M04  (shared utility)
+│   ├── candle_builder.py              # MD-ANA-001.001.M01
+│   ├── db_persister.py                # MD-ANA-001.001.M03
+│   ├── live_engine.py                 # MD-ANA-001.001.M02
+│   ├── strategy_engine.py             # MD-ANA-002.001.M01
+│   ├── exit_manager.py                # MD-ANA-002.001.M04
+│   └── strategies/
+│       ├── breakout.py                # MD-ANA-002.001.M02
+│       └── pullback.py                # MD-ANA-002.001.M03
+└── execution/
+    ├── risk_manager.py                # MD-EXE-001.001.M01
+    ├── execution_engine.py            # MD-EXE-001.001.M02
+    ├── position_tracker.py            # MD-EXE-002.001.M01
+    ├── circuit_breaker.py             # MD-EXE-003.001.M01
+    ├── emergency.py                   # MD-EXE-003.001.M02
+    ├── paper_engine.py                # MD-EXE-004.001.M01
+    └── execution_router.py            # MD-EXE-004.001.M02
+```

@@ -1,0 +1,243 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "monitoring",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\monitoring",
+  "tool_code": "INF",
+  "files": {
+    "__init__.py": {},
+    "alerts.py": {
+      "module_id": "MD-INF-005.001.M02",
+      "srd_id": "SRD-INF-005.003",
+      "classes": [
+        {
+          "name": "AlertDispatcher",
+          "docstring": "Fan-out alert delivery to console + file + optional webhook.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, log_dir: Path, webhook_url: str = \"\") -> None",
+              "line_start": 30,
+              "line_end": 33
+            },
+            {
+              "name": "send",
+              "signature": "def send(self, level: str, message: str) -> None",
+              "docstring": "Dispatch an alert to all configured outputs.",
+              "line_start": 35,
+              "line_end": 39
+            },
+            {
+              "name": "_to_file",
+              "signature": "def _to_file(self, level: str, message: str) -> None",
+              "line_start": 43,
+              "line_end": 48
+            },
+            {
+              "name": "_to_webhook",
+              "signature": "def _to_webhook(self, level: str, message: str) -> None",
+              "line_start": 50,
+              "line_end": 75
+            }
+          ],
+          "line_start": 22,
+          "line_end": 75
+        },
+        {
+          "name": "AlertHandler",
+          "docstring": "A logging.Handler that forwards WARNING+ records to AlertDispatcher.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, dispatcher: AlertDispatcher, level: int = logging.WARNING) -> None",
+              "line_start": 85,
+              "line_end": 87
+            },
+            {
+              "name": "emit",
+              "signature": "def emit(self, record: logging.LogRecord) -> None",
+              "line_start": 89,
+              "line_end": 93
+            }
+          ],
+          "line_start": 78,
+          "line_end": 93
+        }
+      ]
+    },
+    "connectivity.py": {
+      "classes": [
+        {
+          "name": "_ProbeWorker",
+          "docstring": "One-shot thread: attempt TCP to 8.8.8.8:53, emit True/False result.",
+          "methods": [
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 35,
+              "line_end": 41
+            }
+          ],
+          "line_start": 26,
+          "line_end": 41
+        },
+        {
+          "name": "NetWatcher",
+          "docstring": "Periodically checks internet connectivity and emits ``status_changed``.",
+          "class_vars": [
+            "PROBE_INTERVAL_MS: int"
+          ],
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QObject | None = None) -> None",
+              "line_start": 60,
+              "line_end": 67
+            },
+            {
+              "name": "start",
+              "signature": "def start(self) -> None",
+              "docstring": "Begin monitoring.  First probe fires immediately.",
+              "line_start": 71,
+              "line_end": 74
+            },
+            {
+              "name": "stop",
+              "signature": "def stop(self) -> None",
+              "docstring": "Stop monitoring and wait for any in-flight probe to finish.",
+              "line_start": 76,
+              "line_end": 81
+            },
+            {
+              "name": "is_online",
+              "signature": "def is_online(self) -> bool",
+              "docstring": "Return current (last-known) connectivity state.",
+              "line_start": 83,
+              "line_end": 85
+            },
+            {
+              "name": "_probe",
+              "signature": "def _probe(self) -> None",
+              "docstring": "Launch a background probe; skip if a previous one is still running.",
+              "line_start": 89,
+              "line_end": 95
+            },
+            {
+              "name": "_on_result",
+              "signature": "def _on_result(self, online: bool) -> None",
+              "line_start": 97,
+              "line_end": 101
+            }
+          ],
+          "line_start": 44,
+          "line_end": 101
+        }
+      ]
+    },
+    "health.py": {
+      "module_id": "MD-INF-005.001.M03",
+      "srd_id": "SRD-INF-005.004",
+      "classes": [
+        {
+          "name": "HealthCheck",
+          "docstring": "Aggregates broker / DB / universe status into a health report.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\r\n        self,\r\n        broker: Any = None,\r\n        db: Any = None,\r\n        start_time: datetime | None = None,\r\n    ) -> None",
+              "line_start": 28,
+              "line_end": 36
+            },
+            {
+              "name": "report",
+              "signature": "def report(self) -> dict[str, Any]",
+              "docstring": "Return a health-check snapshot.",
+              "line_start": 38,
+              "line_end": 57
+            },
+            {
+              "name": "_check_broker",
+              "signature": "def _check_broker(self) -> bool",
+              "line_start": 61,
+              "line_end": 68
+            },
+            {
+              "name": "_check_db",
+              "signature": "def _check_db(self) -> tuple[bool, dict[str, Any]]",
+              "line_start": 70,
+              "line_end": 87
+            }
+          ],
+          "line_start": 16,
+          "line_end": 87
+        }
+      ]
+    },
+    "logging_setup.py": {
+      "module_id": "MD-INF-005.001.M01",
+      "srd_id": "SRD-INF-005.001",
+      "classes": [
+        {
+          "name": "_DailyDateHandler",
+          "docstring": "File handler that opens a new ``us_swing_YYYY-MM-DD.log`` each calendar day.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\r\n        self,\r\n        log_dir: Path,\r\n        backup_count: int = 30,\r\n        encoding: str = \"utf-8\",\r\n    ) -> None",
+              "line_start": 42,
+              "line_end": 53
+            },
+            {
+              "name": "_dated_path",
+              "signature": "def _dated_path(self, date: datetime.date) -> Path",
+              "line_start": 57,
+              "line_end": 58
+            },
+            {
+              "name": "_compute_next_rollover",
+              "signature": "def _compute_next_rollover(self) -> None",
+              "docstring": "Set self.rolloverAt to the next local midnight (seconds since epoch).",
+              "line_start": 60,
+              "line_end": 70
+            },
+            {
+              "name": "shouldRollover",
+              "signature": "def shouldRollover(self, record: logging.LogRecord) -> bool",
+              "line_start": 72,
+              "line_end": 73
+            },
+            {
+              "name": "doRollover",
+              "signature": "def doRollover(self) -> None",
+              "line_start": 75,
+              "line_end": 93
+            }
+          ],
+          "line_start": 27,
+          "line_end": 93
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "configure_logging",
+          "signature": "def configure_logging(log_dir: Path, level: str = \"INFO\", retention_days: int = 30) -> None",
+          "docstring": "Set up root logger with a daily dated file handler + stderr stream.",
+          "line_start": 98,
+          "line_end": 131
+        },
+        {
+          "name": "_formatter",
+          "signature": "def _formatter() -> logging.Formatter",
+          "line_start": 134,
+          "line_end": 138
+        },
+        {
+          "name": "_install_excepthook",
+          "signature": "def _install_excepthook() -> None",
+          "docstring": "Replace sys.excepthook to log all uncaught exceptions at CRITICAL.",
+          "line_start": 141,
+          "line_end": 155
+        }
+      ]
+    }
+  }
+}

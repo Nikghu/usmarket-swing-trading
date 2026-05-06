@@ -1,0 +1,202 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "universe",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\universe",
+  "tool_code": "INF",
+  "files": {
+    "__init__.py": {},
+    "manager.py": {
+      "module_id": "MD-INF-002.001.M01",
+      "srd_id": "SRD-INF-002.001",
+      "classes": [
+        {
+          "name": "RefreshResult",
+          "docstring": "Summary of a universe refresh operation.",
+          "class_vars": [
+            "added: int",
+            "removed: int",
+            "total: int"
+          ],
+          "line_start": 26,
+          "line_end": 30
+        },
+        {
+          "name": "UniverseManager",
+          "docstring": "S&P 500 universe CRUD and scheduled refresh.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, db: DatabaseManager, cfg: UniverseConfig) -> None",
+              "line_start": 41,
+              "line_end": 44
+            },
+            {
+              "name": "load_universe",
+              "signature": "def load_universe(self) -> list[UniverseRecord]",
+              "docstring": "Return all universe records from the database.",
+              "line_start": 48,
+              "line_end": 53
+            },
+            {
+              "name": "refresh_universe",
+              "signature": "def refresh_universe(self) -> RefreshResult",
+              "docstring": "Download the S&P 500 list and upsert into the database.",
+              "line_start": 57,
+              "line_end": 103
+            },
+            {
+              "name": "schedule_refresh",
+              "signature": "def schedule_refresh(self) -> None",
+              "docstring": "Start a persistent asyncio task that refreshes every N days.",
+              "line_start": 107,
+              "line_end": 117
+            },
+            {
+              "name": "_refresh_loop",
+              "signature": "def _refresh_loop(self, interval_s: float) -> None",
+              "line_start": 121,
+              "line_end": 127
+            },
+            {
+              "name": "_validate_record",
+              "signature": "def _validate_record(symbol: str, name: str, sector: str) -> UniverseRecord",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 130,
+              "line_end": 140
+            }
+          ],
+          "line_start": 33,
+          "line_end": 140
+        }
+      ],
+      "constants": [
+        "_SYMBOL_PATTERN = re.compile(r\"^[A-Z]{1,5}$\")"
+      ]
+    },
+    "store.py": {
+      "classes": [
+        {
+          "name": "Sp500Record",
+          "class_vars": [
+            "symbol: str",
+            "ibkr_symbol: str",
+            "name: str",
+            "sector: str",
+            "market_cap: float | None"
+          ],
+          "line_start": 56,
+          "line_end": 61
+        },
+        {
+          "name": "Sp500Meta",
+          "class_vars": [
+            "last_fetched: datetime | None",
+            "source: str",
+            "count: int"
+          ],
+          "methods": [
+            {
+              "name": "is_stale",
+              "signature": "def is_stale(self) -> bool",
+              "line_start": 70,
+              "line_end": 74
+            },
+            {
+              "name": "age_str",
+              "signature": "def age_str(self) -> str",
+              "line_start": 76,
+              "line_end": 84
+            }
+          ],
+          "line_start": 65,
+          "line_end": 84
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_load_meta",
+          "signature": "def _load_meta() -> Sp500Meta",
+          "line_start": 89,
+          "line_end": 103
+        },
+        {
+          "name": "_save_meta",
+          "signature": "def _save_meta(count: int) -> None",
+          "line_start": 106,
+          "line_end": 113
+        },
+        {
+          "name": "_load_from_csv",
+          "signature": "def _load_from_csv() -> list[Sp500Record]",
+          "line_start": 118,
+          "line_end": 134
+        },
+        {
+          "name": "_save_to_csv",
+          "signature": "def _save_to_csv(records: list[Sp500Record]) -> None",
+          "line_start": 137,
+          "line_end": 151
+        },
+        {
+          "name": "_fetch_from_wikipedia",
+          "signature": "def _fetch_from_wikipedia() -> list[Sp500Record]",
+          "docstring": "Download S&P 500 table from Wikipedia and return normalised records.",
+          "line_start": 156,
+          "line_end": 207
+        },
+        {
+          "name": "_fetch_market_caps",
+          "signature": "def _fetch_market_caps(symbols: list[str]) -> dict[str, float | None]",
+          "docstring": "Return {symbol: market_cap_usd} for each symbol via yfinance fast_info.",
+          "line_start": 210,
+          "line_end": 227
+        },
+        {
+          "name": "get_meta",
+          "signature": "def get_meta() -> Sp500Meta",
+          "docstring": "Return current metadata (last_fetched timestamp, source, count).",
+          "line_start": 232,
+          "line_end": 234
+        },
+        {
+          "name": "refresh",
+          "signature": "def refresh() -> list[Sp500Record]",
+          "docstring": "Force-download from Wikipedia, save CSV + meta, return records.",
+          "line_start": 237,
+          "line_end": 243
+        },
+        {
+          "name": "load_sp500",
+          "signature": "def load_sp500(*, force_refresh: bool = False) -> list[Sp500Record]",
+          "docstring": "Return the S&P 500 universe, refreshing from Wikipedia if stale or missing.",
+          "line_start": 246,
+          "line_end": 265
+        },
+        {
+          "name": "ibkr_csv_exists",
+          "signature": "def ibkr_csv_exists() -> bool",
+          "docstring": "Return True if the IBKR-qualified CSV (~/.usswing/sp500_ibkr.csv) exists.",
+          "line_start": 268,
+          "line_end": 270
+        },
+        {
+          "name": "load_ibkr_universe",
+          "signature": "def load_ibkr_universe() -> list[dict]",
+          "docstring": "Load the IBKR-qualified universe CSV (Symbol, IbkrSymbol, conid, PrimaryExch).",
+          "line_start": 273,
+          "line_end": 285
+        }
+      ],
+      "constants": [
+        "_APP_DIR      = Path.home() / \".usswing\"",
+        "_UNIVERSE_CSV = _APP_DIR / \"sp500_universe.csv\"",
+        "_META_JSON    = _APP_DIR / \"sp500_meta.json\"",
+        "_IBKR_CSV     = _APP_DIR / \"sp500_ibkr.csv\"",
+        "_WIKIPEDIA_URL = \"https://en.wikipedia.org/wiki/List_of_S%26P_500_companies\"",
+        "REFRESH_DAYS   = 7"
+      ]
+    }
+  }
+}

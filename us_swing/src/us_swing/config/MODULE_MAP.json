@@ -1,0 +1,116 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "config",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\config",
+  "tool_code": "INF",
+  "files": {
+    "__init__.py": {},
+    "settings.py": {
+      "module_id": "MD-INF-001.001.M03",
+      "srd_id": "SRD-INF-001.001",
+      "classes": [
+        {
+          "name": "BrokerConfig",
+          "class_vars": [
+            "host: str",
+            "port: int",
+            "client_id: int",
+            "connect_timeout_s: float",
+            "max_reconnect_attempts: int",
+            "max_disconnect_minutes: int"
+          ],
+          "line_start": 23,
+          "line_end": 29
+        },
+        {
+          "name": "DataConfig",
+          "class_vars": [
+            "provider: str",
+            "intraday_retention_days: int",
+            "daily_retention_years: int",
+            "max_concurrent_bootstrap: int"
+          ],
+          "line_start": 33,
+          "line_end": 37
+        },
+        {
+          "name": "UniverseConfig",
+          "class_vars": [
+            "refresh_interval_days: int",
+            "source_url: str"
+          ],
+          "line_start": 41,
+          "line_end": 45
+        },
+        {
+          "name": "RiskConfig",
+          "class_vars": [
+            "risk_per_trade_pct: float",
+            "max_position_value: float",
+            "max_allocation_pct: float",
+            "max_daily_loss_pct: float",
+            "default_order_type: str"
+          ],
+          "line_start": 49,
+          "line_end": 54
+        },
+        {
+          "name": "LogConfig",
+          "class_vars": [
+            "level: str",
+            "log_dir: Path",
+            "retention_days: int",
+            "alert_webhook_url: str"
+          ],
+          "line_start": 58,
+          "line_end": 62
+        },
+        {
+          "name": "DatabaseConfig",
+          "class_vars": [
+            "url: str"
+          ],
+          "line_start": 66,
+          "line_end": 67
+        },
+        {
+          "name": "AppConfig",
+          "class_vars": [
+            "broker: BrokerConfig",
+            "data: DataConfig",
+            "universe: UniverseConfig",
+            "risk: RiskConfig",
+            "log: LogConfig",
+            "database: DatabaseConfig",
+            "live_mode_enabled: bool"
+          ],
+          "line_start": 71,
+          "line_end": 80
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_apply_toml",
+          "signature": "def _apply_toml(cfg: AppConfig, path: Path) -> None",
+          "docstring": "Overlay cfg in-place from a TOML file (best-effort; ignores unknown keys).",
+          "line_start": 85,
+          "line_end": 125
+        },
+        {
+          "name": "_apply_env",
+          "signature": "def _apply_env(cfg: AppConfig) -> None",
+          "docstring": "Overlay cfg in-place from ``USSWING_*`` environment variables.",
+          "line_start": 128,
+          "line_end": 145
+        },
+        {
+          "name": "load_config",
+          "signature": "def load_config(toml_path: Path | None = None) -> AppConfig",
+          "docstring": "Build ``AppConfig`` from defaults \u2192 TOML \u2192 environment variables.",
+          "line_start": 148,
+          "line_end": 165
+        }
+      ]
+    }
+  }
+}

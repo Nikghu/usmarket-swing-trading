@@ -1,0 +1,70 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+MANIFEST
+
+# ─── Virtual Environment ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── PyInstaller Build Output ─────────────────────────────────────────────────
+us_swing/build/
+us_swing/dist/
+*.spec.bak
+
+# ─── Type Checking & Linting ──────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# ─── Testing ──────────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.cover
+nosetests.xml
+
+# ─── IDE & Editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/launch.json
+.vscode/tasks.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS / Windows ─────────────────────────────────────────────────────────────
+desktop.ini
+Thumbs.db
+*.stackdump
+*.lnk
+
+#─── Secrets & Local Config ───────────────────────────────────────────────────
+.env
+.env.*
+*.local.json
+CLAUDE.local.md
+
+# ─── Installer Output ─────────────────────────────────────────────────────────
+installer/installer_output/*.exe
+installer/installer_output/*.sha256
+
+# ─── Logs & Temp ──────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.temp

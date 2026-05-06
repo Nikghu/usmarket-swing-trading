@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "usswing": {
+      "command": "F:\\USMarket_Backtesting\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "usswing.pilot1.core.mcp.server"],
+      "type": "stdio"
+    }
+  }
+}

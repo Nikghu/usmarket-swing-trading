@@ -1,0 +1,67 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(us_swing/src/us_swing/**/MODULE_MAP.json)",
+      "Bash(python*)",
+      "Bash(pytest*)",
+      "Bash(ruff*)",
+      "Bash(mypy*)",
+      "Bash(pip*)",
+      "Bash(ls*)",
+      "Bash(mkdir*)",
+      "Bash(echo*)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NonInteractive -File .claude/hooks/agent-banner.ps1"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import json,sys,os; d=json.load(sys.stdin); fp=d.get('tool_input',{}).get('file_path','').replace('\\\\','/'); skip=(not fp.endswith('.py')) or ('us_swing/src/us_swing' not in fp) or fp.endswith('__init__.py'); print(f'[skeleton-guard] Reading {os.path.basename(fp)} directly. Rule: query skeleton extractor first.\\n  python -m skeleton_extractor query --find <symbol>\\n  python -m skeleton_extractor query --overview <subfolder>') if not skip else None\" 2>/dev/null || true",
+            "statusMessage": "Checking skeleton extractor usage..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import json,sys; d=json.load(sys.stdin); fp=d.get('tool_input',{}).get('file_path',''); open('.claude/.pending_review','a').write(fp+'\\n') if fp.endswith('.py') else None\" 2>/dev/null || true",
+            "statusMessage": "Tracking changed Python file..."
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/refresh_skeleton.py 2>/dev/null || true",
+            "statusMessage": "Refreshing skeleton cache..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/review_reminder.py",
+            "statusMessage": "Checking for pending reviews..."
+          }
+        ]
+      }
+    ]
+  }
+}

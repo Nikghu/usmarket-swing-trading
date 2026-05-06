@@ -1,0 +1,222 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "broker",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\broker",
+  "tool_code": "INF",
+  "files": {
+    "__init__.py": {},
+    "client.py": {
+      "module_id": "MD-INF-001.001.M01",
+      "srd_id": "SRD-INF-001.001",
+      "classes": [
+        {
+          "name": "IBKRClient",
+          "docstring": "Async wrapper around ``ib_insync.IB`` with reconnect and pacing.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, max_reconnect_attempts: int = 10) -> None",
+              "line_start": 51,
+              "line_end": 57
+            },
+            {
+              "name": "connect",
+              "signature": "def connect(\r\n        self,\r\n        host: str,\r\n        port: int,\r\n        client_id: int,\r\n        timeout: float = 5.0,\r\n    ) -> None",
+              "docstring": "Connect to IBKR and validate with an account-summary probe.",
+              "line_start": 61,
+              "line_end": 105
+            },
+            {
+              "name": "disconnect",
+              "signature": "def disconnect(self) -> None",
+              "line_start": 107,
+              "line_end": 110
+            },
+            {
+              "name": "is_connected",
+              "signature": "def is_connected(self) -> bool",
+              "line_start": 112,
+              "line_end": 113
+            },
+            {
+              "name": "on_status_change",
+              "signature": "def on_status_change(self, callback: Callable[[ConnectionStatus], None]) -> None",
+              "docstring": "Register a callback invoked on every connection state change.",
+              "line_start": 117,
+              "line_end": 119
+            },
+            {
+              "name": "req_historical_data",
+              "signature": "def req_historical_data(\r\n        self,\r\n        symbol: str,\r\n        end_datetime: datetime,\r\n        duration: str,\r\n        bar_size: str,\r\n    ) -> list[OHLCVBar]",
+              "docstring": "Fetch historical bars through the pacing queue.",
+              "line_start": 123,
+              "line_end": 169
+            },
+            {
+              "name": "subscribe_realtime_bars",
+              "signature": "def subscribe_realtime_bars(self, symbol: str, bar_size: int = 5) -> None",
+              "line_start": 173,
+              "line_end": 177
+            },
+            {
+              "name": "unsubscribe_realtime_bars",
+              "signature": "def unsubscribe_realtime_bars(self, symbol: str) -> None",
+              "line_start": 179,
+              "line_end": 181
+            },
+            {
+              "name": "on_realtime_bar",
+              "signature": "def on_realtime_bar(self, callback: Callable[[RealtimeBar], None]) -> None",
+              "line_start": 183,
+              "line_end": 184
+            },
+            {
+              "name": "place_order",
+              "signature": "def place_order(self, contract: Any, order: Any) -> int",
+              "line_start": 188,
+              "line_end": 191
+            },
+            {
+              "name": "cancel_order",
+              "signature": "def cancel_order(self, order_id: int) -> None",
+              "line_start": 193,
+              "line_end": 197
+            },
+            {
+              "name": "cancel_all_orders",
+              "signature": "def cancel_all_orders(self) -> None",
+              "line_start": 199,
+              "line_end": 202
+            },
+            {
+              "name": "close_all_positions",
+              "signature": "def close_all_positions(self) -> None",
+              "line_start": 204,
+              "line_end": 214
+            },
+            {
+              "name": "get_account_summary",
+              "signature": "def get_account_summary(self) -> AccountState",
+              "line_start": 218,
+              "line_end": 232
+            },
+            {
+              "name": "get_open_positions",
+              "signature": "def get_open_positions(self) -> list[IBKRPosition]",
+              "line_start": 234,
+              "line_end": 244
+            },
+            {
+              "name": "_on_disconnect",
+              "signature": "def _on_disconnect(self) -> None",
+              "line_start": 248,
+              "line_end": 253
+            },
+            {
+              "name": "_reconnect_loop",
+              "signature": "def _reconnect_loop(self) -> None",
+              "line_start": 255,
+              "line_end": 274
+            },
+            {
+              "name": "_emit_status",
+              "signature": "def _emit_status(self, status: ConnectionStatus) -> None",
+              "line_start": 276,
+              "line_end": 281
+            },
+            {
+              "name": "_on_realtime_bar",
+              "signature": "def _on_realtime_bar(self, symbol: str, bar: Any) -> None",
+              "line_start": 283,
+              "line_end": 297
+            },
+            {
+              "name": "_bar_size_to_tf",
+              "signature": "def _bar_size_to_tf(bar_size: str) -> str",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 300,
+              "line_end": 306
+            }
+          ],
+          "line_start": 44,
+          "line_end": 306
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_backoff",
+          "signature": "def _backoff(attempt: int) -> float",
+          "docstring": "Exponential backoff capped at 60 s.",
+          "line_start": 39,
+          "line_end": 41
+        }
+      ],
+      "constants": [
+        "_BACKOFF_BASE = 2.0",
+        "_BACKOFF_CAP  = 60.0"
+      ]
+    },
+    "pacing.py": {
+      "module_id": "MD-INF-001.001.M02",
+      "srd_id": "SRD-INF-001.005",
+      "classes": [
+        {
+          "name": "PacingQueue",
+          "docstring": "Asyncio rolling-window token bucket for IBKR request pacing.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, limit: int = _IBKR_LIMIT, window_s: float = _IBKR_WINDOW_S) -> None",
+              "line_start": 32,
+              "line_end": 36
+            },
+            {
+              "name": "available",
+              "signature": "def available(self) -> int",
+              "docstring": "Remaining slots in the current window (informational only).",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 41,
+              "line_end": 44
+            },
+            {
+              "name": "acquire",
+              "signature": "def acquire(self) -> None",
+              "docstring": "Wait until a pacing slot is available, then consume it.",
+              "line_start": 46,
+              "line_end": 57
+            },
+            {
+              "name": "release_expired",
+              "signature": "def release_expired(self) -> None",
+              "docstring": "Manually purge expired slots (useful in tests).",
+              "line_start": 59,
+              "line_end": 61
+            },
+            {
+              "name": "_purge_expired",
+              "signature": "def _purge_expired(self) -> None",
+              "line_start": 65,
+              "line_end": 68
+            },
+            {
+              "name": "_time_until_next_slot",
+              "signature": "def _time_until_next_slot(self) -> float",
+              "line_start": 70,
+              "line_end": 73
+            }
+          ],
+          "line_start": 24,
+          "line_end": 73
+        }
+      ],
+      "constants": [
+        "_IBKR_LIMIT    = 50",
+        "_IBKR_WINDOW_S = 600"
+      ]
+    }
+  }
+}

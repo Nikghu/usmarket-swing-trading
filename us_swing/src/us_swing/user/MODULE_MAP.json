@@ -1,0 +1,108 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "user",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\user",
+  "tool_code": "INF",
+  "files": {
+    "__init__.py": {},
+    "manager.py": {
+      "module_id": "MD-INF-006.001.M01",
+      "srd_id": "SRD-INF-006.001",
+      "classes": [
+        {
+          "name": "UserManager",
+          "docstring": "CRUD and mode-transition service for user profiles.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, db: DatabaseManager, cfg: AppConfig) -> None",
+              "line_start": 42,
+              "line_end": 44
+            },
+            {
+              "name": "create_user",
+              "signature": "def create_user(\r\n        self,\r\n        username: str,\r\n        display_name: str,\r\n        ibkr_client_id: int,\r\n        mode: str = \"paper\",\r\n    ) -> UserProfile",
+              "docstring": "Create a new user with default settings.",
+              "line_start": 48,
+              "line_end": 83
+            },
+            {
+              "name": "get_user",
+              "signature": "def get_user(self, user_id: int) -> UserProfile",
+              "docstring": "Retrieve a user profile by ID.",
+              "line_start": 87,
+              "line_end": 96
+            },
+            {
+              "name": "list_users",
+              "signature": "def list_users(self) -> list[UserProfile]",
+              "docstring": "Return all user profiles; empty list when no users exist.",
+              "line_start": 98,
+              "line_end": 100
+            },
+            {
+              "name": "update_user",
+              "signature": "def update_user(self, user_id: int, **kwargs: Any) -> UserProfile",
+              "docstring": "Update one or more user fields.",
+              "line_start": 104,
+              "line_end": 118
+            },
+            {
+              "name": "delete_user",
+              "signature": "def delete_user(self, user_id: int) -> None",
+              "docstring": "Delete a user record.  Orphan trades/positions are retained.",
+              "line_start": 120,
+              "line_end": 128
+            },
+            {
+              "name": "switch_mode",
+              "signature": "def switch_mode(\r\n        self,\r\n        user_id: int,\r\n        new_mode: str,\r\n        confirm_token: str | None = None,\r\n    ) -> UserProfile",
+              "docstring": "Switch a user between paper and live mode.",
+              "line_start": 132,
+              "line_end": 166
+            },
+            {
+              "name": "_ensure_exists",
+              "signature": "def _ensure_exists(self, user_id: int) -> None",
+              "line_start": 170,
+              "line_end": 172
+            },
+            {
+              "name": "_validate_mode",
+              "signature": "def _validate_mode(mode: str) -> None",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 175,
+              "line_end": 177
+            },
+            {
+              "name": "_to_profile",
+              "signature": "def _to_profile(record: UserRecord) -> UserProfile",
+              "docstring": "Parse raw UserRecord into an enriched UserProfile.",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 180,
+              "line_end": 207
+            }
+          ],
+          "line_start": 34,
+          "line_end": 207
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_default_settings_json",
+          "signature": "def _default_settings_json() -> dict",
+          "line_start": 210,
+          "line_end": 230
+        }
+      ],
+      "constants": [
+        "_LIVE_CONFIRM_TOKEN = \"CONFIRM_LIVE_TRADING\"",
+        "_VALID_MODES = {\"paper\", \"live\"}"
+      ]
+    }
+  }
+}

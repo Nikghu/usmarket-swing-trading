@@ -1,0 +1,49 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "scripts",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\scripts",
+  "tool_code": null,
+  "files": {
+    "__init__.py": {},
+    "qualify_sp500_ibkr.py": {
+      "top_level_functions": [
+        {
+          "name": "_parse_args",
+          "signature": "def _parse_args() -> argparse.Namespace",
+          "line_start": 45,
+          "line_end": 51
+        },
+        {
+          "name": "_load_tickers",
+          "signature": "def _load_tickers(force: bool) -> list[tuple[str, str]]",
+          "docstring": "Return list of (original_symbol, ibkr_symbol) tuples from universe.store.",
+          "line_start": 54,
+          "line_end": 60
+        },
+        {
+          "name": "_qualify_all",
+          "signature": "def _qualify_all(\r\n    tickers: list[tuple[str, str]],\r\n    host: str,\r\n    port: int,\r\n    client_id: int,\r\n) -> list[dict]",
+          "docstring": "Connect to TWS, qualify all Stock contracts, return list of result dicts.",
+          "line_start": 63,
+          "line_end": 112
+        },
+        {
+          "name": "_save_csv",
+          "signature": "def _save_csv(rows: list[dict]) -> None",
+          "line_start": 115,
+          "line_end": 123
+        },
+        {
+          "name": "main",
+          "signature": "def main() -> None",
+          "line_start": 126,
+          "line_end": 144
+        }
+      ],
+      "constants": [
+        "_APP_DIR  = Path.home() / \".usswing\"",
+        "_OUT_CSV  = _APP_DIR / \"sp500_ibkr.csv\""
+      ]
+    }
+  }
+}

@@ -1,0 +1,4147 @@
+{
+  "generated": "2026-05-06T08:20:23",
+  "subfolder": "gui",
+  "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\gui",
+  "tool_code": "SCR",
+  "files": {
+    "__init__.py": {},
+    "_demo.py": {
+      "classes": [
+        {
+          "name": "DemoService",
+          "docstring": "Emits Qt signals when demo data changes \u2014 panels connect to these.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QObject | None = None) -> None",
+              "line_start": 179,
+              "line_end": 202
+            },
+            {
+              "name": "set_viewing_uid",
+              "signature": "def set_viewing_uid(self, uid: int | None) -> None",
+              "docstring": "Switch admin scope. None = aggregate all users.",
+              "line_start": 208,
+              "line_end": 213
+            },
+            {
+              "name": "get_viewing_uid",
+              "signature": "def get_viewing_uid(self) -> int | None",
+              "line_start": 215,
+              "line_end": 216
+            },
+            {
+              "name": "get_user_by_id",
+              "signature": "def get_user_by_id(self, uid: int) -> UserProfile | None",
+              "line_start": 218,
+              "line_end": 219
+            },
+            {
+              "name": "get_user_label",
+              "signature": "def get_user_label(self) -> str",
+              "docstring": "Human-readable label for current scope.",
+              "line_start": 221,
+              "line_end": 226
+            },
+            {
+              "name": "get_positions",
+              "signature": "def get_positions(self, user_id: int | None = None) -> list[OpenPosition]",
+              "docstring": "user_id=None \u2192 use viewing context (None=all, int=specific).",
+              "line_start": 230,
+              "line_end": 235
+            },
+            {
+              "name": "get_all_trades",
+              "signature": "def get_all_trades(self, user_id: int | None = None) -> list[TradeRecord]",
+              "line_start": 237,
+              "line_end": 241
+            },
+            {
+              "name": "get_account_state",
+              "signature": "def get_account_state(self, user_id: int | None = None) -> AccountState",
+              "line_start": 243,
+              "line_end": 261
+            },
+            {
+              "name": "get_users",
+              "signature": "def get_users(self) -> list[UserProfile]",
+              "line_start": 263,
+              "line_end": 264
+            },
+            {
+              "name": "get_active_user",
+              "signature": "def get_active_user(self) -> UserProfile",
+              "line_start": 266,
+              "line_end": 267
+            },
+            {
+              "name": "get_screener_results",
+              "signature": "def get_screener_results(self) -> list[ScreenerResult]",
+              "line_start": 269,
+              "line_end": 270
+            },
+            {
+              "name": "get_pending_signals",
+              "signature": "def get_pending_signals(self, user_id: int | None = None) -> list[TradeSignal]",
+              "line_start": 272,
+              "line_end": 273
+            },
+            {
+              "name": "close_position",
+              "signature": "def close_position(self, symbol: str, user_id: int | None = None) -> None",
+              "line_start": 277,
+              "line_end": 292
+            },
+            {
+              "name": "partial_close_position",
+              "signature": "def partial_close_position(self, symbol: str, qty: int, user_id: int | None = None) -> None",
+              "docstring": "Partially close a position by reducing quantity and booking partial PnL.",
+              "line_start": 294,
+              "line_end": 315
+            },
+            {
+              "name": "set_stop_loss",
+              "signature": "def set_stop_loss(self, symbol: str, price: float, user_id: int | None = None,\r\n                      trailing: bool = False,\r\n                      trail_by: str = \"\", trail_val: float = 0.0) -> None",
+              "docstring": "Update stop loss (fixed or trailing) for a position.",
+              "line_start": 317,
+              "line_end": 340
+            },
+            {
+              "name": "execute_signal",
+              "signature": "def execute_signal(self, signal: TradeSignal, quantity: int) -> int",
+              "docstring": "Simulate order submission.  Returns a demo order ID.",
+              "line_start": 343,
+              "line_end": 352
+            },
+            {
+              "name": "add_user",
+              "signature": "def add_user(self, profile: UserProfile) -> UserProfile",
+              "docstring": "Assign a new ID, persist, and emit users_changed.",
+              "line_start": 356,
+              "line_end": 371
+            },
+            {
+              "name": "update_user",
+              "signature": "def update_user(self, profile: UserProfile) -> None",
+              "docstring": "Replace an existing user record in-place, persist, and emit users_changed.",
+              "line_start": 373,
+              "line_end": 380
+            },
+            {
+              "name": "delete_user",
+              "signature": "def delete_user(self, user_id: int) -> str | None",
+              "docstring": "Delete a user by ID.  Returns an error string if blocked, None on success.",
+              "line_start": 382,
+              "line_end": 389
+            },
+            {
+              "name": "get_feed_status",
+              "signature": "def get_feed_status(self) -> str",
+              "docstring": "Return current feed status string.",
+              "line_start": 393,
+              "line_end": 395
+            },
+            {
+              "name": "get_system_config",
+              "signature": "def get_system_config(self) -> SystemConfig",
+              "line_start": 397,
+              "line_end": 398
+            },
+            {
+              "name": "save_system_config",
+              "signature": "def save_system_config(self, cfg: SystemConfig) -> None",
+              "docstring": "Persist system config and reload internal reference.",
+              "line_start": 400,
+              "line_end": 405
+            },
+            {
+              "name": "connect_feed",
+              "signature": "def connect_feed(self) -> None",
+              "docstring": "Simulate connecting to the data feed (paper mode only).",
+              "line_start": 407,
+              "line_end": 419
+            },
+            {
+              "name": "_on_feed_connected",
+              "signature": "def _on_feed_connected(self) -> None",
+              "line_start": 421,
+              "line_end": 424
+            },
+            {
+              "name": "disconnect_feed",
+              "signature": "def disconnect_feed(self) -> None",
+              "docstring": "Disconnect the data feed.",
+              "line_start": 426,
+              "line_end": 430
+            },
+            {
+              "name": "_update_prices",
+              "signature": "def _update_prices(self) -> None",
+              "line_start": 434,
+              "line_end": 444
+            },
+            {
+              "name": "_emit_demo_log",
+              "signature": "def _emit_demo_log(self) -> None",
+              "line_start": 446,
+              "line_end": 450
+            }
+          ],
+          "line_start": 169,
+          "line_end": 450
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_copy_pos",
+          "signature": "def _copy_pos(p: OpenPosition) -> OpenPosition",
+          "docstring": "Return a shallow copy so demo mutations don't affect the seed.",
+          "line_start": 469,
+          "line_end": 478
+        }
+      ],
+      "constants": [
+        "_USERS: list[UserProfile] = [",
+        "_POSITIONS: list[OpenPosition] = [",
+        "_TRADES: list[TradeRecord] = [",
+        "_SIGNALS: list[TradeSignal] = [",
+        "_SCREENER_RESULTS_POOL: list[ScreenerResult] = [",
+        "_USER_EQUITY: dict[int, float] = {1: 150_000.0, 2: 80_000.0, 3: 50_000.0}",
+        "_DEMO_LOGS: list[tuple[str, str]] = ["
+      ]
+    },
+    "_types.py": {},
+    "ai_model_store.py": {
+      "module_id": "MD-SCR-014.008.M20",
+      "srd_id": "SRD-SCR-014.008",
+      "classes": [
+        {
+          "name": "CustomAIModel",
+          "class_vars": [
+            "tier: str",
+            "provider: str",
+            "name: str",
+            "model_id: str",
+            "tool_use: bool"
+          ],
+          "line_start": 20,
+          "line_end": 25
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "load_custom_models",
+          "signature": "def load_custom_models() -> list[CustomAIModel]",
+          "line_start": 28,
+          "line_end": 47
+        },
+        {
+          "name": "save_custom_models",
+          "signature": "def save_custom_models(models: list[CustomAIModel]) -> None",
+          "line_start": 50,
+          "line_end": 57
+        },
+        {
+          "name": "all_model_rows",
+          "signature": "def all_model_rows() -> list[tuple[str, str, str, str, bool, bool]]",
+          "docstring": "Return (tier, provider, name, model_id, tool_use, is_custom) for every model.",
+          "line_start": 60,
+          "line_end": 69
+        },
+        {
+          "name": "validate_model",
+          "signature": "def validate_model(model_id: str, api_key: str = \"\") -> tuple[bool, str]",
+          "docstring": "Send a 1-token probe to OpenRouter. Returns (ok, message). Thread-safe.",
+          "line_start": 72,
+          "line_end": 109
+        }
+      ],
+      "constants": [
+        "_APP_DIR = Path.home() / \".usswing\"",
+        "_STORE_FILE = _APP_DIR / \"ai_models.json\""
+      ]
+    },
+    "ai_transcript_panel.py": {
+      "module_id": "MD-SCR-014.004.M22",
+      "srd_id": "SRD-SCR-014.004",
+      "classes": [
+        {
+          "name": "_TurnBlock",
+          "docstring": "Renders a single conversation turn as a styled chat card.",
+          "class_vars": [
+            "_ROLE_STYLE: dict[str, tuple[str, str, str, str]]"
+          ],
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, turn: Any, parent: QWidget | None = None) -> None",
+              "line_start": 121,
+              "line_end": 364
+            },
+            {
+              "name": "_toggle_content",
+              "signature": "def _toggle_content(self) -> None",
+              "line_start": 367,
+              "line_end": 375
+            }
+          ],
+          "line_start": 86,
+          "line_end": 375
+        },
+        {
+          "name": "AITranscriptPanel",
+          "docstring": "Scrollable panel that displays the full AI conversation transcript.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QWidget | None = None) -> None",
+              "line_start": 385,
+              "line_end": 387
+            },
+            {
+              "name": "_build_ui",
+              "signature": "def _build_ui(self) -> None",
+              "line_start": 390,
+              "line_end": 449
+            },
+            {
+              "name": "load_transcript",
+              "signature": "def load_transcript(\n        self,\n        turns: list[Any],\n        cost_per_1k_in: float,\n        cost_per_1k_out: float,\n    ) -> None",
+              "docstring": "Clear panel, build _TurnBlock per turn, update summary label.",
+              "line_start": 452,
+              "line_end": 527
+            },
+            {
+              "name": "clear",
+              "signature": "def clear(self) -> None",
+              "docstring": "Remove all _TurnBlock widgets and reset summary label.",
+              "line_start": 529,
+              "line_end": 532
+            },
+            {
+              "name": "_clear_turns",
+              "signature": "def _clear_turns(self) -> None",
+              "docstring": "Remove all wrapper layouts and their children from the turns layout.",
+              "line_start": 535,
+              "line_end": 558
+            },
+            {
+              "name": "_update_summary",
+              "signature": "def _update_summary(self, text: str) -> None",
+              "docstring": "Set the summary label text.",
+              "line_start": 560,
+              "line_end": 562
+            }
+          ],
+          "line_start": 382,
+          "line_end": 562
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_screening_results_html",
+          "signature": "def _screening_results_html(content: str) -> str | None",
+          "docstring": "Return an HTML table if content is a JSON list of screening results, else None.",
+          "line_start": 34,
+          "line_end": 79
+        }
+      ],
+      "constants": [
+        "_USER_BG = \"#1a2d45\""
+      ]
+    },
+    "app_service.py": {
+      "srd_id": "SRD-GUI-000.001",
+      "classes": [
+        {
+          "name": "_ConnectWorker",
+          "docstring": "Probes host:port in a background thread; emits succeeded or failed.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, host: str, port: int) -> None",
+              "line_start": 98,
+              "line_end": 101
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 103,
+              "line_end": 109
+            }
+          ],
+          "line_start": 92,
+          "line_end": 109
+        },
+        {
+          "name": "_AccountDataWorker",
+          "docstring": "Reads live account state from IBKR (ib_insync) and disconnects.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, host: str, port: int, client_id: int) -> None",
+              "line_start": 125,
+              "line_end": 129
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 131,
+              "line_end": 135
+            },
+            {
+              "name": "_async_run",
+              "signature": "def _async_run(self) -> None",
+              "line_start": 137,
+              "line_end": 228
+            }
+          ],
+          "line_start": 112,
+          "line_end": 228
+        },
+        {
+          "name": "_MarketWatchWorker",
+          "docstring": "Fetches latest quotes for a list of symbols via yfinance in a background thread.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, symbols: list[str]) -> None",
+              "line_start": 236,
+              "line_end": 238
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 240,
+              "line_end": 257
+            }
+          ],
+          "line_start": 231,
+          "line_end": 257
+        },
+        {
+          "name": "_WatchlistQuoteWorker",
+          "docstring": "Fetches full quote data for watchlist symbols via yfinance in a background threa",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, symbols: list[str]) -> None",
+              "line_start": 265,
+              "line_end": 267
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 269,
+              "line_end": 303
+            }
+          ],
+          "line_start": 260,
+          "line_end": 303
+        },
+        {
+          "name": "_Sp500RefreshWorker",
+          "docstring": "Downloads the S&P 500 universe from Wikipedia in a background thread.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, *, force: bool = False) -> None",
+              "line_start": 312,
+              "line_end": 314
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 316,
+              "line_end": 322
+            }
+          ],
+          "line_start": 306,
+          "line_end": 322
+        },
+        {
+          "name": "CandleDbStatus",
+          "docstring": "Lifecycle status of the local candle database.",
+          "line_start": 335,
+          "line_end": 339
+        },
+        {
+          "name": "CandleDbInfo",
+          "docstring": "Snapshot of candle database state, returned by _CandleDbStatusWorker.",
+          "class_vars": [
+            "status: CandleDbStatus",
+            "last_trading_day: str",
+            "first_candle_date: str | None",
+            "last_candle_date: str | None",
+            "symbols_1d: int",
+            "symbols_1w: int",
+            "total_1d: int",
+            "total_1w: int",
+            "universe_size: int"
+          ],
+          "line_start": 343,
+          "line_end": 353
+        },
+        {
+          "name": "_CandleDbStatusWorker",
+          "docstring": "Reads candle DB stats from disk and emits a CandleDbInfo object.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, universe_size: int) -> None",
+              "line_start": 483,
+              "line_end": 485
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 487,
+              "line_end": 551
+            }
+          ],
+          "line_start": 477,
+          "line_end": 551
+        },
+        {
+          "name": "_CandleDownloadWorker",
+          "docstring": "Downloads Daily + Weekly OHLCV for all symbols via IBKR (ib_insync)",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\r\n        self,\r\n        symbols:          list[str],\r\n        start_date:       datetime.date,\r\n        end_date:         datetime.date,\r\n        mode:             str,   # \"full\" | \"delta\"\r\n        ibkr_host:        str,\r\n        ibkr_port:        int,\r\n        ibkr_client_id:   int,\r\n        benchmark_symbol: str = \"SPY\",\r\n    ) -> None",
+              "line_start": 577,
+              "line_end": 597
+            },
+            {
+              "name": "request_stop",
+              "signature": "def request_stop(self) -> None",
+              "docstring": "Signal the worker to stop after the current symbol completes.",
+              "line_start": 599,
+              "line_end": 601
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "docstring": "Entry point: runs the async download loop in a new event loop.",
+              "line_start": 603,
+              "line_end": 608
+            },
+            {
+              "name": "_async_run",
+              "signature": "def _async_run(self) -> None",
+              "line_start": 612,
+              "line_end": 642
+            },
+            {
+              "name": "_download_benchmark",
+              "signature": "def _download_benchmark(self, ib: object) -> None",
+              "docstring": "Fetch 2 years of 1d + 1w bars for the benchmark symbol (e.g. SPY).",
+              "line_start": 644,
+              "line_end": 706
+            },
+            {
+              "name": "_download_all",
+              "signature": "def _download_all(self, ib: object) -> None",
+              "line_start": 708,
+              "line_end": 839
+            }
+          ],
+          "line_start": 556,
+          "line_end": 839
+        },
+        {
+          "name": "AppService",
+          "docstring": "Paper-mode application service.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QObject | None = None) -> None",
+              "line_start": 897,
+              "line_end": 966
+            },
+            {
+              "name": "connection_status",
+              "signature": "def connection_status(self) -> ConnectionStatus",
+              "docstring": "Typed ``ConnectionStatus`` enum \u2014 use for failsafe guards.",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 971,
+              "line_end": 979
+            },
+            {
+              "name": "get_feed_status",
+              "signature": "def get_feed_status(self) -> str",
+              "docstring": "Return raw ``ConnectionStatus`` value string.",
+              "line_start": 981,
+              "line_end": 983
+            },
+            {
+              "name": "set_viewing_uid",
+              "signature": "def set_viewing_uid(self, uid: int | None) -> None",
+              "docstring": "Switch admin scope.  ``None`` = aggregate all users.",
+              "line_start": 987,
+              "line_end": 992
+            },
+            {
+              "name": "get_viewing_uid",
+              "signature": "def get_viewing_uid(self) -> int | None",
+              "line_start": 994,
+              "line_end": 995
+            },
+            {
+              "name": "get_user_by_id",
+              "signature": "def get_user_by_id(self, uid: int) -> UserProfile | None",
+              "line_start": 997,
+              "line_end": 998
+            },
+            {
+              "name": "get_user_label",
+              "signature": "def get_user_label(self) -> str",
+              "line_start": 1000,
+              "line_end": 1004
+            },
+            {
+              "name": "get_positions",
+              "signature": "def get_positions(self, user_id: int | None = None) -> list[OpenPosition]",
+              "line_start": 1008,
+              "line_end": 1014
+            },
+            {
+              "name": "get_all_trades",
+              "signature": "def get_all_trades(self, user_id: int | None = None) -> list[TradeRecord]",
+              "line_start": 1016,
+              "line_end": 1020
+            },
+            {
+              "name": "get_account_state",
+              "signature": "def get_account_state(self, user_id: int | None = None) -> AccountState",
+              "line_start": 1022,
+              "line_end": 1033
+            },
+            {
+              "name": "get_users",
+              "signature": "def get_users(self) -> list[UserProfile]",
+              "line_start": 1035,
+              "line_end": 1036
+            },
+            {
+              "name": "get_active_user",
+              "signature": "def get_active_user(self) -> UserProfile",
+              "line_start": 1038,
+              "line_end": 1042
+            },
+            {
+              "name": "get_screener_results",
+              "signature": "def get_screener_results(self) -> list[ScreenerResult]",
+              "line_start": 1044,
+              "line_end": 1045
+            },
+            {
+              "name": "get_latest_screener_results",
+              "signature": "def get_latest_screener_results(self) -> list[FilteredStockEntry]",
+              "docstring": "Return the most recent saved screener result for every known preset.",
+              "line_start": 1047,
+              "line_end": 1111
+            },
+            {
+              "name": "notify_screener_results_updated",
+              "signature": "def notify_screener_results_updated(self) -> None",
+              "docstring": "Reload latest file-based results and emit ``screener_results_updated``.",
+              "line_start": 1113,
+              "line_end": 1120
+            },
+            {
+              "name": "get_pending_signals",
+              "signature": "def get_pending_signals(self, user_id: int | None = None) -> list[TradeSignal]",
+              "line_start": 1122,
+              "line_end": 1123
+            },
+            {
+              "name": "close_position",
+              "signature": "def close_position(self, symbol: str, user_id: int | None = None) -> None",
+              "line_start": 1127,
+              "line_end": 1141
+            },
+            {
+              "name": "partial_close_position",
+              "signature": "def partial_close_position(self, symbol: str, qty: int, user_id: int | None = None) -> None",
+              "line_start": 1143,
+              "line_end": 1160
+            },
+            {
+              "name": "set_stop_loss",
+              "signature": "def set_stop_loss(self, symbol: str, price: float, user_id: int | None = None,\r\n                      trailing: bool = False, trail_by: str = \"\", trail_val: float = 0.0) -> None",
+              "line_start": 1162,
+              "line_end": 1181
+            },
+            {
+              "name": "execute_signal",
+              "signature": "def execute_signal(self, signal: TradeSignal, quantity: int) -> int",
+              "docstring": "Simulate an order locally (execution disabled at tool level \u2014 no IBKR call).",
+              "line_start": 1183,
+              "line_end": 1196
+            },
+            {
+              "name": "add_user",
+              "signature": "def add_user(self, profile: UserProfile) -> UserProfile",
+              "line_start": 1200,
+              "line_end": 1214
+            },
+            {
+              "name": "update_user",
+              "signature": "def update_user(self, profile: UserProfile) -> None",
+              "line_start": 1216,
+              "line_end": 1222
+            },
+            {
+              "name": "delete_user",
+              "signature": "def delete_user(self, user_id: int) -> str | None",
+              "line_start": 1224,
+              "line_end": 1230
+            },
+            {
+              "name": "get_system_config",
+              "signature": "def get_system_config(self) -> SystemConfig",
+              "line_start": 1234,
+              "line_end": 1235
+            },
+            {
+              "name": "save_system_config",
+              "signature": "def save_system_config(self, cfg: SystemConfig) -> None",
+              "line_start": 1237,
+              "line_end": 1241
+            },
+            {
+              "name": "connect_feed",
+              "signature": "def connect_feed(self) -> None",
+              "docstring": "Initiate paper feed connection to IBKR TWS / Gateway.",
+              "line_start": 1245,
+              "line_end": 1264
+            },
+            {
+              "name": "disconnect_feed",
+              "signature": "def disconnect_feed(self) -> None",
+              "docstring": "Cleanly disconnect from the data feed.",
+              "line_start": 1266,
+              "line_end": 1276
+            },
+            {
+              "name": "_refresh_account_data",
+              "signature": "def _refresh_account_data(self) -> None",
+              "docstring": "Spawn _AccountDataWorker to read live equity + positions from IBKR.",
+              "line_start": 1280,
+              "line_end": 1292
+            },
+            {
+              "name": "_on_account_data_ready",
+              "signature": "def _on_account_data_ready(self, acct: AccountState, positions: list) -> None",
+              "line_start": 1294,
+              "line_end": 1298
+            },
+            {
+              "name": "_on_account_data_failed",
+              "signature": "def _on_account_data_failed(self, reason: str) -> None",
+              "line_start": 1300,
+              "line_end": 1304
+            },
+            {
+              "name": "_attempt_connect",
+              "signature": "def _attempt_connect(self) -> None",
+              "docstring": "Spawn a background TCP probe; result handled by _on_connect_ok / _on_connect_fai",
+              "line_start": 1306,
+              "line_end": 1313
+            },
+            {
+              "name": "_on_connect_ok",
+              "signature": "def _on_connect_ok(self) -> None",
+              "line_start": 1315,
+              "line_end": 1331
+            },
+            {
+              "name": "_on_connect_fail",
+              "signature": "def _on_connect_fail(self, reason: str) -> None",
+              "line_start": 1333,
+              "line_end": 1341
+            },
+            {
+              "name": "_set_status",
+              "signature": "def _set_status(self, status: ConnectionStatus) -> None",
+              "line_start": 1343,
+              "line_end": 1345
+            },
+            {
+              "name": "is_internet_online",
+              "signature": "def is_internet_online(self) -> bool",
+              "docstring": "Return current internet reachability (last-known probe result).",
+              "line_start": 1349,
+              "line_end": 1351
+            },
+            {
+              "name": "_on_internet_status",
+              "signature": "def _on_internet_status(self, online: bool) -> None",
+              "docstring": "Called by NetWatcher when reachability flips.",
+              "line_start": 1353,
+              "line_end": 1374
+            },
+            {
+              "name": "get_market_watch",
+              "signature": "def get_market_watch(self) -> list[MarketWatchItem]",
+              "docstring": "Return current Market Watch items (up to 3).",
+              "line_start": 1378,
+              "line_end": 1380
+            },
+            {
+              "name": "set_market_watch_symbols",
+              "signature": "def set_market_watch_symbols(self, items: list[tuple[str, str]]) -> None",
+              "docstring": "Replace watch list.  items = [(symbol, display_name), \u2026] max 3.",
+              "line_start": 1382,
+              "line_end": 1389
+            },
+            {
+              "name": "_refresh_market_watch",
+              "signature": "def _refresh_market_watch(self) -> None",
+              "docstring": "Fetch latest quotes for all watch symbols via yfinance (non-blocking via QThread",
+              "line_start": 1391,
+              "line_end": 1399
+            },
+            {
+              "name": "_on_watch_data",
+              "signature": "def _on_watch_data(self, results: list) -> None",
+              "line_start": 1401,
+              "line_end": 1433
+            },
+            {
+              "name": "get_watchlist_items",
+              "signature": "def get_watchlist_items(self) -> list[WatchlistItem]",
+              "line_start": 1437,
+              "line_end": 1438
+            },
+            {
+              "name": "add_to_watchlist",
+              "signature": "def add_to_watchlist(self, symbol: str) -> None",
+              "line_start": 1440,
+              "line_end": 1448
+            },
+            {
+              "name": "remove_from_watchlist",
+              "signature": "def remove_from_watchlist(self, symbol: str) -> None",
+              "line_start": 1450,
+              "line_end": 1454
+            },
+            {
+              "name": "_refresh_watchlist",
+              "signature": "def _refresh_watchlist(self) -> None",
+              "line_start": 1456,
+              "line_end": 1463
+            },
+            {
+              "name": "_on_watchlist_data",
+              "signature": "def _on_watchlist_data(self, results: list) -> None",
+              "line_start": 1465,
+              "line_end": 1481
+            },
+            {
+              "name": "get_market_status",
+              "signature": "def get_market_status(self) -> dict[str, str]",
+              "docstring": "Return current exchange status dict: {'nyse': status, 'nasdaq': status}.",
+              "line_start": 1485,
+              "line_end": 1494
+            },
+            {
+              "name": "_refresh_market_status",
+              "signature": "def _refresh_market_status(self) -> None",
+              "docstring": "Recompute NYSE/NASDAQ status from current Eastern Time and emit signal.",
+              "line_start": 1496,
+              "line_end": 1522
+            },
+            {
+              "name": "get_sp500_universe",
+              "signature": "def get_sp500_universe(self) -> list",
+              "docstring": "Return cached S&P 500 records (list of Sp500Record).  May be empty",
+              "line_start": 1526,
+              "line_end": 1529
+            },
+            {
+              "name": "get_sp500_meta",
+              "signature": "def get_sp500_meta(self)",
+              "docstring": "Return Sp500Meta (last_fetched, source, count, is_stale).",
+              "line_start": 1531,
+              "line_end": 1534
+            },
+            {
+              "name": "refresh_sp500_universe",
+              "signature": "def refresh_sp500_universe(self) -> None",
+              "docstring": "Force-refresh the S&P 500 universe from Wikipedia (runs in QThread).",
+              "line_start": 1536,
+              "line_end": 1538
+            },
+            {
+              "name": "_check_sp500_universe",
+              "signature": "def _check_sp500_universe(self) -> None",
+              "docstring": "Called once 500 ms after startup \u2014 loads cache or triggers download.",
+              "line_start": 1540,
+              "line_end": 1542
+            },
+            {
+              "name": "_run_sp500_refresh",
+              "signature": "def _run_sp500_refresh(self, *, force: bool) -> None",
+              "line_start": 1544,
+              "line_end": 1563
+            },
+            {
+              "name": "_on_sp500_done",
+              "signature": "def _on_sp500_done(self, records: list) -> None",
+              "line_start": 1565,
+              "line_end": 1580
+            },
+            {
+              "name": "_on_sp500_failed",
+              "signature": "def _on_sp500_failed(self, reason: str) -> None",
+              "line_start": 1582,
+              "line_end": 1587
+            },
+            {
+              "name": "get_last_trading_day",
+              "signature": "def get_last_trading_day(self) -> str",
+              "docstring": "Return the most recent completed NYSE trading day as 'YYYY-MM-DD'.",
+              "line_start": 1591,
+              "line_end": 1593
+            },
+            {
+              "name": "get_candle_symbol_coverage",
+              "signature": "def get_candle_symbol_coverage(self) -> \"dict[str, str | None]\"",
+              "docstring": "Return {symbol: last_1d_candle_date} from candles.db.",
+              "line_start": 1595,
+              "line_end": 1611
+            },
+            {
+              "name": "get_candle_symbols",
+              "signature": "def get_candle_symbols(self) -> list[str]",
+              "docstring": "Return sorted list of all symbols that have data in price_1d.",
+              "line_start": 1613,
+              "line_end": 1625
+            },
+            {
+              "name": "get_candles_bulk",
+              "signature": "def get_candles_bulk(\r\n        self,\r\n        symbols: list[str],\r\n        timeframe: str = \"1d\",\r\n        limit: int = 200,\r\n    ) -> \"dict[str, list[dict]]\"",
+              "docstring": "Bulk-fetch OHLCV for multiple symbols in one DB round-trip.",
+              "line_start": 1627,
+              "line_end": 1665
+            },
+            {
+              "name": "get_candles_for_symbol",
+              "signature": "def get_candles_for_symbol(\r\n        self,\r\n        symbol: str,\r\n        timeframe: str = \"1d\",\r\n        limit: int = 500,\r\n    ) -> list[dict]",
+              "docstring": "Return OHLCV rows for *symbol* from candles.db.",
+              "line_start": 1667,
+              "line_end": 1709
+            },
+            {
+              "name": "refresh_candle_db_status",
+              "signature": "def refresh_candle_db_status(self) -> None",
+              "docstring": "Trigger a background check of the candle database state.",
+              "line_start": 1711,
+              "line_end": 1721
+            },
+            {
+              "name": "has_candle_checkpoint",
+              "signature": "def has_candle_checkpoint(self) -> bool",
+              "docstring": "Return True if an interrupted download checkpoint exists.",
+              "line_start": 1723,
+              "line_end": 1725
+            },
+            {
+              "name": "get_failed_symbols",
+              "signature": "def get_failed_symbols(self) -> \"list[str]\"",
+              "docstring": "Return the persisted list of symbols that failed in the last download.",
+              "line_start": 1727,
+              "line_end": 1737
+            },
+            {
+              "name": "has_failed_symbols",
+              "signature": "def has_failed_symbols(self) -> bool",
+              "docstring": "Return True if a non-empty failed-symbols file exists.",
+              "line_start": 1739,
+              "line_end": 1741
+            },
+            {
+              "name": "clear_failed_symbols",
+              "signature": "def clear_failed_symbols(self) -> None",
+              "docstring": "Delete the persisted failed-symbols file.",
+              "line_start": 1743,
+              "line_end": 1745
+            },
+            {
+              "name": "reset_candle_db",
+              "signature": "def reset_candle_db(self) -> None",
+              "docstring": "Delete the candle DB and all ancillary files, then recreate empty tables.",
+              "line_start": 1747,
+              "line_end": 1773
+            },
+            {
+              "name": "start_candle_download",
+              "signature": "def start_candle_download(\r\n        self,\r\n        start_date: datetime.date,\r\n        mode: str = \"full\",\r\n        symbols: \"list[str] | None\" = None,\r\n    ) -> None",
+              "docstring": "Start (or resume) a candle download.",
+              "line_start": 1775,
+              "line_end": 1884
+            },
+            {
+              "name": "stop_candle_download",
+              "signature": "def stop_candle_download(self) -> None",
+              "docstring": "Request a graceful stop of any running download worker.",
+              "line_start": 1886,
+              "line_end": 1898
+            },
+            {
+              "name": "_last_known_candle_date",
+              "signature": "def _last_known_candle_date(self) -> datetime.date | None",
+              "docstring": "Return the most recent date present in price_1d, or None.",
+              "line_start": 1900,
+              "line_end": 1915
+            },
+            {
+              "name": "_on_candle_status_done",
+              "signature": "def _on_candle_status_done(self, info: object) -> None",
+              "line_start": 1917,
+              "line_end": 1918
+            },
+            {
+              "name": "_on_candle_status_failed",
+              "signature": "def _on_candle_status_failed(self, reason: str) -> None",
+              "line_start": 1920,
+              "line_end": 1923
+            },
+            {
+              "name": "_on_candle_progress",
+              "signature": "def _on_candle_progress(self, symbol: str, done: int, total: int) -> None",
+              "line_start": 1925,
+              "line_end": 1926
+            },
+            {
+              "name": "_on_candle_symbol_failed",
+              "signature": "def _on_candle_symbol_failed(self, symbol: str, reason: str) -> None",
+              "docstring": "Accumulate per-symbol failures and broadcast to GUI (SRD-GUI-006.015).",
+              "line_start": 1928,
+              "line_end": 1934
+            },
+            {
+              "name": "_on_candle_finished",
+              "signature": "def _on_candle_finished(self, inserted_1d: int, inserted_1w: int) -> None",
+              "line_start": 1936,
+              "line_end": 1970
+            },
+            {
+              "name": "_on_candle_failed",
+              "signature": "def _on_candle_failed(self, reason: str) -> None",
+              "line_start": 1972,
+              "line_end": 1985
+            }
+          ],
+          "line_start": 868,
+          "line_end": 1985
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_compute_last_trading_day",
+          "signature": "def _compute_last_trading_day() -> datetime.date",
+          "docstring": "Return the most recent completed NYSE trading day.",
+          "line_start": 356,
+          "line_end": 374
+        },
+        {
+          "name": "_ensure_candle_tables",
+          "signature": "def _ensure_candle_tables(conn: sqlite3.Connection) -> None",
+          "docstring": "Create price_1d and price_1w tables if they don't exist.",
+          "line_start": 377,
+          "line_end": 392
+        },
+        {
+          "name": "_save_checkpoint",
+          "signature": "def _save_checkpoint(\r\n    start_date: datetime.date,\r\n    end_date: datetime.date,\r\n    mode: str,\r\n    symbols_done: list[str],\r\n    symbols_todo: list[str],\r\n) -> None",
+          "docstring": "Persist download progress to checkpoint file.",
+          "line_start": 397,
+          "line_end": 415
+        },
+        {
+          "name": "_load_checkpoint",
+          "signature": "def _load_checkpoint() -> dict | None",
+          "docstring": "Return checkpoint dict if file exists and is valid, else None.",
+          "line_start": 418,
+          "line_end": 432
+        },
+        {
+          "name": "_delete_checkpoint",
+          "signature": "def _delete_checkpoint() -> None",
+          "docstring": "Remove the checkpoint file if it exists.",
+          "line_start": 435,
+          "line_end": 440
+        },
+        {
+          "name": "_verify_resume_symbols",
+          "signature": "def _verify_resume_symbols(\r\n    symbols_done: list[str],\r\n    end_date: datetime.date,\r\n) -> list[str]",
+          "docstring": "Check the last N completed symbols against the DB.",
+          "line_start": 443,
+          "line_end": 472
+        },
+        {
+          "name": "_bar_date_str",
+          "signature": "def _bar_date_str(bar_date: object) -> str",
+          "docstring": "Convert an ib_insync bar date (date or datetime) to ISO string.",
+          "line_start": 842,
+          "line_end": 852
+        }
+      ],
+      "constants": [
+        "_CANDLE_DB_PATH: Path         = Path.home() / \".usswing\" / \"candles.db\"",
+        "_CHECKPOINT_PATH: Path        = Path.home() / \".usswing\" / \"candle_download_checkpoint.json\"",
+        "_FAILED_SYMBOLS_PATH: Path    = Path.home() / \".usswing\" / \"candle_failed_symbols.json\"",
+        "_CANDLE_SYMBOL_PAUSE_S: float = 1.0",
+        "_CANDLE_COVERAGE_THRESHOLD: float = 0.95",
+        "_RESUME_VERIFY_COUNT: int     = 5",
+        "_DEFAULT_PAPER_EQUITY: float = 100_000.0",
+        "_DEFAULT_WATCH: list[MarketWatchItem] = ["
+      ]
+    },
+    "chart_panel.py": {
+      "module_id": "MD-GUI-011.001.M01",
+      "srd_id": "SRD-GUI-011.001",
+      "classes": [
+        {
+          "name": "CandleChartPanel",
+          "docstring": "FO-GUI-011 \u2014 Candle Chart Viewer.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 401,
+              "line_end": 410
+            },
+            {
+              "name": "_build_ui",
+              "signature": "def _build_ui(self) -> None",
+              "line_start": 414,
+              "line_end": 535
+            },
+            {
+              "name": "_refresh_symbol_list",
+              "signature": "def _refresh_symbol_list(self) -> None",
+              "docstring": "Repopulate the symbol dropdown from candles.db.",
+              "line_start": 539,
+              "line_end": 556
+            },
+            {
+              "name": "_on_load",
+              "signature": "def _on_load(self) -> None",
+              "line_start": 558,
+              "line_end": 564
+            },
+            {
+              "name": "_auto_reload_if_loaded",
+              "signature": "def _auto_reload_if_loaded(self) -> None",
+              "line_start": 566,
+              "line_end": 568
+            },
+            {
+              "name": "_load_chart",
+              "signature": "def _load_chart(self, symbol: str, timeframe: str, limit: int) -> None",
+              "line_start": 570,
+              "line_end": 593
+            },
+            {
+              "name": "_show_placeholder",
+              "signature": "def _show_placeholder(self) -> None",
+              "line_start": 595,
+              "line_end": 607
+            },
+            {
+              "name": "_show_no_data",
+              "signature": "def _show_no_data(self, symbol: str, timeframe: str) -> None",
+              "line_start": 609,
+              "line_end": 624
+            },
+            {
+              "name": "showEvent",
+              "signature": "def showEvent(self, event) -> None",
+              "docstring": "Refresh symbol list every time the tab becomes visible.",
+              "line_start": 628,
+              "line_end": 631
+            }
+          ],
+          "line_start": 393,
+          "line_end": 631
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_build_html",
+          "signature": "def _build_html(candle_data: list[dict], volume_data: list[dict], symbol: str, timeframe: str) -> str",
+          "docstring": "Return a self-contained HTML page with a TradingView Lightweight Chart.",
+          "line_start": 39,
+          "line_end": 390
+        }
+      ],
+      "constants": [
+        "_RESOURCES = Path(__file__).parent / \"resources\"",
+        "_LWCHART_JS = _RESOURCES / \"lightweight-charts.standalone.production.js\""
+      ]
+    },
+    "dashboard_panel.py": {
+      "module_id": "MD-GUI-002.001.M01",
+      "srd_id": "SRD-GUI-002.001",
+      "classes": [
+        {
+          "name": "_ExitPositionDialog",
+          "docstring": "Professional position-exit dialog modelled after Thinkorswim / IBKR TWS /",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, pos: OpenPosition, user_name: str = \"\",\r\n                 parent: QWidget | None = None) -> None",
+              "line_start": 89,
+              "line_end": 160
+            },
+            {
+              "name": "_build_title_bar",
+              "signature": "def _build_title_bar(self, symbol: str) -> QFrame",
+              "docstring": "Custom draggable title bar with symbol badge, title, and close button.",
+              "line_start": 164,
+              "line_end": 193
+            },
+            {
+              "name": "_build_summary_card",
+              "signature": "def _build_summary_card(self, pos: OpenPosition, user_name: str = \"\") -> QFrame",
+              "docstring": "Two-row four-column position metrics card.",
+              "line_start": 195,
+              "line_end": 330
+            },
+            {
+              "name": "_title_mouse_press",
+              "signature": "def _title_mouse_press(self, event) -> None",
+              "line_start": 334,
+              "line_end": 337
+            },
+            {
+              "name": "_title_mouse_move",
+              "signature": "def _title_mouse_move(self, event) -> None",
+              "line_start": 339,
+              "line_end": 342
+            },
+            {
+              "name": "_title_mouse_release",
+              "signature": "def _title_mouse_release(self, event) -> None",
+              "line_start": 344,
+              "line_end": 346
+            },
+            {
+              "name": "_build_market_tab",
+              "signature": "def _build_market_tab(self) -> None",
+              "docstring": "Tab 1 \u2014 Market Exit: close full position instantly at market.",
+              "line_start": 350,
+              "line_end": 379
+            },
+            {
+              "name": "_build_limit_tab",
+              "signature": "def _build_limit_tab(self) -> None",
+              "docstring": "Tab 2 \u2014 Limit Exit: close at a specified price or better.",
+              "line_start": 381,
+              "line_end": 432
+            },
+            {
+              "name": "_build_scale_out_tab",
+              "signature": "def _build_scale_out_tab(self) -> None",
+              "docstring": "Tab 3 \u2014 Scale Out: partial close, book profit at market.",
+              "line_start": 434,
+              "line_end": 498
+            },
+            {
+              "name": "_build_stop_trail_tab",
+              "signature": "def _build_stop_trail_tab(self) -> None",
+              "docstring": "Tab 4 \u2014 Stop Loss / Trailing: set or update protective stop.",
+              "line_start": 500,
+              "line_end": 575
+            },
+            {
+              "name": "_update_confirm_label",
+              "signature": "def _update_confirm_label(self, idx: int) -> None",
+              "line_start": 579,
+              "line_end": 585
+            },
+            {
+              "name": "_update_limit_est",
+              "signature": "def _update_limit_est(self) -> None",
+              "line_start": 587,
+              "line_end": 595
+            },
+            {
+              "name": "_update_scale_display",
+              "signature": "def _update_scale_display(self) -> None",
+              "line_start": 597,
+              "line_end": 601
+            },
+            {
+              "name": "_sync_scale_pct",
+              "signature": "def _sync_scale_pct(self, qty: int) -> None",
+              "line_start": 603,
+              "line_end": 607
+            },
+            {
+              "name": "_sync_scale_qty",
+              "signature": "def _sync_scale_qty(self, pct: float) -> None",
+              "line_start": 609,
+              "line_end": 613
+            },
+            {
+              "name": "_set_scale_pct",
+              "signature": "def _set_scale_pct(self, pct: int) -> None",
+              "line_start": 615,
+              "line_end": 618
+            },
+            {
+              "name": "_update_scale_est",
+              "signature": "def _update_scale_est(self) -> None",
+              "line_start": 620,
+              "line_end": 629
+            },
+            {
+              "name": "_update_sl_info",
+              "signature": "def _update_sl_info(self) -> None",
+              "line_start": 631,
+              "line_end": 639
+            },
+            {
+              "name": "_on_trailing_toggled",
+              "signature": "def _on_trailing_toggled(self, checked: bool) -> None",
+              "line_start": 641,
+              "line_end": 646
+            },
+            {
+              "name": "_on_confirm",
+              "signature": "def _on_confirm(self) -> None",
+              "line_start": 650,
+              "line_end": 676
+            }
+          ],
+          "line_start": 76,
+          "line_end": 676
+        },
+        {
+          "name": "_StatCard",
+          "docstring": "TIKR-style KPI card:",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, label: str, accent: str = C.BLUE,\r\n                 parent: QWidget | None = None) -> None",
+              "line_start": 693,
+              "line_end": 735
+            },
+            {
+              "name": "set_value",
+              "signature": "def set_value(self, text: str, colour: str = C.TEXT,\r\n                  change: str = \"\", change_colour: str = C.MUTED) -> None",
+              "line_start": 737,
+              "line_end": 744
+            }
+          ],
+          "line_start": 681,
+          "line_end": 744
+        },
+        {
+          "name": "_MarketPulseBar",
+          "docstring": "A slim info bar below cards, showing key market context at a glance.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QWidget | None = None) -> None",
+              "line_start": 752,
+              "line_end": 787
+            },
+            {
+              "name": "refresh",
+              "signature": "def refresh(self, equity: float, open_val: float) -> None",
+              "line_start": 789,
+              "line_end": 795
+            }
+          ],
+          "line_start": 749,
+          "line_end": 795
+        },
+        {
+          "name": "_WatchlistModel",
+          "docstring": "QAbstractTableModel for the Watchlist tab.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent=None) -> None",
+              "line_start": 809,
+              "line_end": 811
+            },
+            {
+              "name": "refresh",
+              "signature": "def refresh(self, items: list[WatchlistItem]) -> None",
+              "line_start": 813,
+              "line_end": 816
+            },
+            {
+              "name": "row_symbol",
+              "signature": "def row_symbol(self, row: int) -> str",
+              "line_start": 818,
+              "line_end": 819
+            },
+            {
+              "name": "rowCount",
+              "signature": "def rowCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 821,
+              "line_end": 822
+            },
+            {
+              "name": "columnCount",
+              "signature": "def columnCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 824,
+              "line_end": 825
+            },
+            {
+              "name": "headerData",
+              "signature": "def headerData(self, section: int, orientation: Qt.Orientation,\r\n                   role: int = Qt.ItemDataRole.DisplayRole)",
+              "line_start": 827,
+              "line_end": 831
+            },
+            {
+              "name": "data",
+              "signature": "def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole)",
+              "line_start": 833,
+              "line_end": 857
+            },
+            {
+              "name": "_display",
+              "signature": "def _display(self, item: WatchlistItem, col: int) -> str",
+              "line_start": 859,
+              "line_end": 903
+            }
+          ],
+          "line_start": 800,
+          "line_end": 903
+        },
+        {
+          "name": "_WatchlistTab",
+          "docstring": "Watchlist tab: add/remove symbols, live-refreshing quote table.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 911,
+              "line_end": 1016
+            },
+            {
+              "name": "add_symbol",
+              "signature": "def add_symbol(self, symbol: str) -> None",
+              "docstring": "Public API \u2014 called by DashboardPanel.on_watchlist_add.",
+              "line_start": 1018,
+              "line_end": 1020
+            },
+            {
+              "name": "_on_add",
+              "signature": "def _on_add(self) -> None",
+              "line_start": 1022,
+              "line_end": 1027
+            },
+            {
+              "name": "_on_remove",
+              "signature": "def _on_remove(self) -> None",
+              "line_start": 1029,
+              "line_end": 1035
+            },
+            {
+              "name": "_on_manual_refresh",
+              "signature": "def _on_manual_refresh(self) -> None",
+              "line_start": 1037,
+              "line_end": 1038
+            },
+            {
+              "name": "_on_selection",
+              "signature": "def _on_selection(self) -> None",
+              "line_start": 1040,
+              "line_end": 1042
+            },
+            {
+              "name": "_on_data_updated",
+              "signature": "def _on_data_updated(self) -> None",
+              "line_start": 1044,
+              "line_end": 1054
+            },
+            {
+              "name": "_update_empty_state",
+              "signature": "def _update_empty_state(self) -> None",
+              "line_start": 1056,
+              "line_end": 1059
+            }
+          ],
+          "line_start": 908,
+          "line_end": 1059
+        },
+        {
+          "name": "DashboardPanel",
+          "docstring": "FO-GUI-002 Dashboard Panel \u2014 TIKR terminal style.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 1070,
+              "line_end": 1281
+            },
+            {
+              "name": "_on_scope_changed",
+              "signature": "def _on_scope_changed(self) -> None",
+              "line_start": 1285,
+              "line_end": 1307
+            },
+            {
+              "name": "_refresh_positions",
+              "signature": "def _refresh_positions(self) -> None",
+              "line_start": 1311,
+              "line_end": 1319
+            },
+            {
+              "name": "on_watchlist_add",
+              "signature": "def on_watchlist_add(self, symbol: str) -> None",
+              "docstring": "Called by MainWindow when screener requests adding symbol to watchlist.",
+              "line_start": 1321,
+              "line_end": 1324
+            },
+            {
+              "name": "_on_pos_selection",
+              "signature": "def _on_pos_selection(self) -> None",
+              "line_start": 1328,
+              "line_end": 1339
+            },
+            {
+              "name": "_on_square_off_all",
+              "signature": "def _on_square_off_all(self) -> None",
+              "line_start": 1341,
+              "line_end": 1356
+            },
+            {
+              "name": "_on_manage_selected",
+              "signature": "def _on_manage_selected(self) -> None",
+              "line_start": 1358,
+              "line_end": 1399
+            },
+            {
+              "name": "_refresh_account",
+              "signature": "def _refresh_account(self) -> None",
+              "line_start": 1401,
+              "line_end": 1424
+            },
+            {
+              "name": "_refresh_trades",
+              "signature": "def _refresh_trades(self) -> None",
+              "line_start": 1428,
+              "line_end": 1430
+            },
+            {
+              "name": "_on_log_message",
+              "signature": "def _on_log_message(self, level: str, message: str) -> None",
+              "line_start": 1432,
+              "line_end": 1441
+            },
+            {
+              "name": "_matches_log_filter",
+              "signature": "def _matches_log_filter(self, level: str, message: str) -> bool",
+              "line_start": 1443,
+              "line_end": 1455
+            },
+            {
+              "name": "_reapply_log_filter",
+              "signature": "def _reapply_log_filter(self) -> None",
+              "line_start": 1457,
+              "line_end": 1466
+            },
+            {
+              "name": "_toggle_log_pause",
+              "signature": "def _toggle_log_pause(self) -> None",
+              "line_start": 1468,
+              "line_end": 1476
+            },
+            {
+              "name": "_clear_log",
+              "signature": "def _clear_log(self) -> None",
+              "line_start": 1478,
+              "line_end": 1482
+            }
+          ],
+          "line_start": 1064,
+          "line_end": 1482
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_resize_columns",
+          "signature": "def _resize_columns(view: QTableView, fixed: dict[int, int]) -> None",
+          "line_start": 1487,
+          "line_end": 1494
+        },
+        {
+          "name": "_padded",
+          "signature": "def _padded(layout: QVBoxLayout) -> QVBoxLayout",
+          "line_start": 1497,
+          "line_end": 1501
+        }
+      ],
+      "constants": [
+        "_DLG_QSS = ("
+      ]
+    },
+    "execution_panel.py": {
+      "classes": [
+        {
+          "name": "_SignalRow",
+          "docstring": "One row in the signal list: symbol label, stats, quantity override, execute.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, signal: TradeSignal, mode: str, parent: QWidget | None = None) -> None",
+              "line_start": 43,
+              "line_end": 118
+            },
+            {
+              "name": "_on_qty_changed",
+              "signature": "def _on_qty_changed(self, value: int) -> None",
+              "line_start": 122,
+              "line_end": 126
+            },
+            {
+              "name": "_on_execute",
+              "signature": "def _on_execute(self) -> None",
+              "line_start": 128,
+              "line_end": 151
+            },
+            {
+              "name": "_get_target_user_label",
+              "signature": "def _get_target_user_label(self) -> str",
+              "docstring": "Return the label of the target user selected in the Execution panel combo.",
+              "line_start": 153,
+              "line_end": 161
+            },
+            {
+              "name": "set_circuit_breaker",
+              "signature": "def set_circuit_breaker(self, active: bool) -> None",
+              "line_start": 163,
+              "line_end": 164
+            },
+            {
+              "name": "refresh_mode",
+              "signature": "def refresh_mode(self, mode: str) -> None",
+              "line_start": 166,
+              "line_end": 167
+            }
+          ],
+          "line_start": 38,
+          "line_end": 167
+        },
+        {
+          "name": "_FilteredStocksModel",
+          "docstring": "Table model for the filtered stocks left pane.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QWidget | None = None) -> None",
+              "line_start": 184,
+              "line_end": 186
+            },
+            {
+              "name": "load",
+              "signature": "def load(self, entries: list[FilteredStockEntry]) -> None",
+              "line_start": 188,
+              "line_end": 191
+            },
+            {
+              "name": "rowCount",
+              "signature": "def rowCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 193,
+              "line_end": 194
+            },
+            {
+              "name": "columnCount",
+              "signature": "def columnCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 196,
+              "line_end": 197
+            },
+            {
+              "name": "headerData",
+              "signature": "def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 199,
+              "line_end": 202
+            },
+            {
+              "name": "data",
+              "signature": "def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 204,
+              "line_end": 239
+            }
+          ],
+          "line_start": 179,
+          "line_end": 239
+        },
+        {
+          "name": "_FilteredStocksPane",
+          "docstring": "Left panel showing the most recent screener output across all presets.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 247,
+              "line_end": 333
+            },
+            {
+              "name": "_on_updated",
+              "signature": "def _on_updated(self, entries: list[FilteredStockEntry]) -> None",
+              "line_start": 335,
+              "line_end": 351
+            },
+            {
+              "name": "_filter_by_date",
+              "signature": "def _filter_by_date(self) -> None",
+              "line_start": 353,
+              "line_end": 360
+            }
+          ],
+          "line_start": 244,
+          "line_end": 360
+        },
+        {
+          "name": "ExecutionPanel",
+          "docstring": "FO-GUI-004 Execution Panel.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 373,
+              "line_end": 432
+            },
+            {
+              "name": "_build_right_pane",
+              "signature": "def _build_right_pane(self, demo: AppService) -> QWidget",
+              "docstring": "Build the right side: pending signals scroll area + status + demo button.",
+              "line_start": 434,
+              "line_end": 482
+            },
+            {
+              "name": "_on_scope_changed",
+              "signature": "def _on_scope_changed(self) -> None",
+              "docstring": "Sync the Execute-for combo with the admin viewing scope.",
+              "line_start": 486,
+              "line_end": 492
+            },
+            {
+              "name": "_on_execute",
+              "signature": "def _on_execute(self, signal: TradeSignal, qty: int) -> None",
+              "line_start": 494,
+              "line_end": 500
+            },
+            {
+              "name": "_toggle_cb",
+              "signature": "def _toggle_cb(self) -> None",
+              "line_start": 502,
+              "line_end": 504
+            },
+            {
+              "name": "on_circuit_breaker",
+              "signature": "def on_circuit_breaker(self, active: bool) -> None",
+              "docstring": "Enable/disable all entry buttons and show banner.",
+              "line_start": 506,
+              "line_end": 513
+            }
+          ],
+          "line_start": 365,
+          "line_end": 513
+        }
+      ],
+      "constants": [
+        "_COL_SYMBOL  = 0",
+        "_COL_SCORE   = 1",
+        "_COL_RUN     = 2",
+        "_COL_STYLE   = 3",
+        "_COL_SCREENER = 4"
+      ]
+    },
+    "log_bridge.py": {
+      "module_id": "MD-GUI-007.001.M02",
+      "srd_id": "SRD-GUI-007.001",
+      "classes": [
+        {
+          "name": "LogBuffer",
+          "docstring": "Fixed-size FIFO buffer for log records (SRD-GUI-007.004).",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, max_entries: int = 10_000) -> None",
+              "line_start": 20,
+              "line_end": 21
+            },
+            {
+              "name": "append",
+              "signature": "def append(self, record: logging.LogRecord) -> None",
+              "line_start": 23,
+              "line_end": 24
+            },
+            {
+              "name": "get_filtered",
+              "signature": "def get_filtered(\r\n        self,\r\n        level: str,\r\n        module_pat: str,\r\n        symbol_pat: str,\r\n    ) -> list[logging.LogRecord]",
+              "line_start": 26,
+              "line_end": 42
+            },
+            {
+              "name": "__len__",
+              "signature": "def __len__(self) -> int",
+              "line_start": 44,
+              "line_end": 45
+            }
+          ],
+          "line_start": 17,
+          "line_end": 45
+        },
+        {
+          "name": "LogSignalEmitter",
+          "docstring": "Polls a queue.Queue every 100ms and emits new_log_entry for each record.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\r\n        self,\r\n        log_queue: queue.Queue[logging.LogRecord],\r\n        parent: QObject | None = None,\r\n    ) -> None",
+              "line_start": 56,
+              "line_end": 65
+            },
+            {
+              "name": "_drain",
+              "signature": "def _drain(self) -> None",
+              "line_start": 67,
+              "line_end": 73
+            },
+            {
+              "name": "stop",
+              "signature": "def stop(self) -> None",
+              "line_start": 75,
+              "line_end": 76
+            }
+          ],
+          "line_start": 48,
+          "line_end": 76
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "setup_queue_handler",
+          "signature": "def setup_queue_handler(max_entries: int = 10_000) -> tuple[LogSignalEmitter, LogBuffer, QueueHandler]",
+          "docstring": "Set up logging infrastructure.  Returns (emitter, buffer, handler).",
+          "line_start": 79,
+          "line_end": 94
+        }
+      ]
+    },
+    "log_viewer_panel.py": {
+      "classes": [
+        {
+          "name": "LogViewerPanel",
+          "docstring": "FO-GUI-007 Log Viewer Panel.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 71,
+              "line_end": 143
+            },
+            {
+              "name": "_on_log_message",
+              "signature": "def _on_log_message(self, level: str, message: str) -> None",
+              "line_start": 147,
+              "line_end": 154
+            },
+            {
+              "name": "_append_entry",
+              "signature": "def _append_entry(self, level: str, message: str) -> None",
+              "line_start": 156,
+              "line_end": 161
+            },
+            {
+              "name": "_matches_filter",
+              "signature": "def _matches_filter(self, level: str, message: str) -> bool",
+              "line_start": 163,
+              "line_end": 175
+            },
+            {
+              "name": "_reapply_filter",
+              "signature": "def _reapply_filter(self) -> None",
+              "docstring": "Re-render entire view based on current filter settings.",
+              "line_start": 177,
+              "line_end": 187
+            },
+            {
+              "name": "_toggle_pause",
+              "signature": "def _toggle_pause(self) -> None",
+              "line_start": 189,
+              "line_end": 198
+            },
+            {
+              "name": "_clear",
+              "signature": "def _clear(self) -> None",
+              "line_start": 200,
+              "line_end": 204
+            }
+          ],
+          "line_start": 62,
+          "line_end": 204
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_html_entry",
+          "signature": "def _html_entry(level: str, message: str) -> str",
+          "docstring": "Build one colored HTML log line.",
+          "line_start": 43,
+          "line_end": 57
+        }
+      ],
+      "constants": [
+        "_LEVEL_COLORS: dict[str, str] = {",
+        "_LEVEL_BG: dict[str, str] = {"
+      ]
+    },
+    "main_window.py": {
+      "classes": [
+        {
+          "name": "_TabBtn",
+          "docstring": "Compact horizontal nav tab \u2014 icon + label, underline when active.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, icon: str, label: str, parent: QWidget | None = None) -> None",
+              "line_start": 51,
+              "line_end": 58
+            }
+          ],
+          "line_start": 48,
+          "line_end": 58
+        },
+        {
+          "name": "_TitleBar",
+          "docstring": "Single compact top bar:",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, window: QMainWindow,\r\n                 panels: list[QWidget], stack: QStackedWidget,\r\n                 parent: QWidget | None = None) -> None",
+              "line_start": 71,
+              "line_end": 202
+            },
+            {
+              "name": "_on_scope_changed",
+              "signature": "def _on_scope_changed(self, idx: int) -> None",
+              "line_start": 203,
+              "line_end": 205
+            },
+            {
+              "name": "_on_feed_btn_clicked",
+              "signature": "def _on_feed_btn_clicked(self) -> None",
+              "line_start": 207,
+              "line_end": 219
+            },
+            {
+              "name": "_on_feed_status_changed",
+              "signature": "def _on_feed_status_changed(self, status_str: str) -> None",
+              "line_start": 221,
+              "line_end": 239
+            },
+            {
+              "name": "mousePressEvent",
+              "signature": "def mousePressEvent(self, ev)",
+              "line_start": 242,
+              "line_end": 245
+            },
+            {
+              "name": "mouseMoveEvent",
+              "signature": "def mouseMoveEvent(self, ev)",
+              "line_start": 247,
+              "line_end": 250
+            },
+            {
+              "name": "mouseDoubleClickEvent",
+              "signature": "def mouseDoubleClickEvent(self, ev)",
+              "line_start": 252,
+              "line_end": 255
+            },
+            {
+              "name": "_toggle_max",
+              "signature": "def _toggle_max(self) -> None",
+              "line_start": 257,
+              "line_end": 269
+            },
+            {
+              "name": "refresh_scope_combo",
+              "signature": "def refresh_scope_combo(self) -> None",
+              "docstring": "Sync combo selection if scope was changed programmatically.",
+              "line_start": 273,
+              "line_end": 279
+            }
+          ],
+          "line_start": 64,
+          "line_end": 279
+        },
+        {
+          "name": "_AdminContextBar",
+          "docstring": "A slim info strip (28px) below the accent line showing the active admin scope:",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 291,
+              "line_end": 364
+            },
+            {
+              "name": "_refresh_mw",
+              "signature": "def _refresh_mw(self) -> None",
+              "line_start": 366,
+              "line_end": 382
+            },
+            {
+              "name": "refresh",
+              "signature": "def refresh(self) -> None",
+              "line_start": 384,
+              "line_end": 414
+            }
+          ],
+          "line_start": 284,
+          "line_end": 414
+        },
+        {
+          "name": "MainWindow",
+          "docstring": "FO-GUI-001 Main Window \u2014 frameless, horizontal-nav terminal style.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 422,
+              "line_end": 530
+            },
+            {
+              "name": "_refresh_status",
+              "signature": "def _refresh_status(self) -> None",
+              "line_start": 534,
+              "line_end": 535
+            },
+            {
+              "name": "_on_internet_status_changed",
+              "signature": "def _on_internet_status_changed(self, online: bool) -> None",
+              "docstring": "Update the status-bar internet pill when connectivity flips.",
+              "line_start": 537,
+              "line_end": 544
+            },
+            {
+              "name": "_on_market_status",
+              "signature": "def _on_market_status(self) -> None",
+              "docstring": "Update NYSE / NASDAQ status bar pills from AppService market status.",
+              "line_start": 546,
+              "line_end": 565
+            },
+            {
+              "name": "_on_db_status_updated",
+              "signature": "def _on_db_status_updated(self, info: object) -> None",
+              "docstring": "Store latest database info for use during auto-connect.",
+              "line_start": 567,
+              "line_end": 569
+            },
+            {
+              "name": "on_circuit_breaker",
+              "signature": "def on_circuit_breaker(self, active: bool) -> None",
+              "line_start": 571,
+              "line_end": 572
+            },
+            {
+              "name": "_on_watchlist_add",
+              "signature": "def _on_watchlist_add(self, symbol: str) -> None",
+              "docstring": "Screener 'Add to Watchlist' \u2014 forward to dashboard for now.",
+              "line_start": 574,
+              "line_end": 576
+            },
+            {
+              "name": "_start_feed_auto_connect",
+              "signature": "def _start_feed_auto_connect(self) -> None",
+              "docstring": "Start scheduler auto-connect: react immediately via signal, retry every 60s if n",
+              "line_start": 578,
+              "line_end": 584
+            },
+            {
+              "name": "_on_scheduler_feed_status",
+              "signature": "def _on_scheduler_feed_status(self, status: str) -> None",
+              "docstring": "Fires immediately when feed status changes during auto-connect.",
+              "line_start": 586,
+              "line_end": 595
+            },
+            {
+              "name": "_schedule_next_retry",
+              "signature": "def _schedule_next_retry(self) -> None",
+              "docstring": "Schedule a retry attempt in 60 seconds.",
+              "line_start": 597,
+              "line_end": 604
+            },
+            {
+              "name": "_on_feed_retry_tick",
+              "signature": "def _on_feed_retry_tick(self) -> None",
+              "docstring": "Retry feed connection every 60 seconds (up to 10 attempts).",
+              "line_start": 606,
+              "line_end": 624
+            },
+            {
+              "name": "_trigger_fill_delta_if_partial",
+              "signature": "def _trigger_fill_delta_if_partial(self) -> None",
+              "docstring": "Trigger fill delta if the database status is PARTIAL.",
+              "line_start": 626,
+              "line_end": 632
+            },
+            {
+              "name": "_maybe_start_auto_fill_tws",
+              "signature": "def _maybe_start_auto_fill_tws(self) -> None",
+              "docstring": "If Auto Fill Credential is enabled, load stored credentials and schedule the fir",
+              "line_start": 636,
+              "line_end": 658
+            },
+            {
+              "name": "_attempt_auto_fill_tws",
+              "signature": "def _attempt_auto_fill_tws(self) -> None",
+              "docstring": "Spawn a FillWorker to type IBKR credentials into the TWS login window.",
+              "line_start": 660,
+              "line_end": 679
+            },
+            {
+              "name": "_on_auto_fill_done",
+              "signature": "def _on_auto_fill_done(self, error: str) -> None",
+              "docstring": "Handle fill result: log success or schedule retry on TWS-not-found.",
+              "line_start": 681,
+              "line_end": 699
+            },
+            {
+              "name": "closeEvent",
+              "signature": "def closeEvent(self, event: object) -> None",
+              "line_start": 703,
+              "line_end": 714
+            }
+          ],
+          "line_start": 419,
+          "line_end": 714
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_sep",
+          "signature": "def _sep() -> QLabel",
+          "line_start": 719,
+          "line_end": 722
+        },
+        {
+          "name": "_vdiv",
+          "signature": "def _vdiv(layout: QHBoxLayout) -> None",
+          "docstring": "Insert a subtle vertical divider into a horizontal layout.",
+          "line_start": 725,
+          "line_end": 731
+        }
+      ]
+    },
+    "position_monitor_panel.py": {
+      "classes": [
+        {
+          "name": "_CapitalRow",
+          "docstring": "Compact capital-availability indicator shown at top of panel.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QWidget | None = None) -> None",
+              "line_start": 33,
+              "line_end": 66
+            },
+            {
+              "name": "refresh",
+              "signature": "def refresh(self, equity: float, open_val: float, max_capital_pct: float) -> None",
+              "line_start": 68,
+              "line_end": 97
+            }
+          ],
+          "line_start": 30,
+          "line_end": 97
+        },
+        {
+          "name": "PositionMonitorPanel",
+          "docstring": "FO-GUI-005 Position Monitor Panel.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 108,
+              "line_end": 175
+            },
+            {
+              "name": "_refresh_positions",
+              "signature": "def _refresh_positions(self) -> None",
+              "line_start": 179,
+              "line_end": 185
+            },
+            {
+              "name": "_refresh_account",
+              "signature": "def _refresh_account(self) -> None",
+              "line_start": 187,
+              "line_end": 190
+            },
+            {
+              "name": "_on_sel",
+              "signature": "def _on_sel(self) -> None",
+              "line_start": 192,
+              "line_end": 195
+            },
+            {
+              "name": "_on_close",
+              "signature": "def _on_close(self) -> None",
+              "line_start": 197,
+              "line_end": 214
+            }
+          ],
+          "line_start": 102,
+          "line_end": 214
+        }
+      ]
+    },
+    "position_table_model.py": {
+      "module_id": "MD-GUI-002.001.M02",
+      "srd_id": "SRD-GUI-002.001",
+      "classes": [
+        {
+          "name": "PositionTableModel",
+          "docstring": "Model: [User] | Symbol | Qty | Avg Entry | Current | Unrealised P&L | Stop | Tar",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: Any = None) -> None",
+              "line_start": 29,
+              "line_end": 34
+            },
+            {
+              "name": "COLUMNS",
+              "signature": "def COLUMNS(self) -> list[str]",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 37,
+              "line_end": 38
+            },
+            {
+              "name": "set_show_user",
+              "signature": "def set_show_user(self, show: bool, user_labels: dict[int, str] | None = None) -> None",
+              "docstring": "Toggle the prepended User column.  user_labels maps user_id \u2192 username.",
+              "line_start": 40,
+              "line_end": 45
+            },
+            {
+              "name": "refresh",
+              "signature": "def refresh(self, positions: list[OpenPosition]) -> None",
+              "line_start": 47,
+              "line_end": 51
+            },
+            {
+              "name": "set_highlighted_row",
+              "signature": "def set_highlighted_row(self, row: int) -> None",
+              "docstring": "Mark a row as highlighted (red font). Pass -1 to clear.",
+              "line_start": 53,
+              "line_end": 65
+            },
+            {
+              "name": "rowCount",
+              "signature": "def rowCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 69,
+              "line_end": 70
+            },
+            {
+              "name": "columnCount",
+              "signature": "def columnCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 72,
+              "line_end": 73
+            },
+            {
+              "name": "headerData",
+              "signature": "def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 75,
+              "line_end": 80
+            },
+            {
+              "name": "data",
+              "signature": "def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 82,
+              "line_end": 108
+            },
+            {
+              "name": "_display",
+              "signature": "def _display(self, pos: OpenPosition, col: int) -> str",
+              "line_start": 112,
+              "line_end": 131
+            },
+            {
+              "name": "_background",
+              "signature": "def _background(self, pos: OpenPosition, col: int) -> QColor | None",
+              "line_start": 133,
+              "line_end": 146
+            },
+            {
+              "name": "_foreground",
+              "signature": "def _foreground(self, pos: OpenPosition, col: int) -> QColor | None",
+              "line_start": 148,
+              "line_end": 163
+            }
+          ],
+          "line_start": 19,
+          "line_end": 163
+        },
+        {
+          "name": "TradeHistoryModel",
+          "docstring": "Model: [User] | Time | Symbol | Side | Qty | Entry | Exit | P&L | Strategy | Mod",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: Any = None) -> None",
+              "line_start": 178,
+              "line_end": 182
+            },
+            {
+              "name": "COLUMNS",
+              "signature": "def COLUMNS(self) -> list[str]",
+              "decorators": [
+                "@property"
+              ],
+              "line_start": 185,
+              "line_end": 186
+            },
+            {
+              "name": "set_show_user",
+              "signature": "def set_show_user(self, show: bool, user_labels: dict[int, str] | None = None) -> None",
+              "docstring": "Toggle the prepended User column. user_labels maps user_id \u2192 username.",
+              "line_start": 188,
+              "line_end": 193
+            },
+            {
+              "name": "refresh",
+              "signature": "def refresh(self, trades: list[TradeRecord]) -> None",
+              "line_start": 195,
+              "line_end": 198
+            },
+            {
+              "name": "rowCount",
+              "signature": "def rowCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 200,
+              "line_end": 201
+            },
+            {
+              "name": "columnCount",
+              "signature": "def columnCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 203,
+              "line_end": 204
+            },
+            {
+              "name": "headerData",
+              "signature": "def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 206,
+              "line_end": 211
+            },
+            {
+              "name": "data",
+              "signature": "def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 213,
+              "line_end": 256
+            }
+          ],
+          "line_start": 168,
+          "line_end": 256
+        }
+      ]
+    },
+    "scheduler_dialog.py": {
+      "srd_id": "SRD-GUI-006.005",
+      "classes": [
+        {
+          "name": "_FillWorker",
+          "docstring": "TEMP \u2014 focuses the TWS login window then types credentials via SendInput.",
+          "class_vars": [
+            "done: pyqtSignal"
+          ],
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, username: str, password: str, parent: QObject | None = None) -> None",
+              "line_start": 330,
+              "line_end": 333
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 335,
+              "line_end": 354
+            }
+          ],
+          "line_start": 325,
+          "line_end": 354
+        },
+        {
+          "name": "_DialogTitleBar",
+          "docstring": "Custom title bar for frameless dialogs: title label + min/max/close.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, title: str, window: QDialog, parent: QWidget | None = None) -> None",
+              "line_start": 373,
+              "line_end": 415
+            },
+            {
+              "name": "mousePressEvent",
+              "signature": "def mousePressEvent(self, ev)",
+              "line_start": 417,
+              "line_end": 420
+            },
+            {
+              "name": "mouseMoveEvent",
+              "signature": "def mouseMoveEvent(self, ev)",
+              "line_start": 422,
+              "line_end": 425
+            },
+            {
+              "name": "mouseDoubleClickEvent",
+              "signature": "def mouseDoubleClickEvent(self, ev)",
+              "line_start": 427,
+              "line_end": 430
+            },
+            {
+              "name": "_toggle_max",
+              "signature": "def _toggle_max(self) -> None",
+              "line_start": 432,
+              "line_end": 444
+            }
+          ],
+          "line_start": 363,
+          "line_end": 444
+        },
+        {
+          "name": "SchedulerDialog",
+          "docstring": "Configure Windows Task Scheduler entries for USSwing and IBKR.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QWidget | None = None) -> None",
+              "line_start": 452,
+              "line_end": 468
+            },
+            {
+              "name": "_build_ui",
+              "signature": "def _build_ui(self) -> None",
+              "line_start": 472,
+              "line_end": 489
+            },
+            {
+              "name": "_build_usswing_group",
+              "signature": "def _build_usswing_group(self) -> QGroupBox",
+              "line_start": 491,
+              "line_end": 532
+            },
+            {
+              "name": "_build_ibkr_group",
+              "signature": "def _build_ibkr_group(self) -> QGroupBox",
+              "line_start": 534,
+              "line_end": 639
+            },
+            {
+              "name": "_build_note",
+              "signature": "def _build_note(self) -> QLabel",
+              "line_start": 641,
+              "line_end": 649
+            },
+            {
+              "name": "_build_buttons",
+              "signature": "def _build_buttons(self) -> QHBoxLayout",
+              "line_start": 651,
+              "line_end": 673
+            },
+            {
+              "name": "_populate_usswing",
+              "signature": "def _populate_usswing(self, cfg: USSwingConfig | None) -> None",
+              "line_start": 677,
+              "line_end": 690
+            },
+            {
+              "name": "_populate_ibkr",
+              "signature": "def _populate_ibkr(self, cfg: SchedulerConfig) -> None",
+              "line_start": 692,
+              "line_end": 706
+            },
+            {
+              "name": "_detect_tws",
+              "signature": "def _detect_tws(self) -> None",
+              "line_start": 708,
+              "line_end": 710
+            },
+            {
+              "name": "_set_ibkr_path",
+              "signature": "def _set_ibkr_path(self, path: str, *, auto: bool) -> None",
+              "line_start": 712,
+              "line_end": 717
+            },
+            {
+              "name": "_on_us_browse",
+              "signature": "def _on_us_browse(self) -> None",
+              "line_start": 721,
+              "line_end": 729
+            },
+            {
+              "name": "_on_ibkr_browse",
+              "signature": "def _on_ibkr_browse(self) -> None",
+              "line_start": 731,
+              "line_end": 737
+            },
+            {
+              "name": "_on_add_or_update",
+              "signature": "def _on_add_or_update(self) -> None",
+              "line_start": 739,
+              "line_end": 816
+            },
+            {
+              "name": "_on_remove",
+              "signature": "def _on_remove(self) -> None",
+              "line_start": 818,
+              "line_end": 854
+            },
+            {
+              "name": "_collect_usswing",
+              "signature": "def _collect_usswing(self) -> USSwingConfig | None",
+              "line_start": 858,
+              "line_end": 868
+            },
+            {
+              "name": "_collect_ibkr",
+              "signature": "def _collect_ibkr(self) -> SchedulerConfig | None",
+              "line_start": 870,
+              "line_end": 882
+            },
+            {
+              "name": "_on_eye_toggled",
+              "signature": "def _on_eye_toggled(self, checked: bool) -> None",
+              "line_start": 886,
+              "line_end": 889
+            },
+            {
+              "name": "_on_save_credentials",
+              "signature": "def _on_save_credentials(self) -> None",
+              "line_start": 891,
+              "line_end": 919
+            },
+            {
+              "name": "_on_fill_tws",
+              "signature": "def _on_fill_tws(self) -> None",
+              "line_start": 923,
+              "line_end": 935
+            },
+            {
+              "name": "_on_fill_done",
+              "signature": "def _on_fill_done(self, error: str) -> None",
+              "line_start": 937,
+              "line_end": 947
+            }
+          ],
+          "line_start": 449,
+          "line_end": 947
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_registry_tws",
+          "signature": "def _registry_tws() -> str | None",
+          "docstring": "Try to read the TWS install path from the Windows registry.",
+          "line_start": 60,
+          "line_end": 83
+        },
+        {
+          "name": "find_tws_exe",
+          "signature": "def find_tws_exe() -> str | None",
+          "docstring": "Return the best-guess path to tws.exe, or None.",
+          "line_start": 86,
+          "line_end": 117
+        },
+        {
+          "name": "_run_schtasks",
+          "signature": "def _run_schtasks(*args: str) -> tuple[bool, str]",
+          "docstring": "Run schtasks.exe with the given arguments. Returns (success, message).",
+          "line_start": 122,
+          "line_end": 139
+        },
+        {
+          "name": "_create_schtask",
+          "signature": "def _create_schtask(\n    task_name: str,\n    exe_path: str,\n    launch_time: str,\n    days: str,\n    extra_args: str = \"\",\n) -> tuple[bool, str]",
+          "line_start": 142,
+          "line_end": 153
+        },
+        {
+          "name": "create_usswing_task",
+          "signature": "def create_usswing_task(cfg: USSwingConfig) -> tuple[bool, str]",
+          "line_start": 156,
+          "line_end": 157
+        },
+        {
+          "name": "create_ibkr_task",
+          "signature": "def create_ibkr_task(cfg: SchedulerConfig, password: str = \"\") -> tuple[bool, str]",
+          "line_start": 160,
+          "line_end": 164
+        },
+        {
+          "name": "delete_task",
+          "signature": "def delete_task(task_name: str) -> tuple[bool, str]",
+          "line_start": 167,
+          "line_end": 168
+        },
+        {
+          "name": "_make_status_label",
+          "signature": "def _make_status_label() -> QLabel",
+          "line_start": 173,
+          "line_end": 176
+        },
+        {
+          "name": "_update_status_label",
+          "signature": "def _update_status_label(lbl: QLabel, path: str | None) -> None",
+          "line_start": 179,
+          "line_end": 188
+        },
+        {
+          "name": "_save_ibkr_password",
+          "signature": "def _save_ibkr_password(username: str, password: str) -> bool",
+          "line_start": 196,
+          "line_end": 204
+        },
+        {
+          "name": "_load_ibkr_password",
+          "signature": "def _load_ibkr_password(username: str) -> str",
+          "line_start": 207,
+          "line_end": 214
+        },
+        {
+          "name": "_delete_ibkr_password",
+          "signature": "def _delete_ibkr_password(username: str) -> None",
+          "line_start": 221,
+          "line_end": 228
+        },
+        {
+          "name": "_find_tws_hwnd",
+          "signature": "def _find_tws_hwnd() -> int",
+          "docstring": "Return HWND of the first visible top-level window whose title looks like TWS log",
+          "line_start": 233,
+          "line_end": 257
+        },
+        {
+          "name": "_winapi_fill",
+          "signature": "def _winapi_fill(username: str, password: str) -> None",
+          "docstring": "Type username, Tab, password into whatever window currently has focus.",
+          "line_start": 260,
+          "line_end": 322
+        }
+      ],
+      "constants": [
+        "_TWS_ROOTS: list[Path] = [",
+        "_USSWING_DEFAULT = Path(r\"C:\\Program Files (x86)\\USSwing\\USSwing.exe\")",
+        "_KEYRING_SERVICE = \"USSwing\""
+      ]
+    },
+    "scheduler_store.py": {
+      "srd_id": "SRD-GUI-006.005",
+      "classes": [
+        {
+          "name": "USSwingConfig",
+          "class_vars": [
+            "task_name: str",
+            "exe_path: str",
+            "launch_time: str",
+            "days: str"
+          ],
+          "line_start": 23,
+          "line_end": 27
+        },
+        {
+          "name": "SchedulerConfig",
+          "docstring": "Trader Workstation scheduled task config.",
+          "class_vars": [
+            "task_name: str",
+            "exe_path: str",
+            "launch_time: str",
+            "days: str",
+            "ibkr_username: str",
+            "auto_login: bool"
+          ],
+          "line_start": 31,
+          "line_end": 38
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_load_raw",
+          "signature": "def _load_raw() -> dict[str, object]",
+          "line_start": 43,
+          "line_end": 50
+        },
+        {
+          "name": "load_usswing_config",
+          "signature": "def load_usswing_config() -> USSwingConfig | None",
+          "docstring": "Return saved USSwing config, or None if not yet configured.",
+          "line_start": 53,
+          "line_end": 64
+        },
+        {
+          "name": "load_scheduler_config",
+          "signature": "def load_scheduler_config() -> SchedulerConfig | None",
+          "docstring": "Return saved IBKR config, or None if not yet configured.",
+          "line_start": 67,
+          "line_end": 85
+        },
+        {
+          "name": "_save_raw",
+          "signature": "def _save_raw(data: dict[str, object]) -> None",
+          "line_start": 90,
+          "line_end": 94
+        },
+        {
+          "name": "save_usswing_config",
+          "signature": "def save_usswing_config(cfg: USSwingConfig) -> None",
+          "line_start": 97,
+          "line_end": 101
+        },
+        {
+          "name": "save_scheduler_config",
+          "signature": "def save_scheduler_config(cfg: SchedulerConfig) -> None",
+          "line_start": 104,
+          "line_end": 108
+        },
+        {
+          "name": "delete_usswing_config",
+          "signature": "def delete_usswing_config() -> None",
+          "line_start": 111,
+          "line_end": 114
+        },
+        {
+          "name": "delete_scheduler_config",
+          "signature": "def delete_scheduler_config() -> None",
+          "line_start": 117,
+          "line_end": 121
+        }
+      ],
+      "constants": [
+        "_APP_DIR    = Path.home() / \".usswing\"",
+        "_STORE_FILE = _APP_DIR / \"scheduler.json\"",
+        "_USSWING_EXE_DEFAULT = r\"C:\\Program Files (x86)\\USSwing\\USSwing.exe\""
+      ]
+    },
+    "screener_panel.py": {
+      "module_id": "MD-GUI-003.001.M01",
+      "srd_id": "SRD-SCR-007.001",
+      "classes": [
+        {
+          "name": "_Row",
+          "class_vars": [
+            "symbol: str",
+            "score: float",
+            "details: str",
+            "ai_reasoning: str"
+          ],
+          "line_start": 111,
+          "line_end": 115
+        },
+        {
+          "name": "_ResultsModel",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: Any = None) -> None",
+              "line_start": 129,
+              "line_end": 131
+            },
+            {
+              "name": "load",
+              "signature": "def load(self, rows: list[_Row]) -> None",
+              "line_start": 133,
+              "line_end": 136
+            },
+            {
+              "name": "clear",
+              "signature": "def clear(self) -> None",
+              "line_start": 138,
+              "line_end": 139
+            },
+            {
+              "name": "row_at",
+              "signature": "def row_at(self, index: int) -> _Row | None",
+              "line_start": 141,
+              "line_end": 144
+            },
+            {
+              "name": "rowCount",
+              "signature": "def rowCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 148,
+              "line_end": 149
+            },
+            {
+              "name": "columnCount",
+              "signature": "def columnCount(self, parent: QModelIndex = QModelIndex()) -> int",
+              "line_start": 151,
+              "line_end": 152
+            },
+            {
+              "name": "headerData",
+              "signature": "def headerData(\n        self,\n        section: int,\n        orientation: Qt.Orientation,\n        role: int = Qt.ItemDataRole.DisplayRole,\n    ) -> Any",
+              "line_start": 154,
+              "line_end": 170
+            },
+            {
+              "name": "data",
+              "signature": "def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any",
+              "line_start": 172,
+              "line_end": 230
+            }
+          ],
+          "line_start": 126,
+          "line_end": 230
+        },
+        {
+          "name": "_PresetRunWorker",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        preset_id: str,\n        user_id: str,\n        svc: AppService,\n        mgr: Any,\n        storage: Any,\n        timeframe: str = \"1d\",\n        manual: bool = True,\n        parent: Any = None,\n    ) -> None",
+              "line_start": 239,
+              "line_end": 257
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 259,
+              "line_end": 342
+            }
+          ],
+          "line_start": 235,
+          "line_end": 342
+        },
+        {
+          "name": "_ModelValidateWorker",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, model_id: str, parent: Any = None) -> None",
+              "line_start": 350,
+              "line_end": 352
+            },
+            {
+              "name": "run",
+              "signature": "def run(self) -> None",
+              "line_start": 354,
+              "line_end": 357
+            }
+          ],
+          "line_start": 347,
+          "line_end": 357
+        },
+        {
+          "name": "_ChartButtonDelegate",
+          "docstring": "Paints a small clickable-looking \ud83d\udcc8 button in the Chart column.",
+          "methods": [
+            {
+              "name": "paint",
+              "signature": "def paint(self, painter: QPainter, option: Any, index: Any) -> None",
+              "line_start": 365,
+              "line_end": 381
+            },
+            {
+              "name": "sizeHint",
+              "signature": "def sizeHint(self, option: Any, index: Any) -> QSize",
+              "line_start": 383,
+              "line_end": 384
+            }
+          ],
+          "line_start": 362,
+          "line_end": 384
+        },
+        {
+          "name": "QuickChartWindow",
+          "docstring": "Standalone frameless chart window opened from the Screener results table.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 397,
+              "line_end": 437
+            },
+            {
+              "name": "_make_title_bar",
+              "signature": "def _make_title_bar(self) -> QFrame",
+              "line_start": 441,
+              "line_end": 489
+            },
+            {
+              "name": "_toggle_maximize",
+              "signature": "def _toggle_maximize(self) -> None",
+              "line_start": 491,
+              "line_end": 500
+            },
+            {
+              "name": "mousePressEvent",
+              "signature": "def mousePressEvent(self, event: Any) -> None",
+              "line_start": 504,
+              "line_end": 510
+            },
+            {
+              "name": "mouseMoveEvent",
+              "signature": "def mouseMoveEvent(self, event: Any) -> None",
+              "line_start": 512,
+              "line_end": 517
+            },
+            {
+              "name": "mouseReleaseEvent",
+              "signature": "def mouseReleaseEvent(self, event: Any) -> None",
+              "line_start": 519,
+              "line_end": 521
+            },
+            {
+              "name": "open_symbol",
+              "signature": "def open_symbol(self, symbol: str, timeframe: str = \"1d\") -> None",
+              "docstring": "Switch to an existing tab for *symbol*, or create a new one.",
+              "line_start": 525,
+              "line_end": 534
+            },
+            {
+              "name": "_attach_close_btn",
+              "signature": "def _attach_close_btn(self, tab_idx: int) -> None",
+              "docstring": "Add a visible custom \u00d7 button to the right side of a tab.",
+              "line_start": 536,
+              "line_end": 551
+            },
+            {
+              "name": "_close_tab_for_widget",
+              "signature": "def _close_tab_for_widget(self, widget: QWidget) -> None",
+              "line_start": 553,
+              "line_end": 556
+            },
+            {
+              "name": "closeEvent",
+              "signature": "def closeEvent(self, event: Any) -> None",
+              "line_start": 558,
+              "line_end": 560
+            },
+            {
+              "name": "_make_chart_view",
+              "signature": "def _make_chart_view(self, symbol: str, timeframe: str) -> QWebEngineView",
+              "line_start": 562,
+              "line_end": 590
+            }
+          ],
+          "line_start": 389,
+          "line_end": 590
+        },
+        {
+          "name": "_FramelessDialog",
+          "docstring": "QDialog subclass: frameless OS chrome + custom title bar with min/max/close.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        title: str,\n        min_width: int = 420,\n        min_height: int = 0,\n        extra_qss: str = \"\",\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 680,
+              "line_end": 713
+            },
+            {
+              "name": "content_layout",
+              "signature": "def content_layout(self) -> QVBoxLayout",
+              "line_start": 715,
+              "line_end": 716
+            },
+            {
+              "name": "_make_title_bar",
+              "signature": "def _make_title_bar(self, title: str) -> QFrame",
+              "line_start": 718,
+              "line_end": 761
+            },
+            {
+              "name": "_toggle_maximize",
+              "signature": "def _toggle_maximize(self) -> None",
+              "line_start": 763,
+              "line_end": 772
+            },
+            {
+              "name": "mousePressEvent",
+              "signature": "def mousePressEvent(self, event: Any) -> None",
+              "line_start": 774,
+              "line_end": 780
+            },
+            {
+              "name": "mouseMoveEvent",
+              "signature": "def mouseMoveEvent(self, event: Any) -> None",
+              "line_start": 782,
+              "line_end": 787
+            },
+            {
+              "name": "mouseReleaseEvent",
+              "signature": "def mouseReleaseEvent(self, event: Any) -> None",
+              "line_start": 789,
+              "line_end": 791
+            }
+          ],
+          "line_start": 677,
+          "line_end": 791
+        },
+        {
+          "name": "_IndicatorConfigDialog",
+          "docstring": "View / edit the 5 filter params of IndicatorScreener for one ScreenerRef.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, config: dict | None = None, parent: QWidget | None = None) -> None",
+              "line_start": 799,
+              "line_end": 952
+            },
+            {
+              "name": "get_config",
+              "signature": "def get_config(self) -> dict",
+              "docstring": "Return full IndicatorScreener config dict from current widget values.",
+              "line_start": 954,
+              "line_end": 988
+            }
+          ],
+          "line_start": 796,
+          "line_end": 988
+        },
+        {
+          "name": "_PriceActionConfigDialog",
+          "docstring": "Toggle and tune the 5 price-action patterns for one ScreenerRef.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, config: dict | None = None, parent: QWidget | None = None) -> None",
+              "line_start": 1026,
+              "line_end": 1162
+            },
+            {
+              "name": "get_config",
+              "signature": "def get_config(self) -> dict",
+              "line_start": 1164,
+              "line_end": 1189
+            }
+          ],
+          "line_start": 1023,
+          "line_end": 1189
+        },
+        {
+          "name": "_GroupWidget",
+          "docstring": "One group card in the Composite preset builder.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        group_id: str,\n        logic: str = \"AND\",\n        screener_ids: list[str] | None = None,\n        configs: dict[str, dict] | None = None,\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 1203,
+              "line_end": 1314
+            },
+            {
+              "name": "_apply_logic_style",
+              "signature": "def _apply_logic_style(self) -> None",
+              "line_start": 1318,
+              "line_end": 1331
+            },
+            {
+              "name": "_toggle_logic",
+              "signature": "def _toggle_logic(self) -> None",
+              "line_start": 1333,
+              "line_end": 1336
+            },
+            {
+              "name": "_on_list_changed",
+              "signature": "def _on_list_changed(self) -> None",
+              "line_start": 1338,
+              "line_end": 1340
+            },
+            {
+              "name": "_sync_empty_state",
+              "signature": "def _sync_empty_state(self) -> None",
+              "line_start": 1342,
+              "line_end": 1345
+            },
+            {
+              "name": "_on_selection_changed",
+              "signature": "def _on_selection_changed(self) -> None",
+              "line_start": 1347,
+              "line_end": 1352
+            },
+            {
+              "name": "_on_configure",
+              "signature": "def _on_configure(self) -> None",
+              "line_start": 1354,
+              "line_end": 1362
+            },
+            {
+              "name": "_on_add_screener",
+              "signature": "def _on_add_screener(self) -> None",
+              "line_start": 1364,
+              "line_end": 1386
+            },
+            {
+              "name": "_list_ctx_menu",
+              "signature": "def _list_ctx_menu(self, pos: Any) -> None",
+              "line_start": 1388,
+              "line_end": 1410
+            },
+            {
+              "name": "_open_indicator_config",
+              "signature": "def _open_indicator_config(self, sid: str) -> None",
+              "line_start": 1412,
+              "line_end": 1416
+            },
+            {
+              "name": "_open_price_action_config",
+              "signature": "def _open_price_action_config(self, sid: str) -> None",
+              "line_start": 1418,
+              "line_end": 1422
+            },
+            {
+              "name": "_add_item",
+              "signature": "def _add_item(self, sid: str) -> None",
+              "line_start": 1424,
+              "line_end": 1429
+            },
+            {
+              "name": "screener_ids",
+              "signature": "def screener_ids(self) -> list[str]",
+              "line_start": 1433,
+              "line_end": 1437
+            },
+            {
+              "name": "screener_configs",
+              "signature": "def screener_configs(self) -> dict[str, dict]",
+              "line_start": 1439,
+              "line_end": 1440
+            },
+            {
+              "name": "logic",
+              "signature": "def logic(self) -> str",
+              "line_start": 1442,
+              "line_end": 1443
+            },
+            {
+              "name": "group_id",
+              "signature": "def group_id(self) -> str",
+              "line_start": 1445,
+              "line_end": 1446
+            }
+          ],
+          "line_start": 1194,
+          "line_end": 1446
+        },
+        {
+          "name": "_WeightedRow",
+          "docstring": "One row in the Weighted preset builder \u2014 screener label + weight spinbox.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        sid: str,\n        weight: float = 0.0,\n        config: dict | None = None,\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 1457,
+              "line_end": 1524
+            },
+            {
+              "name": "screener_id",
+              "signature": "def screener_id(self) -> str",
+              "line_start": 1526,
+              "line_end": 1527
+            },
+            {
+              "name": "weight",
+              "signature": "def weight(self) -> float",
+              "line_start": 1529,
+              "line_end": 1530
+            },
+            {
+              "name": "config",
+              "signature": "def config(self) -> dict",
+              "line_start": 1532,
+              "line_end": 1533
+            },
+            {
+              "name": "_open_config",
+              "signature": "def _open_config(self) -> None",
+              "line_start": 1535,
+              "line_end": 1541
+            }
+          ],
+          "line_start": 1451,
+          "line_end": 1541
+        },
+        {
+          "name": "_UserTag",
+          "docstring": "Removable badge representing a single user in the Assign Users section.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        user_id: str,\n        label: str | None = None,\n        valid: bool = True,\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 1551,
+              "line_end": 1585
+            }
+          ],
+          "line_start": 1546,
+          "line_end": 1585
+        },
+        {
+          "name": "_UserPickerDialog",
+          "docstring": "Popup that lists all users as checkboxes; returns selected user IDs.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        all_users: list[Any],\n        already_assigned: set[str],\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 1591,
+              "line_end": 1656
+            },
+            {
+              "name": "selected_ids",
+              "signature": "def selected_ids(self) -> set[str]",
+              "line_start": 1658,
+              "line_end": 1659
+            }
+          ],
+          "line_start": 1588,
+          "line_end": 1659
+        },
+        {
+          "name": "_AssignUsersWidget",
+          "docstring": "Tag-based user assignment with a picker popup (SRD-SCR-007.012).",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        preset_id: str,\n        mgr: Any,\n        requestor_id: str,\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 1665,
+              "line_end": 1702
+            },
+            {
+              "name": "load_existing",
+              "signature": "def load_existing(self, user_ids: list[str]) -> None",
+              "line_start": 1704,
+              "line_end": 1706
+            },
+            {
+              "name": "_on_open_picker",
+              "signature": "def _on_open_picker(self) -> None",
+              "line_start": 1708,
+              "line_end": 1726
+            },
+            {
+              "name": "_on_remove",
+              "signature": "def _on_remove(self, uid: str) -> None",
+              "line_start": 1728,
+              "line_end": 1738
+            },
+            {
+              "name": "_insert_tag",
+              "signature": "def _insert_tag(self, uid: str) -> None",
+              "line_start": 1740,
+              "line_end": 1746
+            }
+          ],
+          "line_start": 1662,
+          "line_end": 1746
+        },
+        {
+          "name": "_PresetBuilderDialog",
+          "docstring": "WYSIWYG Preset Builder \u2014 create new or edit existing preset.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        mgr: Any,\n        user_id: str,\n        preset: Any = None,          # None = create new; Preset = edit\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 1759,
+              "line_end": 2005
+            },
+            {
+              "name": "_build_composite_area",
+              "signature": "def _build_composite_area(self) -> QWidget",
+              "line_start": 2009,
+              "line_end": 2035
+            },
+            {
+              "name": "_add_group",
+              "signature": "def _add_group(\n        self,\n        gid: str | None = None,\n        logic: str = \"AND\",\n        screener_ids: list[str] | None = None,\n        configs: dict[str, dict] | None = None,\n    ) -> _GroupWidget",
+              "line_start": 2037,
+              "line_end": 2054
+            },
+            {
+              "name": "_on_remove_group",
+              "signature": "def _on_remove_group(self, gid: str) -> None",
+              "line_start": 2056,
+              "line_end": 2062
+            },
+            {
+              "name": "_build_weighted_area",
+              "signature": "def _build_weighted_area(self) -> QWidget",
+              "line_start": 2066,
+              "line_end": 2113
+            },
+            {
+              "name": "_add_weighted_row",
+              "signature": "def _add_weighted_row(self, sid: str, weight: float = 0.0, config: dict | None = None) -> None",
+              "line_start": 2115,
+              "line_end": 2122
+            },
+            {
+              "name": "_on_remove_weighted_row",
+              "signature": "def _on_remove_weighted_row(self, row: _WeightedRow) -> None",
+              "line_start": 2124,
+              "line_end": 2128
+            },
+            {
+              "name": "_on_add_weighted_screener",
+              "signature": "def _on_add_weighted_screener(self) -> None",
+              "line_start": 2130,
+              "line_end": 2151
+            },
+            {
+              "name": "_normalize_weights",
+              "signature": "def _normalize_weights(self) -> None",
+              "line_start": 2153,
+              "line_end": 2160
+            },
+            {
+              "name": "_on_type_changed",
+              "signature": "def _on_type_changed(self, btn_id: int, checked: bool) -> None",
+              "line_start": 2164,
+              "line_end": 2168
+            },
+            {
+              "name": "_is_composite",
+              "signature": "def _is_composite(self) -> bool",
+              "line_start": 2170,
+              "line_end": 2171
+            },
+            {
+              "name": "_refresh_preview",
+              "signature": "def _refresh_preview(self) -> None",
+              "line_start": 2175,
+              "line_end": 2198
+            },
+            {
+              "name": "_collect_trading_styles",
+              "signature": "def _collect_trading_styles(self) -> list[str]",
+              "line_start": 2202,
+              "line_end": 2203
+            },
+            {
+              "name": "_populate_from_preset",
+              "signature": "def _populate_from_preset(self, preset: Any) -> None",
+              "line_start": 2205,
+              "line_end": 2242
+            },
+            {
+              "name": "_build_preset_from_ui",
+              "signature": "def _build_preset_from_ui(self, preset_id: str | None = None) -> Any",
+              "line_start": 2246,
+              "line_end": 2310
+            },
+            {
+              "name": "_validate",
+              "signature": "def _validate(self) -> str | None",
+              "docstring": "Return error message string if invalid, else None.",
+              "line_start": 2312,
+              "line_end": 2325
+            },
+            {
+              "name": "_on_save",
+              "signature": "def _on_save(self) -> None",
+              "line_start": 2327,
+              "line_end": 2353
+            },
+            {
+              "name": "_on_save_as",
+              "signature": "def _on_save_as(self) -> None",
+              "docstring": "Save a clone with a new name.",
+              "line_start": 2355,
+              "line_end": 2368
+            },
+            {
+              "name": "_on_model_text_changed",
+              "signature": "def _on_model_text_changed(self) -> None",
+              "line_start": 2372,
+              "line_end": 2373
+            },
+            {
+              "name": "_on_validate_model",
+              "signature": "def _on_validate_model(self) -> None",
+              "line_start": 2375,
+              "line_end": 2387
+            },
+            {
+              "name": "_on_validate_done",
+              "signature": "def _on_validate_done(self, ok: bool, message: str) -> None",
+              "line_start": 2389,
+              "line_end": 2397
+            },
+            {
+              "name": "_lbl",
+              "signature": "def _lbl(text: str) -> QLabel",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 2400,
+              "line_end": 2403
+            },
+            {
+              "name": "preset_id",
+              "signature": "def preset_id(self) -> str | None",
+              "line_start": 2405,
+              "line_end": 2406
+            }
+          ],
+          "line_start": 1749,
+          "line_end": 2406
+        },
+        {
+          "name": "_NewPresetDialog",
+          "docstring": "Simple dialog for creating a new Composite or Weighted preset.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        mgr: Any,\n        user_id: str,\n        parent: QWidget | None = None,\n    ) -> None",
+              "line_start": 2414,
+              "line_end": 2519
+            },
+            {
+              "name": "_label",
+              "signature": "def _label(text: str) -> QLabel",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 2524,
+              "line_end": 2527
+            },
+            {
+              "name": "preset_id",
+              "signature": "def preset_id(self) -> str | None",
+              "line_start": 2529,
+              "line_end": 2530
+            },
+            {
+              "name": "_on_save",
+              "signature": "def _on_save(self) -> None",
+              "line_start": 2534,
+              "line_end": 2585
+            }
+          ],
+          "line_start": 2411,
+          "line_end": 2585
+        },
+        {
+          "name": "ScreenerPanel",
+          "docstring": "FO-SCR-007 Screener Panel v2 \u2014 preset-based execution.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 2600,
+              "line_end": 2640
+            },
+            {
+              "name": "_init_backend",
+              "signature": "def _init_backend(self) -> None",
+              "line_start": 2644,
+              "line_end": 2652
+            },
+            {
+              "name": "_build_toolbar",
+              "signature": "def _build_toolbar(self) -> QFrame",
+              "line_start": 2656,
+              "line_end": 2737
+            },
+            {
+              "name": "_build_left_pane",
+              "signature": "def _build_left_pane(self) -> QFrame",
+              "line_start": 2741,
+              "line_end": 2805
+            },
+            {
+              "name": "_build_right_pane",
+              "signature": "def _build_right_pane(self) -> QWidget",
+              "line_start": 2809,
+              "line_end": 2876
+            },
+            {
+              "name": "_on_style_filter_changed",
+              "signature": "def _on_style_filter_changed(self) -> None",
+              "line_start": 2880,
+              "line_end": 2881
+            },
+            {
+              "name": "_populate_preset_list",
+              "signature": "def _populate_preset_list(self) -> None",
+              "line_start": 2883,
+              "line_end": 2915
+            },
+            {
+              "name": "_add_section_header",
+              "signature": "def _add_section_header(self, text: str) -> None",
+              "line_start": 2917,
+              "line_end": 2923
+            },
+            {
+              "name": "_add_preset_item",
+              "signature": "def _add_preset_item(self, preset: Any) -> None",
+              "line_start": 2925,
+              "line_end": 2930
+            },
+            {
+              "name": "_section_font",
+              "signature": "def _section_font() -> QFont",
+              "decorators": [
+                "@staticmethod"
+              ],
+              "line_start": 2933,
+              "line_end": 2937
+            },
+            {
+              "name": "_on_preset_clicked",
+              "signature": "def _on_preset_clicked(self, item: QListWidgetItem) -> None",
+              "line_start": 2941,
+              "line_end": 2958
+            },
+            {
+              "name": "_refresh_date_nav",
+              "signature": "def _refresh_date_nav(self) -> None",
+              "line_start": 2960,
+              "line_end": 2982
+            },
+            {
+              "name": "_update_date_display",
+              "signature": "def _update_date_display(self) -> None",
+              "line_start": 2984,
+              "line_end": 2993
+            },
+            {
+              "name": "_navigate_date",
+              "signature": "def _navigate_date(self, delta: int) -> None",
+              "line_start": 2995,
+              "line_end": 3000
+            },
+            {
+              "name": "_load_result_for_current_date",
+              "signature": "def _load_result_for_current_date(self) -> None",
+              "line_start": 3002,
+              "line_end": 3010
+            },
+            {
+              "name": "_on_db_status_changed",
+              "signature": "def _on_db_status_changed(self, info: Any) -> None",
+              "docstring": "Cache latest CandleDbInfo and fire auto-run if DB just became CURRENT.",
+              "line_start": 3012,
+              "line_end": 3015
+            },
+            {
+              "name": "_maybe_auto_run",
+              "signature": "def _maybe_auto_run(self) -> None",
+              "docstring": "Auto-run today's screener (SRD-SCR-004.007).",
+              "line_start": 3017,
+              "line_end": 3063
+            },
+            {
+              "name": "_run_preset",
+              "signature": "def _run_preset(self) -> None",
+              "line_start": 3067,
+              "line_end": 3068
+            },
+            {
+              "name": "_run_preset_as",
+              "signature": "def _run_preset_as(self, preset_id: str | None = None, manual: bool = True) -> None",
+              "line_start": 3070,
+              "line_end": 3096
+            },
+            {
+              "name": "_select_preset_in_list",
+              "signature": "def _select_preset_in_list(self, preset_id: str) -> None",
+              "docstring": "Programmatically select a preset in the left list without re-triggering auto-run",
+              "line_start": 3098,
+              "line_end": 3116
+            },
+            {
+              "name": "_on_run_finished",
+              "signature": "def _on_run_finished(self, result: Any) -> None",
+              "line_start": 3118,
+              "line_end": 3143
+            },
+            {
+              "name": "_on_run_failed",
+              "signature": "def _on_run_failed(self, reason: str) -> None",
+              "line_start": 3145,
+              "line_end": 3149
+            },
+            {
+              "name": "_refresh_transcript_visibility",
+              "signature": "def _refresh_transcript_visibility(self) -> None",
+              "docstring": "Show the transcript panel only when the active preset uses LLM ranking.",
+              "line_start": 3153,
+              "line_end": 3160
+            },
+            {
+              "name": "_display_result",
+              "signature": "def _display_result(self, result: Any) -> None",
+              "docstring": "Populate the results table from a ScreenerRunResult.",
+              "line_start": 3162,
+              "line_end": 3191
+            },
+            {
+              "name": "_build_rows",
+              "signature": "def _build_rows(self, result: Any) -> list[_Row]",
+              "line_start": 3193,
+              "line_end": 3241
+            },
+            {
+              "name": "_update_mode_badge",
+              "signature": "def _update_mode_badge(self, mode: str) -> None",
+              "line_start": 3243,
+              "line_end": 3256
+            },
+            {
+              "name": "_show_table",
+              "signature": "def _show_table(self, *, has_data: bool) -> None",
+              "line_start": 3258,
+              "line_end": 3260
+            },
+            {
+              "name": "_show_empty",
+              "signature": "def _show_empty(self, message: str = \"Select a preset from the list\\nand click \u25b6 Run Now\") -> None",
+              "line_start": 3262,
+              "line_end": 3266
+            },
+            {
+              "name": "_show_error",
+              "signature": "def _show_error(self, reason: str) -> None",
+              "line_start": 3268,
+              "line_end": 3272
+            },
+            {
+              "name": "_on_preset_context_menu",
+              "signature": "def _on_preset_context_menu(self, pos: Any) -> None",
+              "line_start": 3276,
+              "line_end": 3285
+            },
+            {
+              "name": "_on_edit_preset",
+              "signature": "def _on_edit_preset(self) -> None",
+              "line_start": 3287,
+              "line_end": 3306
+            },
+            {
+              "name": "_on_duplicate_preset",
+              "signature": "def _on_duplicate_preset(self) -> None",
+              "line_start": 3308,
+              "line_end": 3330
+            },
+            {
+              "name": "_on_delete_preset",
+              "signature": "def _on_delete_preset(self) -> None",
+              "line_start": 3332,
+              "line_end": 3361
+            },
+            {
+              "name": "_on_new_preset",
+              "signature": "def _on_new_preset(self) -> None",
+              "line_start": 3365,
+              "line_end": 3374
+            },
+            {
+              "name": "_select_preset_by_id",
+              "signature": "def _select_preset_by_id(self, preset_id: str) -> None",
+              "line_start": 3376,
+              "line_end": 3382
+            },
+            {
+              "name": "_on_table_clicked",
+              "signature": "def _on_table_clicked(self, proxy_index: QModelIndex) -> None",
+              "line_start": 3386,
+              "line_end": 3392
+            },
+            {
+              "name": "_open_quick_chart",
+              "signature": "def _open_quick_chart(self, symbol: str) -> None",
+              "line_start": 3394,
+              "line_end": 3400
+            },
+            {
+              "name": "_on_selection",
+              "signature": "def _on_selection(self) -> None",
+              "line_start": 3404,
+              "line_end": 3406
+            },
+            {
+              "name": "_on_add_watchlist",
+              "signature": "def _on_add_watchlist(self) -> None",
+              "line_start": 3408,
+              "line_end": 3417
+            },
+            {
+              "name": "_export_csv",
+              "signature": "def _export_csv(self) -> None",
+              "line_start": 3421,
+              "line_end": 3442
+            }
+          ],
+          "line_start": 2590,
+          "line_end": 3442
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_format_indicator_config",
+          "signature": "def _format_indicator_config(config: dict) -> str",
+          "docstring": "Return a compact one-line summary of an IndicatorScreener config dict.",
+          "line_start": 614,
+          "line_end": 663
+        },
+        {
+          "name": "_hdivider",
+          "signature": "def _hdivider() -> QFrame",
+          "docstring": "Thin horizontal rule used between sections in config dialogs.",
+          "line_start": 666,
+          "line_end": 672
+        },
+        {
+          "name": "_format_price_action_config",
+          "signature": "def _format_price_action_config(config: dict) -> str",
+          "docstring": "Return a compact one-line summary of a PriceActionScreener config dict.",
+          "line_start": 1010,
+          "line_end": 1020
+        }
+      ],
+      "constants": [
+        "_STYLE_OPTIONS: list[tuple[str, str | None]] = [",
+        "_SCREENER_DISPLAY: dict[str, str] = {",
+        "_CHART_COL = 1",
+        "_AI_REASONING_PREVIEW_CHARS = 60",
+        "_INDICATOR_DEFAULTS: dict[str, dict] = {",
+        "_INDICATOR_SCREENER_ID   = \"indicator_composite\"",
+        "_PRICE_ACTION_SCREENER_ID = \"price_action\"",
+        "_LLM_CLAUDE_SCREENER_ID  = \"llm_claude_ranking\"",
+        "_HIDDEN_SCREENER_IDS: frozenset[str] = frozenset({_LLM_CLAUDE_SCREENER_ID})",
+        "_CHECKBOX_QSS = f\"QCheckBox {{ color: {C.TEXT}; font-size: 9pt; spacing: 6px; }}\"",
+        "_PA_PATTERN_LABELS: dict[str, str] = {",
+        "_PA_DEFAULTS: dict[str, Any] = {"
+      ]
+    },
+    "settings_panel.py": {
+      "classes": [
+        {
+          "name": "_UserDialog",
+          "docstring": "Create or edit a UserProfile.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, user: UserProfile | None = None, parent: QWidget | None = None) -> None",
+              "line_start": 49,
+              "line_end": 121
+            },
+            {
+              "name": "get_profile",
+              "signature": "def get_profile(self) -> UserProfile",
+              "line_start": 123,
+              "line_end": 141
+            }
+          ],
+          "line_start": 46,
+          "line_end": 141
+        },
+        {
+          "name": "_UsersTab",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 147,
+              "line_end": 195
+            },
+            {
+              "name": "_refresh",
+              "signature": "def _refresh(self) -> None",
+              "line_start": 197,
+              "line_end": 218
+            },
+            {
+              "name": "_on_sel",
+              "signature": "def _on_sel(self) -> None",
+              "line_start": 220,
+              "line_end": 223
+            },
+            {
+              "name": "_get_selected_user",
+              "signature": "def _get_selected_user(self) -> UserProfile | None",
+              "line_start": 225,
+              "line_end": 231
+            },
+            {
+              "name": "_on_new",
+              "signature": "def _on_new(self) -> None",
+              "line_start": 233,
+              "line_end": 236
+            },
+            {
+              "name": "_on_edit",
+              "signature": "def _on_edit(self) -> None",
+              "line_start": 238,
+              "line_end": 244
+            },
+            {
+              "name": "_on_delete",
+              "signature": "def _on_delete(self) -> None",
+              "line_start": 246,
+              "line_end": 259
+            }
+          ],
+          "line_start": 146,
+          "line_end": 259
+        },
+        {
+          "name": "_RiskTab",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 265,
+              "line_end": 308
+            },
+            {
+              "name": "_on_save",
+              "signature": "def _on_save(self) -> None",
+              "line_start": 310,
+              "line_end": 311
+            }
+          ],
+          "line_start": 264,
+          "line_end": 311
+        },
+        {
+          "name": "_StrategiesTab",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, parent: QWidget | None = None) -> None",
+              "line_start": 317,
+              "line_end": 344
+            }
+          ],
+          "line_start": 316,
+          "line_end": 344
+        },
+        {
+          "name": "_SystemTab",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 350,
+              "line_end": 415
+            },
+            {
+              "name": "_refresh_sched_btn_label",
+              "signature": "def _refresh_sched_btn_label(self) -> None",
+              "line_start": 419,
+              "line_end": 422
+            },
+            {
+              "name": "_on_scheduler",
+              "signature": "def _on_scheduler(self) -> None",
+              "line_start": 424,
+              "line_end": 428
+            },
+            {
+              "name": "_on_save",
+              "signature": "def _on_save(self) -> None",
+              "line_start": 430,
+              "line_end": 442
+            }
+          ],
+          "line_start": 349,
+          "line_end": 442
+        },
+        {
+          "name": "_UniverseTab",
+          "docstring": "S&P 500 universe viewer \u2014 HTML table rendered in QWebEngineView.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 673,
+              "line_end": 710
+            },
+            {
+              "name": "_load_from_cache",
+              "signature": "def _load_from_cache(self) -> None",
+              "line_start": 714,
+              "line_end": 723
+            },
+            {
+              "name": "_push_filters",
+              "signature": "def _push_filters(self) -> None",
+              "line_start": 725,
+              "line_end": 727
+            },
+            {
+              "name": "_on_refresh",
+              "signature": "def _on_refresh(self) -> None",
+              "line_start": 729,
+              "line_end": 731
+            }
+          ],
+          "line_start": 666,
+          "line_end": 731
+        },
+        {
+          "name": "_DatabaseTab",
+          "docstring": "SRD-GUI-006.011 \u2014 Candle database lifecycle management.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, svc: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 744,
+              "line_end": 943
+            },
+            {
+              "name": "_on_refresh_status",
+              "signature": "def _on_refresh_status(self) -> None",
+              "line_start": 947,
+              "line_end": 954
+            },
+            {
+              "name": "_on_status_loaded",
+              "signature": "def _on_status_loaded(self, info: object) -> None",
+              "line_start": 956,
+              "line_end": 1018
+            },
+            {
+              "name": "_on_build_clicked",
+              "signature": "def _on_build_clicked(self) -> None",
+              "line_start": 1020,
+              "line_end": 1049
+            },
+            {
+              "name": "_on_cancel",
+              "signature": "def _on_cancel(self) -> None",
+              "line_start": 1051,
+              "line_end": 1054
+            },
+            {
+              "name": "_on_progress",
+              "signature": "def _on_progress(self, symbol: str, done: int, total: int) -> None",
+              "line_start": 1056,
+              "line_end": 1062
+            },
+            {
+              "name": "_on_finished",
+              "signature": "def _on_finished(self, inserted_1d: int, inserted_1w: int) -> None",
+              "line_start": 1064,
+              "line_end": 1071
+            },
+            {
+              "name": "_on_failed",
+              "signature": "def _on_failed(self, reason: str) -> None",
+              "line_start": 1073,
+              "line_end": 1076
+            },
+            {
+              "name": "_on_paused",
+              "signature": "def _on_paused(self, reason: str) -> None",
+              "docstring": "Called when IBKR disconnects mid-download (SRD-GUI-006.014).",
+              "line_start": 1078,
+              "line_end": 1082
+            },
+            {
+              "name": "_on_symbol_failed",
+              "signature": "def _on_symbol_failed(self, symbol: str, reason: str) -> None",
+              "docstring": "Increment live fail counter in progress section (SRD-GUI-006.016).",
+              "line_start": 1084,
+              "line_end": 1091
+            },
+            {
+              "name": "_on_failures_ready",
+              "signature": "def _on_failures_ready(self, symbols: object) -> None",
+              "docstring": "Show/hide discrepancy panel after download finishes (SRD-GUI-006.016).",
+              "line_start": 1093,
+              "line_end": 1102
+            },
+            {
+              "name": "_on_fix_discrepancies",
+              "signature": "def _on_fix_discrepancies(self) -> None",
+              "docstring": "Re-download only failed symbols (SRD-GUI-006.016).",
+              "line_start": 1104,
+              "line_end": 1128
+            },
+            {
+              "name": "_on_reset_db",
+              "signature": "def _on_reset_db(self) -> None",
+              "docstring": "Confirm and reset the candle database (delete + recreate empty schema).",
+              "line_start": 1130,
+              "line_end": 1154
+            },
+            {
+              "name": "_show_discrepancies",
+              "signature": "def _show_discrepancies(self, symbols: list[str]) -> None",
+              "docstring": "Populate and show the discrepancy group.",
+              "line_start": 1158,
+              "line_end": 1168
+            },
+            {
+              "name": "_load_persisted_failures",
+              "signature": "def _load_persisted_failures(self) -> None",
+              "docstring": "Restore failed-symbols panel from disk on startup (SRD-GUI-006.016).",
+              "line_start": 1170,
+              "line_end": 1175
+            },
+            {
+              "name": "_apply_checkpoint_state",
+              "signature": "def _apply_checkpoint_state(self) -> None",
+              "docstring": "Show '\u25b6 Resume Download' if a checkpoint exists; restore normal label otherwise.",
+              "line_start": 1177,
+              "line_end": 1187
+            },
+            {
+              "name": "_set_downloading",
+              "signature": "def _set_downloading(self, active: bool) -> None",
+              "line_start": 1189,
+              "line_end": 1203
+            }
+          ],
+          "line_start": 736,
+          "line_end": 1203
+        },
+        {
+          "name": "SettingsPanel",
+          "docstring": "FO-GUI-006 Settings Panel \u2014 5 sub-tabs.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, demo: AppService, parent: QWidget | None = None) -> None",
+              "line_start": 1213,
+              "line_end": 1227
+            },
+            {
+              "name": "trigger_fill_delta",
+              "signature": "def trigger_fill_delta(self) -> None",
+              "docstring": "Programmatically invoke fill delta \u2014 identical to clicking the button manually.",
+              "line_start": 1229,
+              "line_end": 1231
+            }
+          ],
+          "line_start": 1208,
+          "line_end": 1231
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_build_universe_html",
+          "signature": "def _build_universe_html(\r\n    records: list,\r\n    coverage: \"dict[str, str | None] | None\" = None,\r\n    last_trading_day: str | None = None,\r\n) -> str",
+          "docstring": "Serialize records to an HTML page with all data embedded as JSON.",
+          "line_start": 620,
+          "line_end": 663
+        }
+      ],
+      "constants": [
+        "_UNIVERSE_HTML = \"\"\"\\"
+      ]
+    },
+    "system_store.py": {
+      "classes": [
+        {
+          "name": "SystemConfig",
+          "class_vars": [
+            "ibkr_host: str",
+            "ibkr_port: int",
+            "ibkr_system_client_id: int",
+            "log_level: str",
+            "scheduler_enabled: bool",
+            "market_open: str",
+            "market_close: str",
+            "market_timezone: str",
+            "benchmark_symbol: str"
+          ],
+          "line_start": 26,
+          "line_end": 35
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "load_system_config",
+          "signature": "def load_system_config() -> SystemConfig",
+          "docstring": "Load config from disk.  Returns defaults if file is missing or corrupt.",
+          "line_start": 40,
+          "line_end": 60
+        },
+        {
+          "name": "save_system_config",
+          "signature": "def save_system_config(cfg: SystemConfig) -> None",
+          "docstring": "Persist config atomically.",
+          "line_start": 63,
+          "line_end": 71
+        },
+        {
+          "name": "is_market_open",
+          "signature": "def is_market_open(cfg: SystemConfig) -> bool",
+          "docstring": "Check if the market is currently open based on market_open/close times and timez",
+          "line_start": 76,
+          "line_end": 110
+        }
+      ],
+      "constants": [
+        "_APP_DIR    = Path.home() / \".usswing\"",
+        "_STORE_FILE = _APP_DIR / \"system.json\""
+      ]
+    },
+    "theme.py": {
+      "module_id": "MD-GUI-001.001.M01",
+      "classes": [
+        {
+          "name": "C",
+          "docstring": "Colour token constants.",
+          "line_start": 8,
+          "line_end": 40
+        }
+      ],
+      "constants": [
+        "STATE_COLORS: dict[str, str] = {",
+        "QSS = f\"\"\""
+      ]
+    },
+    "user_store.py": {
+      "top_level_functions": [
+        {
+          "name": "_to_dict",
+          "signature": "def _to_dict(u: UserProfile) -> dict",
+          "line_start": 31,
+          "line_end": 45
+        },
+        {
+          "name": "_from_dict",
+          "signature": "def _from_dict(d: dict) -> UserProfile",
+          "line_start": 48,
+          "line_end": 66
+        },
+        {
+          "name": "load_users",
+          "signature": "def load_users() -> list[UserProfile]",
+          "docstring": "Load users from disk.  Returns empty list if no store exists yet.",
+          "line_start": 71,
+          "line_end": 81
+        },
+        {
+          "name": "save_users",
+          "signature": "def save_users(users: list[UserProfile]) -> None",
+          "docstring": "Persist users to disk atomically (write tmp \u2192 replace).",
+          "line_start": 84,
+          "line_end": 92
+        },
+        {
+          "name": "next_user_id",
+          "signature": "def next_user_id(users: list[UserProfile]) -> int",
+          "docstring": "Return max existing ID + 1 (or 1 when list is empty).",
+          "line_start": 95,
+          "line_end": 97
+        }
+      ],
+      "constants": [
+        "_APP_DIR    = Path.home() / \".usswing\"",
+        "_STORE_FILE = _APP_DIR / \"users.json\""
+      ]
+    }
+  }
+}
