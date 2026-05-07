@@ -27,6 +27,8 @@ class SystemConfig:
     ibkr_host: str       = "127.0.0.1"
     ibkr_port: int       = 7497
     ibkr_system_client_id: int = 10
+    ibkr_enabled: bool   = False
+    ibkr_intraday_client_id: int = 11
     log_level: str       = "INFO"
     scheduler_enabled: bool = False
     market_open: str     = "09:35"
@@ -46,9 +48,11 @@ def load_system_config() -> SystemConfig:
         if not isinstance(data, dict):
             return SystemConfig()
         cfg = SystemConfig()
-        cfg.ibkr_host              = str(data.get("ibkr_host",              cfg.ibkr_host))
-        cfg.ibkr_port              = int(data.get("ibkr_port",              cfg.ibkr_port))
-        cfg.ibkr_system_client_id  = int(data.get("ibkr_system_client_id",  cfg.ibkr_system_client_id))
+        cfg.ibkr_host                = str(data.get("ibkr_host",                cfg.ibkr_host))
+        cfg.ibkr_port                = int(data.get("ibkr_port",                cfg.ibkr_port))
+        cfg.ibkr_system_client_id    = int(data.get("ibkr_system_client_id",    cfg.ibkr_system_client_id))
+        cfg.ibkr_enabled             = bool(data.get("ibkr_enabled",            cfg.ibkr_enabled))
+        cfg.ibkr_intraday_client_id  = int(data.get("ibkr_intraday_client_id",  cfg.ibkr_intraday_client_id))
         cfg.log_level              = str(data.get("log_level",              cfg.log_level))
         cfg.scheduler_enabled = bool(data.get("scheduler_enabled", cfg.scheduler_enabled))
         cfg.market_open       = str(data.get("market_open",       cfg.market_open))

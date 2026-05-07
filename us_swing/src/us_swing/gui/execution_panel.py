@@ -4,9 +4,10 @@ FO-GUI-004 Execution Panel: pending signals + override qty + execute entry.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
-from PyQt6.QtCore import QAbstractTableModel, QDate, QModelIndex, QSortFilterProxyModel, Qt, pyqtSignal
+from PyQt6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt, pyqtSignal
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -169,21 +170,23 @@ class _SignalRow(QFrame):
 
 # ── Filtered Stocks table model ───────────────────────────────────────────────
 
-_COL_SYMBOL  = 0
-_COL_SCORE   = 1
-_COL_RUN     = 2
-_COL_STYLE   = 3
+_COL_SYMBOL   = 0
+_COL_SCORE    = 1
+_COL_RUN      = 2
+_COL_STYLE    = 3
 _COL_SCREENER = 4
+_COL_CANDLES  = 5
 
 
 class _FilteredStocksModel(QAbstractTableModel):
     """Table model for the filtered stocks left pane."""
 
-    HEADERS = ["Symbol", "Score", "Run", "Style", "Screener"]
+    HEADERS = ["Symbol", "Score", "Run", "Style", "Screener", "Candles"]
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._rows: list[FilteredStockEntry] = []
+        self._readiness: dict[str, bool | None] = {}
 
     def load(self, entries: list[FilteredStockEntry]) -> None:
         self.beginResetModel()
@@ -218,6 +221,11 @@ class _FilteredStocksModel(QAbstractTableModel):
                 return entry.screener_name
             if col == _COL_RUN:
                 return "Auto" if entry.run_type == "scheduled" else "Manual"
+            if col == _COL_CANDLES:
+                state = self._readiness.get(entry.symbol)
+                if state is None and entry.symbol in self._readiness:
+                    return "⟳"
+                return "✓" if state else "—"
 
         if role == Qt.ItemDataRole.ForegroundRole:
             if col == _COL_SYMBOL:
@@ -230,13 +238,28 @@ class _FilteredStocksModel(QAbstractTableModel):
                 return QColor(C.RED)
             if col == _COL_RUN:
                 return QColor(C.TEAL) if entry.run_type == "scheduled" else QColor(C.BLUE)
+            if col == _COL_CANDLES:
+                state = self._readiness.get(entry.symbol)
+                if state is None and entry.symbol in self._readiness:
+                    return QColor(C.YELLOW)
+                return QColor(C.GREEN) if state else QColor(C.MUTED)
 
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            if col in (_COL_SCORE, _COL_RUN):
+            if col in (_COL_SCORE, _COL_RUN, _COL_CANDLES):
                 return Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
             return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
         return None
+
+    def set_candle_readiness(self, report: dict[str, bool | None]) -> None:
+        self._readiness.update(report)
+        if self._rows:
+            top_left = self.createIndex(0, _COL_CANDLES)
+            bot_right = self.createIndex(len(self._rows) - 1, _COL_CANDLES)
+            self.dataChanged.emit(
+                top_left, bot_right,
+                [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.ForegroundRole],
+            )
 
 
 # ── Filtered Stocks left pane ─────────────────────────────────────────────────
@@ -249,11 +272,15 @@ class _FilteredStocksPane(QWidget):
         self.setMinimumWidth(180)
         self._all_entries: list[FilteredStockEntry] = []
 
+        self._current_date = ""
+
         # ── Header ─────────────────────────────────────────────────────────────
         hdr_lbl = QLabel("FILTERED STOCKS")
         hdr_lbl.setStyleSheet(
             f"color: {C.MUTED}; font-size: 7pt; font-weight: bold; letter-spacing: 2px;"
         )
+        self._date_lbl = QLabel("")
+        self._date_lbl.setStyleSheet(f"color: {C.MUTED}; font-size: 8pt;")
         self._count_lbl = QLabel("")
         self._count_lbl.setStyleSheet(f"color: {C.MUTED}; font-size: 8pt;")
 
@@ -261,23 +288,8 @@ class _FilteredStocksPane(QWidget):
         hdr_row.setContentsMargins(0, 0, 0, 0)
         hdr_row.addWidget(hdr_lbl)
         hdr_row.addStretch()
+        hdr_row.addWidget(self._date_lbl)
         hdr_row.addWidget(self._count_lbl)
-
-        # ── Date selector ──────────────────────────────────────────────────────
-        date_lbl = QLabel("Date")
-        date_lbl.setStyleSheet(f"color: {C.MUTED}; font-size: 8pt;")
-        self._date_combo = QComboBox()
-        self._date_combo.setFixedWidth(120)
-        self._date_combo.setStyleSheet("QComboBox { outline: none; } QComboBox:focus { outline: none; }")
-
-        date_row = QHBoxLayout()
-        date_row.setContentsMargins(0, 0, 0, 0)
-        date_row.setSpacing(6)
-        date_row.addWidget(date_lbl)
-        date_row.addWidget(self._date_combo)
-        date_row.addStretch()
-
-        self._date_combo.currentIndexChanged.connect(self._filter_by_date)
 
         # ── Table ──────────────────────────────────────────────────────────────
         self._model = _FilteredStocksModel()
@@ -308,6 +320,8 @@ class _FilteredStocksPane(QWidget):
         hdrs.setSectionResizeMode(_COL_STYLE,    QHeaderView.ResizeMode.Interactive)
         hdrs.resizeSection(_COL_STYLE, 65)
         hdrs.setSectionResizeMode(_COL_SCREENER, QHeaderView.ResizeMode.Stretch)
+        hdrs.setSectionResizeMode(_COL_CANDLES,  QHeaderView.ResizeMode.Fixed)
+        hdrs.resizeSection(_COL_CANDLES, 58)
 
         # ── Empty state label ─────────────────────────────────────────────────
         self._empty_lbl = QLabel("No screener results yet.\nRun a preset in the Screener tab.")
@@ -324,40 +338,39 @@ class _FilteredStocksPane(QWidget):
         root.setContentsMargins(0, 0, 6, 0)
         root.setSpacing(6)
         root.addLayout(hdr_row)
-        root.addLayout(date_row)
         root.addWidget(self._table, 1)
         root.addWidget(self._empty_lbl, 1)
 
         # ── Wire up to service ─────────────────────────────────────────────────
         svc.screener_results_updated.connect(self._on_updated)
+        svc.candle_readiness_updated.connect(self._on_candle_readiness)
         self._on_updated(svc.get_latest_screener_results())
 
     def _on_updated(self, entries: list[FilteredStockEntry]) -> None:
         self._all_entries = entries
         dates = sorted({e.date for e in entries}, reverse=True)
-        self._date_combo.blockSignals(True)
-        try:
-            self._date_combo.clear()
-            for d in dates:
-                qd = QDate.fromString(d, "yyyy-MM-dd")
-                self._date_combo.addItem(qd.toString("dd MMM yyyy"), d)
-        finally:
-            self._date_combo.blockSignals(False)
         if not dates:
+            self._current_date = ""
+            self._date_lbl.setText("")
             self._count_lbl.setText("")
             self._table.setVisible(False)
             self._empty_lbl.setVisible(True)
             return
+        self._current_date = dates[0]
+        formatted = datetime.strptime(self._current_date, "%Y-%m-%d").strftime("%d %b %Y")
+        self._date_lbl.setText(formatted)
         self._filter_by_date()
 
     def _filter_by_date(self) -> None:
-        date_str = self._date_combo.currentData() or ""
-        visible = [e for e in self._all_entries if e.date == date_str]
+        visible = [e for e in self._all_entries if e.date == self._current_date]
         self._model.load(visible)
         count = len(visible)
         self._count_lbl.setText(f"{count} stock{'s' if count != 1 else ''}")
         self._table.setVisible(count > 0)
         self._empty_lbl.setVisible(count == 0)
+
+    def _on_candle_readiness(self, report: dict) -> None:
+        self._model.set_candle_readiness(report)
 
 
 # ── Execution Panel ───────────────────────────────────────────────────────────

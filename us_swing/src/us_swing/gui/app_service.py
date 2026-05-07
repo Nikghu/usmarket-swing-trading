@@ -893,6 +893,8 @@ class AppService(QObject):
     candle_symbol_failed      = pyqtSignal(str, str)       # symbol, reason (per-symbol)
     candle_download_failures  = pyqtSignal(object)         # list[str] — full failed list at end
     screener_results_updated  = pyqtSignal(list)           # list[FilteredStockEntry]
+    intraday_load_progress    = pyqtSignal(str, int, int)  # symbol, done, total
+    candle_readiness_updated  = pyqtSignal(dict)           # dict[str, bool | None]
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -964,6 +966,11 @@ class AppService(QObject):
         self._net_watcher = NetWatcher(parent=self)
         self._net_watcher.status_changed.connect(self._on_internet_status)
         self._net_watcher.start()
+
+        # ── Intraday candle loader (SRD-EXE-006.007 / .008) ──────────────────
+        self._intraday_loader: QThread | None = None
+        self._pending_candle_symbols: list[str] | None = None
+        self.screener_results_updated.connect(self._on_screener_results_updated)
 
     # ── Architecture-level connection status ──────────────────────────────────
 
@@ -1118,6 +1125,63 @@ class AppService(QObject):
         """
         entries = self.get_latest_screener_results()
         self.screener_results_updated.emit(entries)
+
+    # ── Intraday candle auto-fetch (SRD-EXE-006.007 / .008) ──────────────────
+
+    def _on_screener_results_updated(self, entries: list[FilteredStockEntry]) -> None:
+        symbols = sorted({e.symbol for e in entries})
+        if not symbols:
+            return
+        if not self._system_cfg.ibkr_enabled:
+            _log.info("Candle auto-fetch skipped — IBKR disabled")
+            return
+        self._start_intraday_loader(symbols)
+
+    def _start_intraday_loader(self, symbols: list[str]) -> None:
+        if self._intraday_loader is not None and self._intraday_loader.isRunning():
+            self._pending_candle_symbols = symbols
+            _log.warning(
+                "IntradayCandleLoader already running — deferring %d symbols", len(symbols)
+            )
+            return
+
+        from us_swing.config.settings import DataConfig
+        from us_swing.data.dummy_provider import DummyProvider
+        from us_swing.data.engine import HistoricalDataEngine
+        from us_swing.db.manager import DatabaseManager
+        from us_swing.execution.intraday_candle_loader import IntradayCandleLoader
+
+        cfg = self._system_cfg
+        db = DatabaseManager(f"sqlite:///{_CANDLE_DB_PATH}")
+        hist = HistoricalDataEngine(DummyProvider(), db, DataConfig())
+        loader = IntradayCandleLoader(
+            symbols=symbols,
+            ibkr_host=cfg.ibkr_host,
+            ibkr_port=cfg.ibkr_port,
+            ibkr_client_id=cfg.ibkr_intraday_client_id,
+            db=db,
+            hist_engine=hist,
+            parent=self,
+        )
+        loader.load_progress.connect(self.intraday_load_progress)
+        loader.load_complete.connect(self._on_candle_load_complete)
+        self._intraday_loader = loader
+        self.candle_readiness_updated.emit({s: None for s in symbols})
+        _log.info("IntradayCandleLoader started for %d symbols", len(symbols))
+        loader.start()
+
+    def _on_candle_load_complete(self, results: list) -> None:
+        readiness: dict[str, bool | None] = {r.symbol: r.ok for r in results}
+        self.candle_readiness_updated.emit(readiness)
+        failed = [r.symbol for r in results if not r.ok]
+        if failed:
+            _log.warning(
+                "IntradayCandleLoader: %d symbol(s) failed: %s", len(failed), failed
+            )
+        pending = self._pending_candle_symbols
+        if pending is not None:
+            self._pending_candle_symbols = None
+            self._start_intraday_loader(pending)
 
     def get_pending_signals(self, user_id: int | None = None) -> list[TradeSignal]:
         return list(self._signals)
