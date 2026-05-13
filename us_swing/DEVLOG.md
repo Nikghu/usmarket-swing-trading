@@ -2,6 +2,14 @@
 
 ---
 
+## [20260513] EXE — Auto-update wiring + v1.1.0 release (GitHub release + assets)
+
+- Type: Chore
+- Artifacts updated: run_gui.py (updater_stub integration), usswing_installer.yaml (github_repo fix), .claude/commands/push-updates.md (new slash command), CLAUDE.md (slash command entry), updater_manifest.json (v1.1.0 URLs)
+- Decisions: Auto-check-for-updates at GUI startup; GitHub release hosting at Nikghu/agentqt; `/project:push-updates` slash command automates tag creation and asset upload
+
+---
+
 ## [20260513] GUI — Wrote RN-GUI-1.0.0-20260513 for Candle Chart Viewer (FO-GUI-011)
 
 - Type: Documentation
