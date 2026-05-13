@@ -9,7 +9,7 @@
 
 ## 0. Immediate Next Step
 
-**Current:** FO-GUI-011 (Candle Chart Viewer) complete. RN written. Next: resume EXE Phase 2 (FO-EXE-007) or SCR Phase 2 multi-provider AI ranking.
+**Current:** FO-GUI-011 (Candle Chart Viewer) complete. RN written. Auto-update wiring integrated into `run_gui.py` and v1.1.0 released (GitHub release + assets). Next: resume EXE Phase 2 (FO-EXE-007) or SCR Phase 2 multi-provider AI ranking.
 
 **FO-GUI-011 — Candle Chart Viewer — COMPLETE (Session 41, 2026-05-13):**
 - "📈 Chart" navigation tab (index 3, before Settings) with symbol/timeframe/bars toolbar

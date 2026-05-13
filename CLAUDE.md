@@ -74,6 +74,7 @@ Available via `/project:<name>`:
 | `/project:hookify` | Scan conversation for PyQt6 behavior patterns and write hook rules to settings.json — periodic maintenance only |
 | `/project:workspace` | Load full workspace folder orientation — tree, layout, conventions |
 | `/project:pyqt-comment-analyzer` | Analyze PyQt6 comments for accuracy and comment rot — advisory only, invoke when pyqt-code-reviewer flags comments |
+| `/project:push-updates` | Publish a GitHub release after building the installer — creates tag, uploads .exe + .sha256, patches manifest |
 
 ## Maintenance
 
