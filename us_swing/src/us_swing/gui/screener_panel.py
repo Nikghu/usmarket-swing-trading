@@ -79,7 +79,7 @@ from PyQt6.QtWidgets import (
 from us_swing.gui.ai_transcript_panel import AITranscriptPanel
 from us_swing.gui.app_service import AppService
 from us_swing.gui.chart_panel import _build_html as _build_chart_html
-from us_swing.gui.theme import C
+from us_swing.gui.theme import C, active_palette
 from us_swing.screener.screeners import _api_key_store
 from us_swing.screener.storage import INPUT_COST_PER_1K, OUTPUT_COST_PER_1K
 from us_swing.screener.screeners._cloud_ai_models import (
@@ -609,7 +609,7 @@ _LLM_CLAUDE_SCREENER_ID  = "llm_claude_ranking"
 # Screeners hidden from the "Add Screener" menu — still registered for backward compat with saved presets
 _HIDDEN_SCREENER_IDS: frozenset[str] = frozenset({_LLM_CLAUDE_SCREENER_ID})
 
-_CHECKBOX_QSS = f"QCheckBox {{ color: {C.TEXT}; font-size: 9pt; spacing: 6px; }}"
+_CHECKBOX_QSS = "QCheckBox { font-size: 9pt; spacing: 6px; }"
 
 
 def _format_indicator_config(config: dict) -> str:
@@ -669,7 +669,7 @@ def _hdivider() -> QFrame:
     line = QFrame()
     line.setFrameShape(QFrame.Shape.HLine)
     line.setFixedHeight(1)
-    line.setStyleSheet(f"background: {C.OVERLAY}; border: none;")
+    line.setStyleSheet(f"background: {active_palette().OVERLAY}; border: none;")
     return line
 
 
@@ -692,10 +692,8 @@ class _FramelessDialog(QDialog):
         if min_height:
             self.setMinimumHeight(min_height)
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
-        self.setStyleSheet(
-            f"QDialog {{ background: {C.BG}; border: 1px solid {C.OVERLAY2}; }}"
-            + extra_qss
-        )
+        if extra_qss:
+            self.setStyleSheet(extra_qss)
         self._drag_pos: QPoint | None = None
         self._maximized = False
 
@@ -718,18 +716,14 @@ class _FramelessDialog(QDialog):
 
     def _make_title_bar(self, title: str) -> QFrame:
         bar = QFrame()
+        bar.setObjectName("title_bar")
         bar.setFixedHeight(38)
-        bar.setStyleSheet(
-            f"QFrame {{ background: {C.SURFACE}; border-bottom: 1px solid {C.OVERLAY}; }}"
-        )
         hl = QHBoxLayout(bar)
         hl.setContentsMargins(14, 0, 6, 0)
         hl.setSpacing(0)
 
         title_lbl = QLabel(title)
-        title_lbl.setStyleSheet(
-            f"color: {C.TEXT}; font-size: 9pt; font-weight: bold; background: transparent;"
-        )
+        title_lbl.setObjectName("top_brand")
         hl.addWidget(title_lbl)
         hl.addStretch()
 
@@ -812,15 +806,16 @@ class _IndicatorConfigDialog(_FramelessDialog):
             return d
 
         root = self.content_layout()
+        _T = active_palette()
 
         def _section(title: str) -> QLabel:
             lbl = QLabel(title)
-            lbl.setStyleSheet(f"color: {C.BLUE}; font-weight: bold; font-size: 9pt;")
+            lbl.setStyleSheet(f"color: {_T.BLUE}; font-weight: bold; font-size: 9pt;")
             return lbl
 
         def _lbl(text: str) -> QLabel:
             l = QLabel(text)
-            l.setStyleSheet(f"color: {C.SUBTEXT}; font-size: 8pt;")
+            l.setStyleSheet(f"color: {_T.SUBTEXT}; font-size: 8pt;")
             return l
 
         def _spin_d(lo: float, hi: float, step: float, val: float, dec: int = 3) -> QDoubleSpinBox:
@@ -831,8 +826,8 @@ class _IndicatorConfigDialog(_FramelessDialog):
             s.setValue(val)
             s.setFixedWidth(80)
             s.setStyleSheet(
-                f"QDoubleSpinBox {{ background: {C.OVERLAY}; color: {C.TEXT};"
-                f" border: 1px solid {C.OVERLAY}; border-radius: 3px; padding: 1px 4px; }}"
+                f"QDoubleSpinBox {{ background: {_T.OVERLAY}; color: {_T.TEXT};"
+                f" border: 1px solid {_T.OVERLAY}; border-radius: 3px; padding: 1px 4px; }}"
             )
             return s
 
@@ -1040,15 +1035,16 @@ class _PriceActionConfigDialog(_FramelessDialog):
             return d
 
         root = self.content_layout()
+        _T = active_palette()
 
         def _section(title: str) -> QLabel:
             lbl = QLabel(title)
-            lbl.setStyleSheet(f"color: {C.BLUE}; font-weight: bold; font-size: 9pt;")
+            lbl.setStyleSheet(f"color: {_T.BLUE}; font-weight: bold; font-size: 9pt;")
             return lbl
 
         def _lbl(text: str) -> QLabel:
             l = QLabel(text)
-            l.setStyleSheet(f"color: {C.SUBTEXT}; font-size: 8pt;")
+            l.setStyleSheet(f"color: {_T.SUBTEXT}; font-size: 8pt;")
             return l
 
         def _spin_d(lo: float, hi: float, step: float, val: float, dec: int = 2) -> QDoubleSpinBox:
@@ -1059,8 +1055,8 @@ class _PriceActionConfigDialog(_FramelessDialog):
             s.setValue(val)
             s.setFixedWidth(80)
             s.setStyleSheet(
-                f"QDoubleSpinBox {{ background: {C.OVERLAY}; color: {C.TEXT};"
-                f" border: 1px solid {C.OVERLAY}; border-radius: 3px; padding: 1px 4px; }}"
+                f"QDoubleSpinBox {{ background: {_T.OVERLAY}; color: {_T.TEXT};"
+                f" border: 1px solid {_T.OVERLAY}; border-radius: 3px; padding: 1px 4px; }}"
             )
             return s
 
@@ -1214,12 +1210,14 @@ class _GroupWidget(QFrame):
         self._logic    = logic
         self._configs: dict[str, dict] = dict(configs or {})
 
+        self._T = active_palette()
+        _T = self._T
         self.setObjectName("group_frame")
         self.setStyleSheet(
             f"QFrame#group_frame {{"
-            f"  border: 1px solid {C.BLUE}55;"
+            f"  border: 1px solid {_T.BLUE}55;"
             f"  border-radius: 6px;"
-            f"  background: {C.SURFACE};"
+            f"  background: {_T.SURFACE};"
             f"  margin-bottom: 8px;"
             f"}}"
         )
@@ -1232,7 +1230,7 @@ class _GroupWidget(QFrame):
         header = QWidget()
         header.setFixedHeight(38)
         header.setStyleSheet(
-            f"background: {C.OVERLAY}; border-radius: 5px 5px 0 0;"
+            f"background: {_T.OVERLAY}; border-radius: 5px 5px 0 0;"
         )
         hl = QHBoxLayout(header)
         hl.setContentsMargins(10, 0, 8, 0)
@@ -1241,7 +1239,7 @@ class _GroupWidget(QFrame):
         num = group_id.lstrip("g") or "1"
         self._title_lbl = QLabel(f"Group {num}")
         self._title_lbl.setStyleSheet(
-            f"color: {C.BLUE}; font-weight: bold; font-size: 9pt; background: transparent;"
+            f"color: {_T.BLUE}; font-weight: bold; font-size: 9pt; background: transparent;"
         )
 
         self._logic_btn = QPushButton(logic)
@@ -1283,8 +1281,8 @@ class _GroupWidget(QFrame):
         self._empty_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._empty_lbl.setFixedHeight(48)
         self._empty_lbl.setStyleSheet(
-            f"color: {C.MUTED}; font-size: 8pt; font-style: italic;"
-            f" background: {C.BG}; border: none;"
+            f"color: {_T.MUTED}; font-size: 8pt; font-style: italic;"
+            f" background: {_T.BG}; border: none;"
         )
         root.addWidget(self._empty_lbl)
 
@@ -1296,12 +1294,12 @@ class _GroupWidget(QFrame):
         self._list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self._list.setDefaultDropAction(Qt.DropAction.MoveAction)
         self._list.setStyleSheet(
-            f"QListWidget {{ border: none; background: {C.BG}; padding: 4px; outline: none; }}"
-            f"QListWidget::item {{ padding: 5px 10px; color: {C.TEXT}; font-size: 9pt;"
+            f"QListWidget {{ border: none; background: {_T.BG}; padding: 4px; outline: none; }}"
+            f"QListWidget::item {{ padding: 5px 10px; color: {_T.TEXT}; font-size: 9pt;"
             f"  border-radius: 3px; margin-bottom: 2px; }}"
-            f"QListWidget::item:selected {{ background: #1a2d45; color: {C.BLUE}; }}"
+            f"QListWidget::item:selected {{ background: {_T.OVERLAY}; color: {_T.BLUE}; }}"
             f"QListWidget::item:focus {{ outline: none; border: none; }}"
-            f"QListWidget::item:hover:!selected {{ background: {C.OVERLAY}; }}"
+            f"QListWidget::item:hover:!selected {{ background: {_T.OVERLAY}; }}"
         )
         self._list.model().rowsInserted.connect(self._on_list_changed)
         self._list.model().rowsRemoved.connect(self._on_list_changed)
@@ -1317,17 +1315,16 @@ class _GroupWidget(QFrame):
     # ── Internal helpers ───────────────────────────────────────────────────
 
     def _apply_logic_style(self) -> None:
+        _T = self._T
         is_and = self._logic == "AND"
-        fg  = "#89b4fa" if is_and else "#cba6f7"
-        bg  = "#1a2d45" if is_and else "#2e1a2a"
-        bdr = "#89b4fa" if is_and else "#cba6f7"
-        hover = "#1e3558" if is_and else "#3d2240"
+        fg  = _T.BLUE if is_and else _T.MAUVE
+        bdr = _T.BLUE if is_and else _T.MAUVE
         self._logic_btn.setText(self._logic)
         self._logic_btn.setStyleSheet(
-            f"QPushButton {{ background: {bg}; color: {fg}; font-size: 8pt;"
+            f"QPushButton {{ background: {_T.OVERLAY}; color: {fg}; font-size: 8pt;"
             f" font-weight: bold; border: 1px solid {bdr}; border-radius: 4px;"
             f" padding: 1px 4px; }}"
-            f"QPushButton:hover {{ background: {hover}; }}"
+            f"QPushButton:hover {{ background: {_T.OVERLAY2}; }}"
             f"QPushButton:focus {{ outline: none; }}"
         )
 
@@ -1465,10 +1462,11 @@ class _WeightedRow(QFrame):
         super().__init__(parent)
         self._sid    = sid
         self._config = dict(config) if config else {}
+        _T = active_palette()
 
         self.setFixedHeight(34)
         self.setStyleSheet(
-            f"QFrame {{ background: {C.SURFACE}; border-bottom: 1px solid {C.OVERLAY}; }}"
+            f"QFrame {{ background: {_T.SURFACE}; border-bottom: 1px solid {_T.OVERLAY}; }}"
         )
         hl = QHBoxLayout(self)
         hl.setContentsMargins(8, 0, 6, 0)
@@ -1476,11 +1474,11 @@ class _WeightedRow(QFrame):
 
         drag_hint = QLabel("≡")
         drag_hint.setFixedWidth(14)
-        drag_hint.setStyleSheet(f"color: {C.MUTED}; font-size: 12pt; background: transparent;")
+        drag_hint.setStyleSheet(f"color: {_T.MUTED}; font-size: 12pt; background: transparent;")
 
         label = _SCREENER_DISPLAY.get(sid, sid)
         name_lbl = QLabel(label)
-        name_lbl.setStyleSheet(f"color: {C.TEXT}; font-size: 9pt; background: transparent;")
+        name_lbl.setStyleSheet(f"color: {_T.TEXT}; font-size: 9pt; background: transparent;")
 
         hl.addWidget(drag_hint)
         hl.addWidget(name_lbl, 1)
@@ -1490,15 +1488,15 @@ class _WeightedRow(QFrame):
             cfg_btn.setFixedSize(22, 22)
             cfg_btn.setToolTip("Edit screener settings")
             cfg_btn.setStyleSheet(
-                f"QPushButton {{ background: transparent; color: {C.SUBTEXT}; font-size: 11pt;"
-                f" border: 1px solid {C.OVERLAY2}; border-radius: 3px; }}"
-                f"QPushButton:hover {{ color: {C.BLUE}; border-color: {C.BLUE}; }}"
+                f"QPushButton {{ background: transparent; color: {_T.SUBTEXT}; font-size: 11pt;"
+                f" border: 1px solid {_T.OVERLAY2}; border-radius: 3px; }}"
+                f"QPushButton:hover {{ color: {_T.BLUE}; border-color: {_T.BLUE}; }}"
             )
             cfg_btn.clicked.connect(self._open_config)
             hl.addWidget(cfg_btn)
 
         wlbl = QLabel("Weight:")
-        wlbl.setStyleSheet(f"color: {C.MUTED}; font-size: 8pt; background: transparent;")
+        wlbl.setStyleSheet(f"color: {_T.MUTED}; font-size: 8pt; background: transparent;")
         hl.addWidget(wlbl)
 
         self._spin = QDoubleSpinBox()
@@ -1508,8 +1506,8 @@ class _WeightedRow(QFrame):
         self._spin.setValue(weight)
         self._spin.setFixedWidth(62)
         self._spin.setStyleSheet(
-            f"QDoubleSpinBox {{ background: {C.OVERLAY}; color: {C.TEXT};"
-            f" border: 1px solid {C.OVERLAY}; border-radius: 3px; padding: 1px 4px; }}"
+            f"QDoubleSpinBox {{ background: {_T.OVERLAY}; color: {_T.TEXT};"
+            f" border: 1px solid {_T.OVERLAY}; border-radius: 3px; padding: 1px 4px; }}"
         )
         self._spin.valueChanged.connect(lambda _: self.changed.emit())
         hl.addWidget(self._spin)
@@ -1517,9 +1515,9 @@ class _WeightedRow(QFrame):
         del_btn = QPushButton("×")
         del_btn.setFixedSize(20, 20)
         del_btn.setStyleSheet(
-            f"QPushButton {{ background: transparent; color: {C.SUBTEXT}; font-size: 12pt;"
+            f"QPushButton {{ background: transparent; color: {_T.SUBTEXT}; font-size: 12pt;"
             f" border: none; }}"
-            f"QPushButton:hover {{ color: {C.RED}; }}"
+            f"QPushButton:hover {{ color: {_T.RED}; }}"
         )
         del_btn.clicked.connect(lambda: self.remove_requested.emit(self))
         hl.addWidget(del_btn)
@@ -1596,12 +1594,9 @@ class _UserPickerDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        _T = active_palette()
         self.setWindowTitle("Select Users")
         self.setMinimumWidth(300)
-        self.setStyleSheet(
-            f"QDialog {{ background: {C.BG}; }}"
-            f"QLabel {{ color: {C.TEXT}; font-size: 9pt; }}"
-        )
 
         self._checks: dict[str, QCheckBox] = {}   # uid → checkbox
 
@@ -1610,7 +1605,7 @@ class _UserPickerDialog(QDialog):
         vl.setContentsMargins(14, 12, 14, 12)
 
         header = QLabel("Select users to assign this preset to:")
-        header.setStyleSheet(f"color: {C.SUBTEXT}; font-size: 8pt;")
+        header.setStyleSheet(f"color: {_T.SUBTEXT}; font-size: 8pt;")
         vl.addWidget(header)
 
         scroll = QScrollArea()
@@ -1618,10 +1613,10 @@ class _UserPickerDialog(QDialog):
         scroll.setMinimumHeight(180)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet(
-            f"QScrollArea {{ border: 1px solid {C.OVERLAY}; border-radius: 4px; }}"
+            f"QScrollArea {{ border: 1px solid {_T.OVERLAY}; border-radius: 4px; }}"
         )
         inner = QWidget()
-        inner.setStyleSheet(f"background: {C.SURFACE};")
+        inner.setStyleSheet(f"background: {_T.SURFACE};")
         inner_vl = QVBoxLayout(inner)
         inner_vl.setContentsMargins(8, 8, 8, 8)
         inner_vl.setSpacing(6)
@@ -1630,13 +1625,13 @@ class _UserPickerDialog(QDialog):
             uid = str(u.user_id)
             cb  = QCheckBox(f"{u.display_name}  ({u.username})")
             cb.setChecked(uid in already_assigned)
-            cb.setStyleSheet(f"color: {C.TEXT}; font-size: 9pt;")
+            cb.setStyleSheet(f"color: {_T.TEXT}; font-size: 9pt;")
             self._checks[uid] = cb
             inner_vl.addWidget(cb)
 
         if not all_users:
             lbl = QLabel("No other users found.")
-            lbl.setStyleSheet(f"color: {C.MUTED}; font-size: 9pt;")
+            lbl.setStyleSheet(f"color: {_T.MUTED}; font-size: 9pt;")
             inner_vl.addWidget(lbl)
 
         inner_vl.addStretch()
@@ -1716,11 +1711,12 @@ class _AssignUsersWidget(QWidget):
 
         # grant newly ticked users
         for uid in selected - already:
-            try:
-                self._mgr.grant_access(self._preset_id, [uid], self._requestor_id)
-                self._insert_tag(uid)
-            except Exception:  # noqa: BLE001
-                pass
+            if self._preset_id:
+                try:
+                    self._mgr.grant_access(self._preset_id, [uid], self._requestor_id)
+                except Exception:  # noqa: BLE001
+                    pass
+            self._insert_tag(uid)
 
         # revoke newly un-ticked users
         for uid in already - selected:
@@ -1730,13 +1726,17 @@ class _AssignUsersWidget(QWidget):
         tag = next((t for t in self._tags if t._user_id == uid), None)
         if tag is None:
             return
-        try:
-            self._mgr.revoke_access(self._preset_id, uid, self._requestor_id)
-        except Exception:  # noqa: BLE001
-            pass
+        if self._preset_id:
+            try:
+                self._mgr.revoke_access(self._preset_id, uid, self._requestor_id)
+            except Exception:  # noqa: BLE001
+                pass
         self._tag_row.removeWidget(tag)
         tag.deleteLater()
         self._tags.remove(tag)
+
+    def selected_ids(self) -> list[str]:
+        return [t._user_id for t in self._tags]
 
     def _insert_tag(self, uid: str) -> None:
         label = self._id_label_map.get(uid, uid)
@@ -1770,6 +1770,7 @@ class _PresetBuilderDialog(_FramelessDialog):
         self._user_id  = user_id
         self._preset   = preset
         self._saved_id: str | None = None
+        _T = active_palette()
 
         self._content_layout.setContentsMargins(14, 10, 14, 12)
         root = self._content_layout
@@ -1796,15 +1797,15 @@ class _PresetBuilderDialog(_FramelessDialog):
         _sep = QFrame()
         _sep.setFrameShape(QFrame.Shape.HLine)
         _sep.setFrameShadow(QFrame.Shadow.Sunken)
-        _sep.setStyleSheet(f"color: {C.OVERLAY};")
+        _sep.setStyleSheet(f"color: {_T.OVERLAY};")
         root.addWidget(_sep)
 
         # ── Row 2: Type group box + Style/Users group box (horizontal) ───
         from PyQt6.QtWidgets import QStackedWidget
         _is_creator = preset is None or not preset.is_admin
         _gb_style = (
-            f"QGroupBox {{ color: {C.MUTED}; font-size: 8pt;"
-            f" border: 1px solid {C.OVERLAY}; border-radius: 4px;"
+            f"QGroupBox {{ color: {_T.MUTED}; font-size: 8pt;"
+            f" border: 1px solid {_T.OVERLAY}; border-radius: 4px;"
             f" padding: 6px 8px 6px 8px; margin-top: 8px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; left: 8px; padding: 0 2px; }}"
         )
@@ -1823,8 +1824,8 @@ class _PresetBuilderDialog(_FramelessDialog):
         self._btn_grp = QButtonGroup(self)
         self._r_composite = QRadioButton("Composite  (AND/OR groups)")
         self._r_weighted  = QRadioButton("Weighted  (scored ensemble)")
-        self._r_composite.setStyleSheet(f"color: {C.TEXT}; font-size: 9pt;")
-        self._r_weighted.setStyleSheet(f"color: {C.TEXT}; font-size: 9pt;")
+        self._r_composite.setStyleSheet(f"color: {_T.TEXT}; font-size: 9pt;")
+        self._r_weighted.setStyleSheet(f"color: {_T.TEXT}; font-size: 9pt;")
         self._r_composite.setChecked(True)
         self._btn_grp.addButton(self._r_composite, 0)
         self._btn_grp.addButton(self._r_weighted, 1)
@@ -1851,8 +1852,8 @@ class _PresetBuilderDialog(_FramelessDialog):
         self._preview.setReadOnly(True)
         self._preview.setFixedHeight(72)
         self._preview.setStyleSheet(
-            f"QPlainTextEdit {{ background: {C.SURFACE}; color: {C.SUBTEXT};"
-            f" border: 1px solid {C.OVERLAY}; border-radius: 4px;"
+            f"QPlainTextEdit {{ background: {_T.SURFACE}; color: {_T.SUBTEXT};"
+            f" border: 1px solid {_T.OVERLAY}; border-radius: 4px;"
             f" font-family: monospace; font-size: 9pt; padding: 4px; }}"
         )
         type_vl.addWidget(self._preview)
@@ -1877,26 +1878,22 @@ class _PresetBuilderDialog(_FramelessDialog):
         for lbl_text, style_val in _STYLE_OPTIONS[1:]:   # skip "All Styles"
             cb = QCheckBox(lbl_text)
             cb.setEnabled(_is_creator)
-            cb.setStyleSheet(f"color: {C.TEXT}; font-size: 9pt;")
+            cb.setStyleSheet(f"color: {_T.TEXT}; font-size: 9pt;")
             self._style_checks[style_val] = cb
             style_users_vl.addWidget(cb)
 
-        # ── Assign Users (SRD-SCR-007.012) — user-owned edit mode only ───
+        # ── Assign Users (SRD-SCR-007.012) — user-owned presets only ────
         self._assign_widget: _AssignUsersWidget | None = None
-        show_assign = (
-            preset is not None
-            and not preset.is_admin
-            and _is_creator
-        )
-        if show_assign:
+        if _is_creator:
             style_users_vl.addSpacing(8)
             style_users_vl.addWidget(self._lbl("Assign Users"))
             self._assign_widget = _AssignUsersWidget(
-                preset_id=preset.id,
+                preset_id=preset.id if preset is not None else "",
                 mgr=mgr,
                 requestor_id=user_id,
             )
-            self._assign_widget.load_existing(getattr(preset, "assigned_to", []))
+            if preset is not None:
+                self._assign_widget.load_existing(getattr(preset, "assigned_to", []))
             style_users_vl.addWidget(self._assign_widget)
 
         style_users_vl.addStretch()
@@ -1917,7 +1914,7 @@ class _PresetBuilderDialog(_FramelessDialog):
         self._ai_ranking_chk = QCheckBox(
             "Enable AI Ranking — let an AI model score and sort your filtered results"
         )
-        self._ai_ranking_chk.setStyleSheet(f"color: {C.TEXT}; font-size: 9pt;")
+        self._ai_ranking_chk.setStyleSheet(f"color: {_T.TEXT}; font-size: 9pt;")
         ai_header_hl.addWidget(self._ai_ranking_chk)
         ai_header_hl.addStretch()
         self._ai_model_validate_btn = QPushButton("⚡  Validate")
@@ -1952,7 +1949,7 @@ class _PresetBuilderDialog(_FramelessDialog):
         self._ai_model_edit.textChanged.connect(self._on_model_text_changed)
         model_vl.addWidget(self._ai_model_edit)
         self._ai_model_status_lbl = QLabel("")
-        self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {C.MUTED};")
+        self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {_T.MUTED};")
         model_vl.addWidget(self._ai_model_status_lbl)
         model_vl.addStretch()
         ai_fields_hl.addLayout(model_vl, 2)
@@ -2008,6 +2005,7 @@ class _PresetBuilderDialog(_FramelessDialog):
     # ── Composite area ────────────────────────────────────────────────────
 
     def _build_composite_area(self) -> QWidget:
+        _T = active_palette()
         page = QWidget()
         vl   = QVBoxLayout(page)
         vl.setContentsMargins(0, 0, 0, 0)
@@ -2018,10 +2016,10 @@ class _PresetBuilderDialog(_FramelessDialog):
         scroll.setMinimumHeight(80)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet(
-            f"QScrollArea {{ border: none; background: {C.BG}; }}"
+            f"QScrollArea {{ border: none; background: {_T.BG}; }}"
         )
         self._groups_content = QWidget()
-        self._groups_content.setStyleSheet(f"background: {C.BG};")
+        self._groups_content.setStyleSheet(f"background: {_T.BG};")
         self._groups_layout  = QVBoxLayout(self._groups_content)
         self._groups_layout.setContentsMargins(0, 0, 0, 0)
         self._groups_layout.setSpacing(0)
@@ -2065,6 +2063,7 @@ class _PresetBuilderDialog(_FramelessDialog):
     # ── Weighted area ─────────────────────────────────────────────────────
 
     def _build_weighted_area(self) -> QWidget:
+        _T = active_palette()
         page = QWidget()
         vl   = QVBoxLayout(page)
         vl.setContentsMargins(0, 0, 0, 0)
@@ -2098,10 +2097,10 @@ class _PresetBuilderDialog(_FramelessDialog):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet(
-            f"QScrollArea {{ border: 1px solid {C.OVERLAY}; border-radius: 4px; }}"
+            f"QScrollArea {{ border: 1px solid {_T.OVERLAY}; border-radius: 4px; }}"
         )
         self._w_content = QWidget()
-        self._w_content.setStyleSheet(f"background: {C.SURFACE};")
+        self._w_content.setStyleSheet(f"background: {_T.SURFACE};")
         self._w_layout  = QVBoxLayout(self._w_content)
         self._w_layout.setContentsMargins(0, 0, 0, 0)
         self._w_layout.setSpacing(0)
@@ -2349,6 +2348,12 @@ class _PresetBuilderDialog(_FramelessDialog):
                 p = self._build_preset_from_ui()
                 self._mgr.create_preset(p, user_id=self._user_id)
                 self._saved_id = p.id
+                if self._assign_widget is not None:
+                    for uid in self._assign_widget.selected_ids():
+                        try:
+                            self._mgr.grant_access(p.id, [uid], self._user_id)
+                        except Exception:  # noqa: BLE001
+                            pass
             self.accept()
         except Exception as exc:  # noqa: BLE001
             self._name.setToolTip(str(exc))
@@ -2374,33 +2379,35 @@ class _PresetBuilderDialog(_FramelessDialog):
         self._ai_model_status_lbl.setText("")
 
     def _on_validate_model(self) -> None:
+        _T = active_palette()
         model_id = self._ai_model_edit.text().strip()
         if not model_id:
-            self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {C.MUTED};")
+            self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {_T.MUTED};")
             self._ai_model_status_lbl.setText("Enter a model ID first.")
             return
         self._ai_model_validate_btn.setEnabled(False)
         self._ai_model_validate_btn.setText("…")
-        self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {C.MUTED};")
+        self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {_T.MUTED};")
         self._ai_model_status_lbl.setText("Checking…")
         self._validate_worker = _ModelValidateWorker(model_id, parent=self)
         self._validate_worker.done.connect(self._on_validate_done)
         self._validate_worker.start()
 
     def _on_validate_done(self, ok: bool, message: str) -> None:
+        _T = active_palette()
         self._ai_model_validate_btn.setEnabled(True)
         self._ai_model_validate_btn.setText("⚡  Validate")
         if ok:
-            self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {C.GREEN};")
+            self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {_T.GREEN};")
             self._ai_model_status_lbl.setText(f"✓  {message}")
         else:
-            self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: #e74c3c;")
+            self._ai_model_status_lbl.setStyleSheet(f"font-size: 8pt; color: {_T.RED};")
             self._ai_model_status_lbl.setText(f"✗  {message}")
 
     @staticmethod
     def _lbl(text: str) -> QLabel:
         lbl = QLabel(text)
-        lbl.setStyleSheet(f"color: {C.MUTED}; font-size: 8pt;")
+        lbl.setStyleSheet(f"color: {active_palette().MUTED}; font-size: 8pt;")
         return lbl
 
     def preset_id(self) -> str | None:
@@ -2713,10 +2720,6 @@ class ScreenerPanel(QWidget):
         toolbar = QFrame()
         toolbar.setObjectName("screener_toolbar")
         toolbar.setFixedHeight(58)
-        toolbar.setStyleSheet(
-            f"QFrame#screener_toolbar {{ background: {C.BG};"
-            f" border-bottom: 1px solid {C.OVERLAY}; }}"
-        )
         tb = QHBoxLayout(toolbar)
         tb.setContentsMargins(14, 0, 14, 8)
         tb.setSpacing(8)
@@ -2762,7 +2765,7 @@ class ScreenerPanel(QWidget):
 
         self._preset_list = QListWidget()
         self._preset_list.setStyleSheet(
-            f"QListWidget {{ border: none; background: {C.SURFACE}; outline: none; }}"
+            f"QListWidget {{ border: none; outline: none; }}"
             f"QListWidget::item {{ padding: 6px 10px; border-bottom: 1px solid {C.OVERLAY}; }}"
             f"QListWidget::item:selected {{ background: #1a2d45; color: {C.BLUE}; }}"
             f"QListWidget::item:focus {{ outline: none; border: none; }}"
@@ -2783,10 +2786,6 @@ class ScreenerPanel(QWidget):
         frame = QFrame()
         frame.setObjectName("preset_pane")
         frame.setFixedWidth(260)
-        frame.setStyleSheet(
-            f"QFrame#preset_pane {{ background: {C.SURFACE};"
-            f" border-right: 1px solid {C.OVERLAY}; }}"
-        )
         fl = QVBoxLayout(frame)
         fl.setContentsMargins(0, 0, 0, 0)
         fl.setSpacing(0)
@@ -2795,7 +2794,7 @@ class ScreenerPanel(QWidget):
         fl.addWidget(self._preset_list, 1)
 
         btn_row = QWidget()
-        btn_row.setStyleSheet(f"background: {C.SURFACE};")
+        btn_row.setStyleSheet("background: transparent;")
         br = QVBoxLayout(btn_row)
         br.setContentsMargins(8, 6, 8, 8)
         br.setSpacing(6)
@@ -2831,7 +2830,7 @@ class ScreenerPanel(QWidget):
         self._table.setShowGrid(False)
         self._table.setWordWrap(True)
         self._table.setStyleSheet(
-            f"QTableView {{ border: none; background: {C.BG}; outline: none; }}"
+            "QTableView { border: none; outline: none; }"
             "QTableView::item { padding: 5px 8px; }"
             "QTableView::item:focus { outline: none; border: none; }"
         )
