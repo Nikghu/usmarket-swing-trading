@@ -1,10 +1,10 @@
 # Functional Overview — GUI Module (GUI)
 
 **Document ID:** FO-GUI
-**Version:** 2.3.0
+**Version:** 2.4.0
 **Traces To:** requirements.md §21, §22, §23.3, §24, §25, §28.1, §29.1, §32
 **Status:** Draft
-**Last Updated:** 2026-05-06
+**Last Updated:** 2026-05-15
 **Project:** US Swing Trading System
 
 ---
@@ -280,3 +280,53 @@ The chart viewer shall:
 5. Candle and volume time-scales remain synchronised during pan and zoom.
 6. A "No data" placeholder is shown (instead of an empty chart) when the queried symbol/timeframe has no rows in the database.
 7. The bundled `lightweight-charts.standalone.production.js` is used when present; CDN fallback is used only when the bundle is missing.
+
+---
+
+## FO-GUI-012: Live Streaming Price Display
+
+**Status:** Approved
+**Priority:** Must
+**Depends on:** FO-EXE-008, FO-GUI-005, FO-GUI-009
+**Source:** Operational need — eliminate yfinance polling latency for live position and watchlist prices
+
+AppService shall replace yfinance polling for current price on three GUI surfaces with IBKR `reqMktData` streaming ticks provided by `LiveTickWorker` (FO-EXE-008). The change is transparent to all consumer panels — they continue to receive the existing `positions_updated`, `market_watch_updated`, and `watchlist_updated` signals; only the internal price-update path changes.
+
+### Surface 1 — Market Watch Strip (extends FO-GUI-009)
+
+The 15-second `_MarketWatchWorker` QThread and its yfinance polling path are removed. Market Watch symbols (user-entered in Yahoo notation, e.g. `^GSPC`) are translated to IBKR index contracts by a static mapping maintained in AppService:
+
+| Yahoo symbol | IBKR Contract |
+|---|---|
+| `^GSPC` | `symbol=SPX, secType=IND, exchange=CBOE, currency=USD` |
+| `^IXIC` | `symbol=COMP, secType=IND, exchange=NASDAQ, currency=USD` |
+| `^DJI` | `symbol=INDU, secType=IND, exchange=ECBOT, currency=USD` |
+
+Symbols not present in the map are not subscribed; their displayed price shows `"–"`. On each `tick_price(tag, price)` event for a Market Watch tag, AppService updates the in-memory watch entry and emits `market_watch_updated`.
+
+### Surface 2 — Watchlist Quote Panel (extends FO-GUI-003)
+
+The 30-second `_WatchlistQuoteWorker` price-polling path is replaced with tick events. AppService subscribes only watchlist symbols that appear in the locally cached S&P 500 universe (`load_sp500()`, `universe/store.py`). Non-S&P 500 symbols are not subscribed; their LTP column shows the last known value or `"–"` if no tick has arrived.
+
+Static metadata fields (day_open, day_high, day_low, year_high, year_low, volume, market_cap) are fetched once via yfinance at watchlist load time (no continuous polling). These fields are not updated by streaming ticks.
+
+### Surface 3 — Position Monitor current_price (extends FO-GUI-005)
+
+`_AccountDataWorker` (30-second IBKR portfolio snapshot) remains the authoritative source for account equity, P&L, and position snapshot. However, for any open position whose symbol is a member of the S&P 500, `current_price` is overridden by the most recent `tick_price` value. Non-S&P 500 position symbols continue to derive current_price from the portfolio snapshot (marketValue / quantity).
+
+### Lifecycle & Subscription Management
+
+- `LiveTickWorker` is instantiated by AppService immediately after IBKR connect succeeds. Initial contract set = Market Watch contracts + active watchlist S&P 500 symbols + open position S&P 500 symbols.
+- On watchlist change or position open/close, AppService calls `LiveTickWorker.set_contracts()` to reconcile subscriptions.
+- On IBKR disconnect, AppService calls `LiveTickWorker.request_stop()`. Market Watch prices revert to `"–"`; position and watchlist LTPs retain their last known values until the next account poll updates them.
+- `SystemConfig.ibkr_tick_client_id` (default 14) is exposed in the Settings → System tab so operators can adjust it without redeploying.
+
+### Acceptance Criteria
+
+1. With IBKR feed connected, a price move for an S&P 500 symbol held as an open position updates the Position Monitor `current_price` column within 1 s — no manual refresh required.
+2. Market Watch `^GSPC` LTP updates within 1 s of an SPX index tick; daily change % recalculates correctly from the same tick data.
+3. Adding an S&P 500 stock to the Watchlist triggers a `LiveTickWorker.set_contracts()` call and that symbol's LTP begins streaming within 2 s. Day_open and year_high fields remain as set at watchlist-load time.
+4. On IBKR disconnect, Market Watch cells display `"–"`; Position Monitor current_price retains its last streamed value.
+5. A non-S&P 500 symbol open in the Position Monitor receives no tick subscription; its current_price is updated by the 30-second `_AccountDataWorker` poll as before.
+6. A user-entered Market Watch symbol with no entry in the index translation map (e.g., a custom ticker) is not subscribed and displays `"–"` without error.
+7. Changing `ibkr_tick_client_id` in Settings and reconnecting the feed starts a new `LiveTickWorker` with the updated clientId.

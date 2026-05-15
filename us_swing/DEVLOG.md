@@ -2,6 +2,14 @@
 
 ---
 
+## [20260515] EXE+GUI — FO-EXE-008 + FO-GUI-012 Live Tick Streaming complete
+
+- Type: Feature
+- Artifacts updated: live_tick_worker.py (new), app_service.py (tick wiring), settings_panel.py (tick client ID), system_store.py (deserialization fix), TRACE-EXE, TRACE-GUI, UTCD-EXE (16 Pass), UTCD-GUI (19 Pass), RN-EXE-1.2.0-20260515, RN-GUI-1.1.0-20260515
+- Summary: Replaced yfinance 15 s Market Watch polling with IBKR reqMktData streaming ticks. LiveTickWorker (clientId=14) streams price updates for Market Watch index symbols (^GSPC/^IXIC/^DJI via IBKR index contracts), S&P 500 gated watchlist symbols, and S&P 500 gated position symbols. All three GUI surfaces update within 1 s of IBKR price change. 35 tests written and passing. Subscription cap at 95 symbols.
+
+---
+
 ## [20260513] EXE — Auto-update wiring + v1.1.0 release (GitHub release + assets)
 
 - Type: Chore

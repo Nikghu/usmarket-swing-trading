@@ -1,10 +1,10 @@
 # Module Decomposition — Execution & Risk Management (EXE)
 
 **Document ID:** MD-EXE
-**Version:** 1.3.0
-**Traces To:** SRD-EXE v1.3.0 / DD-EXE v1.3.0
+**Version:** 1.4.0
+**Traces To:** SRD-EXE v1.5.0 / DD-EXE v1.4.0
 **Status:** Draft
-**Last Updated:** 2026-05-06
+**Last Updated:** 2026-05-15
 **Project:** US Swing Trading System
 
 ---
@@ -22,6 +22,7 @@
 | MD-EXE-004.001.M02 | SRD-EXE-004.005 | `src/us_swing/execution/execution_router.py` | `ExecutionRouter` — routes signals to `PaperEngine` or `ExecutionEngine` based on active user's mode. Mode is checked per-signal, not cached. | `route_signal(user_id, signal, **kwargs) -> int \| None` | `execution_engine.py`, `paper_engine.py`, `user/manager.py` | No | Draft |
 | MD-EXE-006.001.M01 | SRD-EXE-006.001–006 | `src/usswing/execution/intraday_candle_loader.py` | `IntradayCandleLoader(QThread)` — delta-fetches 1 m bars from IBKR for a stock list, validates ≥ 390 candles per timeframe (3 m, 5 m, 1 h), persists via `DatabaseManager`, emits progress/completion signals. `CandleLoadResult` and `SymbolReadiness` dataclasses. | `load(symbols) → None` (QThread.start), `get_readiness_report(symbols) -> dict[str, SymbolReadiness]`, signals: `load_progress(str, int, int)`, `load_complete(list[CandleLoadResult])` | `broker/client.py` (IBKRClient), `db/manager.py` (DatabaseManager), `data_engine/engine.py` (HistoricalDataEngine), `PyQt6.QtCore.QThread` | No | Draft |
 | MD-EXE-007.001.M01 | SRD-EXE-007.003–008 | `src/us_swing/execution/live_bar_worker.py` | `LiveBarWorker(QThread)` — subscribes to IBKR tick-by-tick trade data via `reqTickByTick('Last', numberOfTicks=0)`, applies RTH guard per tick, converts each trade to `RealtimeBar(open=high=low=close=price, volume=size)`, delegates aggregation to `CandleBuilder` (3m + 15m time-based windows), persists completed bars to `price_3m` / `price_15m` via raw SQLite INSERT OR IGNORE, emits `candle_closed(str)` signal. Falls back to yfinance 60s polling when IBKR is unavailable. | `request_stop() -> None`; signal: `candle_closed(str)` | `analysis/candle_builder.py` (CandleBuilder), `data/models.py` (RealtimeBar, OHLCVBar), `PyQt6.QtCore.QThread`, `asyncio`, `sqlite3`, `zoneinfo`, `ib_insync` (optional), `yfinance` (optional fallback) | No | Draft |
+| MD-EXE-008.001.M01 | SRD-EXE-008.001–006 | `src/us_swing/execution/live_tick_worker.py` | `LiveTickWorker(QThread)` — owns `ib_insync.IB()` with dedicated clientId (default 14); maintains `reqMktData` subscriptions for a caller-supplied `dict[str, Contract]`; emits `tick_price(tag, price)` via `pendingTickersEvent` with `last → close` price fallback; emits `subscription_failed(tag, code)` on IBKR errors 200/354/420; `set_contracts()` reconciles subscriptions in batches of 10 with 200 ms pause; `request_stop()` cancels all subscriptions and disconnects within 3 s; clientId collision (error 326) retried up to 3 times | `set_contracts(contracts: dict[str, Contract]) -> None`, `request_stop() -> None`; signals: `tick_price(str, float)`, `subscription_failed(str, int)` | `ib_insync` (IB, Contract, Ticker), `PyQt6.QtCore.QThread`, `asyncio`, `threading`, `math.isnan` | No | Draft |
 
 ---
 
@@ -53,6 +54,7 @@ execution/intraday_candle_loader.py  ← broker/client.py, db/manager.py, data_e
                                         PyQt6.QtCore
 execution/live_bar_worker.py         ← analysis/candle_builder.py, data/models.py,
                                         PyQt6.QtCore, asyncio, sqlite3, ib_insync (opt), yfinance (opt)
+execution/live_tick_worker.py        ← ib_insync, PyQt6.QtCore, asyncio, threading, math
 ```
 
 ---
@@ -110,5 +112,6 @@ src/us_swing/
     ├── paper_engine.py                # MD-EXE-004.001.M01
     ├── execution_router.py            # MD-EXE-004.001.M02
     ├── intraday_candle_loader.py      # MD-EXE-006.001.M01
-    └── live_bar_worker.py             # MD-EXE-007.001.M01
+    ├── live_bar_worker.py             # MD-EXE-007.001.M01
+    └── live_tick_worker.py            # MD-EXE-008.001.M01
 ```

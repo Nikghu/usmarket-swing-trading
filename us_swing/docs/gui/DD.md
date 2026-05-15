@@ -1,10 +1,10 @@
 # Design Document — GUI Module (GUI)
 
 **Document ID:** DD-GUI
-**Version:** 1.3.0
-**Traces To:** SRD-GUI v2.4.0
+**Version:** 1.4.0
+**Traces To:** SRD-GUI v2.6.0
 **Status:** Draft
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-05-15
 **Project:** US Swing Trading System
 
 ---
@@ -425,3 +425,195 @@ gui/resources/lightweight-charts.standalone.production.js
 ```
 Resolved at import time via `Path(__file__).parent / "resources" / "lightweight-charts.standalone.production.js"`.
 Bundle is read and inlined into the HTML page so the chart works fully offline. CDN fallback (`https://unpkg.com/lightweight-charts@5.0.5/...`) activates only when the file does not exist.
+
+---
+
+## DD-GUI-012.001.D01 — AppService: LiveTickWorker Lifecycle & Slot Wiring
+
+**Parent SRD:** SRD-GUI-012.001, SRD-GUI-012.003, SRD-GUI-012.004, SRD-GUI-012.005, SRD-GUI-012.006, SRD-GUI-012.007
+- **Status:** Draft
+
+### Module-Level Constants Added to app_service.py
+
+```python
+# Yahoo Finance notation → IBKR index Contract
+# Tags passed to LiveTickWorker must use these Yahoo keys so _on_mktwatch_tick
+# can match against self._watch[i].symbol without re-translation.
+from ib_insync import Contract
+
+_YAHOO_TO_IBKR: dict[str, Contract] = {
+    "^GSPC": Contract(symbol="SPX",  secType="IND", exchange="CBOE",   currency="USD"),
+    "^IXIC": Contract(symbol="COMP", secType="IND", exchange="NASDAQ", currency="USD"),
+    "^DJI":  Contract(symbol="INDU", secType="IND", exchange="ECBOT",  currency="USD"),
+}
+
+def _make_stk_contract(sym: str) -> Contract:
+    return Contract(symbol=sym, secType="STK", exchange="SMART", currency="USD")
+```
+
+### New AppService Instance Attributes
+
+| Attribute | Type | Initialised | Purpose |
+|---|---|---|---|
+| `_tick_worker` | `LiveTickWorker \| None` | `None` in `__init__` | Holds the running worker; None when disconnected |
+| `_watch_prev_close` | `dict[str, float]` | `{}` in `__init__` | Stores prev_close for Market Watch symbols; populated by one-shot yfinance fetch at connect |
+| `_sp500_cache` | `frozenset[str]` | `frozenset()` in `__init__` | Cached S&P 500 symbol set; refreshed on `sp500_updated` signal |
+
+### _on_connect_ok() Changes
+
+```python
+def _on_connect_ok(self) -> None:
+    # ... existing code (account timer, live bar worker, etc.) ...
+
+    # Fetch Market Watch prev_close once (one-shot, not on timer)
+    self._fetch_mw_prev_close_once()
+
+    # Start tick worker
+    cfg = SystemConfig.load()
+    self._tick_worker = LiveTickWorker(cfg.ibkr_host, cfg.ibkr_port,
+                                       cfg.ibkr_tick_client_id, parent=self)
+    self._tick_worker.tick_price.connect(self._on_mktwatch_tick)
+    self._tick_worker.tick_price.connect(self._on_watchlist_tick)
+    self._tick_worker.tick_price.connect(self._on_position_tick)
+    self._tick_worker.subscription_failed.connect(self._on_tick_sub_failed)
+    self._tick_worker.start()
+    self._sync_tick_subscriptions()
+```
+
+`_fetch_mw_prev_close_once()` reuses `_MarketWatchWorker.run()` logic (fetch `yfinance.Ticker.fast_info` for each watch symbol) but runs it synchronously in a short-lived QThread with a `done` signal that populates `self._watch_prev_close`. This is the only remaining yfinance call for Market Watch.
+
+### disconnect_feed() Changes
+
+```python
+def disconnect_feed(self) -> None:
+    # ... existing: stop _acct_timer, _wl_timer, LiveBarWorker ...
+    if self._tick_worker is not None:
+        self._tick_worker.request_stop()
+        self._tick_worker = None
+    # Clear Market Watch LTPs → display "–"
+    for item in self._watch:
+        item.ltp = None
+        item.change_pct = None
+    self.market_watch_updated.emit()
+    # Positions and watchlist retain last known prices — no clearing
+```
+
+### _sync_tick_subscriptions()
+
+```python
+def _sync_tick_subscriptions(self) -> None:
+    if self._tick_worker is None:
+        return
+    sp500 = self._sp500_cache
+
+    contracts: dict[str, Contract] = {}
+
+    # 1. Market Watch (all mapped index symbols that are configured)
+    for item in self._watch:
+        contract = _YAHOO_TO_IBKR.get(item.symbol)
+        if contract is not None:
+            contracts[item.symbol] = contract
+
+    # 2. Watchlist (S&P 500 members only)
+    for sym in self._watchlist_symbols:
+        if sym in sp500:
+            contracts[sym] = _make_stk_contract(sym)
+
+    # 3. Open position symbols (S&P 500 members, non-CLOSED)
+    for pos in self._positions:
+        if pos.symbol in sp500 and pos.state != "CLOSED":
+            contracts[pos.symbol] = _make_stk_contract(pos.symbol)
+
+    # Guard: warn if near IBKR 100-line limit
+    if len(contracts) > 95:
+        log.warning("[Tick] Subscription count %d near IBKR limit — "
+                    "trimming position contracts", len(contracts))
+        # Keep Market Watch + Watchlist; drop excess position contracts
+        non_pos = {k: v for k, v in contracts.items()
+                   if k in _YAHOO_TO_IBKR or k in self._watchlist_symbols}
+        contracts = non_pos
+
+    self._tick_worker.set_contracts(contracts)
+```
+
+### Tick Slot Implementations
+
+```python
+def _on_mktwatch_tick(self, tag: str, price: float) -> None:
+    for item in self._watch:
+        if item.symbol == tag:
+            item.ltp = price
+            prev = self._watch_prev_close.get(tag)
+            item.change_pct = (price - prev) / prev * 100 if prev else None
+            self.market_watch_updated.emit()
+            return
+    log.debug("[Tick] Market Watch tag not found: %s", tag)
+
+def _on_watchlist_tick(self, tag: str, price: float) -> None:
+    for item in self._watchlist:
+        if item["symbol"] == tag:
+            item["ltp"] = price
+            prev = item.get("prev_close", 0.0)
+            if prev:
+                item["change"]     = price - prev
+                item["change_pct"] = item["change"] / prev * 100
+            self.watchlist_updated.emit()
+            return
+
+def _on_position_tick(self, tag: str, price: float) -> None:
+    updated = False
+    for pos in self._positions:
+        if pos.symbol == tag:
+            pos.current_price = price
+            updated = True
+    if updated:
+        self.positions_updated.emit()
+
+def _on_tick_sub_failed(self, tag: str, code: int) -> None:
+    log.warning("[Tick] Subscription dropped for %s (IBKR error %d)", tag, code)
+```
+
+### Removed Code
+
+| Removed | Reason |
+|---|---|
+| `_MarketWatchWorker` class | Replaced by `_on_mktwatch_tick` + one-shot prev_close fetch |
+| `self._watch_timer` QTimer + `_refresh_market_watch()` + `_on_watch_data()` | Replaced by streaming tick |
+| `self._mw_worker` reference | No longer needed |
+
+### _WatchlistQuoteWorker Changes
+
+The QTimer (`_wl_timer`) is removed for price-column updates. The `_WatchlistQuoteWorker` continues to run **once** at watchlist-load time to populate static metadata (`day_open`, `year_high`, etc.) and `prev_close`. The per-run timer that previously refreshed prices every 30 s is deleted.
+
+---
+
+## DD-GUI-012.001.D02 — SystemConfig & Settings Panel: ibkr_tick_client_id
+
+**Parent SRD:** SRD-GUI-012.001, SRD-GUI-012.007 (Settings exposure)
+- **Status:** Draft
+
+### SystemConfig Change (system_store.py)
+
+```python
+@dataclass
+class SystemConfig:
+    ibkr_host:              str  = "127.0.0.1"
+    ibkr_port:              int  = 7497
+    ibkr_system_client_id:  int  = 10
+    ibkr_enabled:           bool = False
+    ibkr_intraday_client_id: int = 12
+    ibkr_live_client_id:    int  = 13
+    ibkr_tick_client_id:    int  = 14    # NEW — LiveTickWorker clientId
+```
+
+Persisted to the same JSON config as existing fields. No migration needed — `dataclasses.field(default=14)` handles missing key on first load.
+
+### Settings Panel System Tab
+
+The System tab already exposes `ibkr_system_client_id`, `ibkr_intraday_client_id`, and `ibkr_live_client_id` as `QSpinBox` widgets. Add a fourth row in the same pattern:
+
+| Label | Widget | Range | Default |
+|---|---|---|---|
+| "Tick Data Client ID" | `QSpinBox` | 1–999 | 14 |
+
+The spinbox is bound to `SystemConfig.ibkr_tick_client_id`. Changes take effect on the next IBKR reconnect (existing behaviour for all connection params). No immediate restart of `LiveTickWorker` on change — consistent with how other clientId fields behave.

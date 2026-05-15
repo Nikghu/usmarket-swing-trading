@@ -2,14 +2,24 @@
 
 **Document:** CONTEXT.md
 **Project:** us_swing
-**Last Updated:** 2026-04-22 (Session 36)
+**Last Updated:** 2026-05-15 (Session 42)
 **Updated By:** Claude Sonnet 4.6
 
 ---
 
 ## 0. Immediate Next Step
 
-**Current:** FO-GUI-011 (Candle Chart Viewer) complete. RN written. Auto-update wiring integrated into `run_gui.py` and v1.1.0 released (GitHub release + assets). Next: resume EXE Phase 2 (FO-EXE-007) or SCR Phase 2 multi-provider AI ranking.
+**Current:** FO-EXE-008 + FO-GUI-012 (Live Tick Streaming) complete. LiveTickWorker + AppService wiring implemented and all 35 tests pass. Next: resume EXE Phase 2 (FO-EXE-007) or SCR Phase 2 multi-provider AI ranking.
+
+**FO-EXE-008 + FO-GUI-012 — Live Tick Streaming — COMPLETE (Session 42, 2026-05-15):**
+- `LiveTickWorker(QThread)` streams live last-price ticks via IBKR `reqMktData` (clientId=14)
+- Replaces `_MarketWatchWorker` (15 s yfinance polling) entirely; watchlist LTP and position `current_price` also driven by tick stream
+- Market Watch, Watchlist, Position Monitor all update within 1 s of IBKR price change; S&P 500 membership gate for watchlist/positions; 95-symbol subscription cap
+- `_YAHOO_TO_IBKR` table translates ^GSPC/^IXIC/^DJI to IBKR index contracts; `_fetch_mw_prev_close_once()` fetches prev_close once via yfinance at connect time
+- `ibkr_tick_client_id` exposed in Settings → System tab; clientId collision retry (up to 4 attempts)
+- Files: 1 new source (`execution/live_tick_worker.py` MD-EXE-008.001.M01), 2 modified (`gui/app_service.py`, `gui/settings_panel.py`), 1 fix (`gui/system_store.py` deserialization), 2 new test files (35 tests), 2 RNs
+- All artifacts updated: TRACE-EXE + TRACE-GUI (FO-EXE-008 + FO-GUI-012 Implemented), UTCD (35 tests Pass), RN-EXE-1.2.0-20260515, RN-GUI-1.1.0-20260515
+- Status: All phases complete
 
 **FO-GUI-011 — Candle Chart Viewer — COMPLETE (Session 41, 2026-05-13):**
 - "📈 Chart" navigation tab (index 3, before Settings) with symbol/timeframe/bars toolbar

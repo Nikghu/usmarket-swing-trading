@@ -1,10 +1,10 @@
 # Design Document — Execution & Risk Management (EXE)
 
 **Document ID:** DD-EXE
-**Version:** 1.3.0
-**Traces To:** SRD-EXE v1.3.0
+**Version:** 1.4.0
+**Traces To:** SRD-EXE v1.5.0
 **Status:** Draft
-**Last Updated:** 2026-05-06
+**Last Updated:** 2026-05-15
 **Project:** US Swing Trading System
 
 ---
@@ -947,3 +947,174 @@ For `candles_15m`, the existing time-windowed COUNT on `price_1m` is unchanged �
 | `candles_15m` | `COUNT(*) FROM price_1m WHERE datetime >= cutoff_15m` | unchanged |
 | `last_1m_bar` | `MAX(datetime) FROM price_1m WHERE symbol = :sym` | unchanged |
 | `ready` | both counts ≥ 390 | unchanged logic; now `candles_3m` is exact |
+
+---
+
+## DD-EXE-008.001.D01 — LiveTickWorker Internal Architecture
+
+**Parent SRD:** SRD-EXE-008.001, SRD-EXE-008.003, SRD-EXE-008.005, SRD-EXE-008.006
+- **Status:** Draft
+
+### Class Skeleton
+
+```python
+class LiveTickWorker(QThread):
+    tick_price         = pyqtSignal(str, float)   # (tag, last_price)
+    subscription_failed = pyqtSignal(str, int)    # (tag, ibkr_error_code)
+
+    def __init__(self, host: str, port: int, client_id: int,
+                 parent: QObject | None = None) -> None:
+        super().__init__(parent)
+        self._host       = host
+        self._port       = port
+        self._client_id  = client_id
+        self._stop_event = threading.Event()
+        self._lock       = threading.Lock()
+        # Subscription state (all guarded by _lock):
+        self._active:       dict[str, Contract] = {}     # tag → Contract
+        self._tickers:      dict[str, Ticker]   = {}     # tag → Ticker
+        self._tag_by_conid: dict[int, str]      = {}     # conId → tag
+        self._reqid_to_tag: dict[int, str]      = {}     # reqId → tag
+
+    def run(self) -> None:
+        asyncio.run(self._async_run())
+
+    async def _async_run(self) -> None:
+        ib = IB()
+        await self._connect_with_retry(ib)
+        ib.pendingTickersEvent += self._on_pending_tickers
+        ib.errorEvent          += self._on_ibkr_error
+        while not self._stop_event.is_set():
+            await asyncio.sleep(0.05)
+        # Teardown
+        with self._lock:
+            for ticker in self._tickers.values():
+                ib.cancelMktData(ticker.contract)
+        await ib.disconnectAsync()
+```
+
+### Internal State Tables
+
+| Dict | Key type | Value type | Purpose |
+|---|---|---|---|
+| `_active` | `str` (tag) | `Contract` | Caller-desired subscription set; source of truth for reconciliation |
+| `_tickers` | `str` (tag) | `Ticker` | ib_insync Ticker returned by `reqMktData`; used for cancellation |
+| `_tag_by_conid` | `int` (conId) | `str` (tag) | Fast lookup in `pendingTickersEvent` (O(1) per ticker) |
+| `_reqid_to_tag` | `int` (reqId) | `str` (tag) | Maps IBKR error reqId back to caller tag for `subscription_failed` |
+
+All four dicts are guarded by `_lock`. `_on_pending_tickers` reads `_tag_by_conid` under the lock; it does NOT hold the lock during signal emission (avoiding deadlock with the GUI thread).
+
+### asyncio / QThread Pattern
+
+Matches `LiveBarWorker` exactly: `QThread.run()` calls `asyncio.run()`, which owns the event loop for the worker's lifetime. `set_contracts()` is called from the GUI thread and schedules work on the ib_insync event loop via `ib.schedule()` (or direct call under lock, since ib_insync is thread-safe for `reqMktData`/`cancelMktData` calls when not inside an async context).
+
+### ClientId Collision Retry (`_connect_with_retry`)
+
+```python
+async def _connect_with_retry(self, ib: IB) -> None:
+    client_id = self._client_id
+    for attempt in range(4):   # 1 initial + 3 retries
+        try:
+            await ib.connectAsync(self._host, self._port, clientId=client_id)
+            return
+        except ConnectionRefusedError:
+            raise   # TWS not running — fatal, don't retry
+        # Error 326 arrives via errorEvent, not as an exception;
+        # detect via ib.isConnected() == False after connect attempt
+        if not ib.isConnected() and attempt < 3:
+            log.warning("[Tick] ClientId %d in use — retrying with %d",
+                        client_id, client_id + 1)
+            client_id += 1
+    log.error("[Tick] Cannot connect — all clientId slots in use")
+    self._stop_event.set()
+```
+
+---
+
+## DD-EXE-008.001.D02 — set_contracts() Reconciliation & Tick Handler
+
+**Parent SRD:** SRD-EXE-008.002, SRD-EXE-008.003, SRD-EXE-008.004
+- **Status:** Draft
+
+### Reconciliation Algorithm
+
+```python
+_SUB_BATCH = 10
+_SUB_PAUSE = 0.20   # seconds
+
+def set_contracts(self, contracts: dict[str, Contract]) -> None:
+    with self._lock:
+        current_tags = set(self._active)
+        new_tags     = set(contracts)
+        to_add    = new_tags - current_tags
+        to_remove = current_tags - new_tags
+
+        # Unsubscribe removed tags
+        for tag in to_remove:
+            ib.cancelMktData(self._tickers.pop(tag).contract)
+            self._active.pop(tag)
+            # _tag_by_conid and _reqid_to_tag cleaned in _on_ibkr_error
+            # or on next pendingTickersEvent miss — safe to leave stale
+
+        # Subscribe new tags in batches
+        batch: list[tuple[str, Contract]] = []
+        for tag in to_add:
+            batch.append((tag, contracts[tag]))
+            if len(batch) == _SUB_BATCH:
+                self._subscribe_batch(batch)
+                time.sleep(_SUB_PAUSE)
+                batch.clear()
+        if batch:
+            self._subscribe_batch(batch)
+
+        self._active = dict(contracts)   # update desired set
+```
+
+`_subscribe_batch` calls `ib.reqMktData(contract, "", False, False)` for each pair, populates `_tickers[tag]`, `_tag_by_conid[ticker.contract.conId]`, and `_reqid_to_tag[ticker.reqId]` under the same lock.
+
+### pendingTickersEvent Handler
+
+```python
+def _on_pending_tickers(self, tickers: set[Ticker]) -> None:
+    for ticker in tickers:
+        with self._lock:
+            tag = self._tag_by_conid.get(ticker.contract.conId)
+        if tag is None:
+            continue
+        price = ticker.last
+        if isnan(price) or price <= 0:
+            price = ticker.close
+        if isnan(price) or price <= 0:
+            continue   # no valid price yet — suppress emission
+        self.tick_price.emit(tag, price)   # cross-thread signal queue
+```
+
+### Error Handler
+
+```python
+def _on_ibkr_error(self, reqId: int, code: int, msg: str,
+                   contract: Contract) -> None:
+    if code not in {200, 354, 420}:
+        log.warning("[Tick] IBKR error %d for reqId %d: %s", code, reqId, msg)
+        return
+    with self._lock:
+        tag = self._reqid_to_tag.pop(reqId, None)
+        if tag is None:
+            return
+        self._tickers.pop(tag, None)
+        self._active.pop(tag, None)
+        # Remove stale conId entry (contract.conId may be 0 if unknown)
+        self._tag_by_conid = {k: v for k, v in self._tag_by_conid.items()
+                              if v != tag}
+    self.subscription_failed.emit(tag, code)
+    log.warning("[Tick] Subscription failed for %s (code %d)", tag, code)
+```
+
+### Edge Cases
+
+| Scenario | Behaviour |
+|---|---|
+| `set_contracts({})` called while worker running | All subscriptions cancelled; `_active` becomes `{}` |
+| Same tag appears in successive `set_contracts` calls | No duplicate `reqMktData` — `to_add` excludes existing tags |
+| conId is 0 at reqMktData return time | `_tag_by_conid` populated lazily on first `pendingTickersEvent` where `ticker.contract.conId` becomes non-zero |
+| `ticker.last` and `ticker.close` both NaN | Signal suppressed; handler called again on next price update |

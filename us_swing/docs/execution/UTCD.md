@@ -1,35 +1,35 @@
-# Unit Test Case Document — Execution & Risk Management (EXE)
+﻿# Unit Test Case Document â€” Execution & Risk Management (EXE)
 
 **Document ID:** UTCD-EXE
-**Version:** 1.3.0
-**Traces To:** MD-EXE v1.3.0
+**Version:** 1.4.0
+**Traces To:** MD-EXE v1.4.0
 **Status:** Draft
-**Last Updated:** 2026-05-06
+**Last Updated:** 2026-05-16
 **Project:** US Swing Trading System
 
-> Tests written BEFORE implementation per process.md §7.
+> Tests written BEFORE implementation per process.md Â§7.
 
 ---
 
-## Module: `execution/risk_manager.py` — RiskManager
+## Module: `execution/risk_manager.py` â€” RiskManager
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-001.001.M01.T01 | MD-EXE-001.001.M01 | Unit | Position size calculation: standard case | equity=$100,000; risk_pct=1%; entry=$50; stop=$48 | `500` shares (100000 × 0.01 / 2 = 500) | Draft |
+| UT-EXE-001.001.M01.T01 | MD-EXE-001.001.M01 | Unit | Position size calculation: standard case | equity=$100,000; risk_pct=1%; entry=$50; stop=$48 | `500` shares (100000 Ã— 0.01 / 2 = 500) | Draft |
 | UT-EXE-001.001.M01.T02 | MD-EXE-001.001.M01 | Unit | Position size capped by max_position_value | equity=$100,000; risk_pct=1%; entry=$50; stop=$49.90 (risk/share=$0.10); max_position=$10,000 | `200` shares (capped: 10000/50=200 < uncapped=10000) | Draft |
 | UT-EXE-001.001.M01.T03 | MD-EXE-001.001.M01 | Unit | `validate_signal()` passes when deployment within limit | existing_deployed=$20,000; new_required=$5,000; equity=$100,000; max_pct=50% | `ValidationResult(ok=True)` | Draft |
 | UT-EXE-001.001.M01.T04 | MD-EXE-001.001.M01 | Unit | `validate_signal()` rejects when deployment exceeds limit | existing_deployed=$48,000; new_required=$5,000; equity=$100,000; max_pct=50% | `ValidationResult(ok=False, reason contains "capital allocation")` | Draft |
 | UT-EXE-001.001.M01.T05 | MD-EXE-001.001.M01 | Unit | `validate_signal()` rejects when circuit breaker active | `circuit_breaker_active=True` | `ValidationResult(ok=False, reason contains "circuit breaker")` | Draft |
-| UT-EXE-001.001.M01.T06 | MD-EXE-001.001.M01 | Edge | `calculate_position_size()` floors fractional shares | risk/share=$3.00; risk_dollars=$1,000 → 333.33 | Returns `333` (floor) | Draft |
+| UT-EXE-001.001.M01.T06 | MD-EXE-001.001.M01 | Edge | `calculate_position_size()` floors fractional shares | risk/share=$3.00; risk_dollars=$1,000 â†’ 333.33 | Returns `333` (floor) | Draft |
 
 ---
 
-## Module: `execution/execution_engine.py` — ExecutionEngine
+## Module: `execution/execution_engine.py` â€” ExecutionEngine
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-001.001.M02.T01 | MD-EXE-001.001.M02 | Unit | `submit_signal()` calls IBKR place_order when validation passes | Mock `RiskManager.validate_signal` → `ok=True`; Mock IBKR returns order_id=123 | `submit_signal()` returns 123; IBKR `place_order()` called once | Draft |
-| UT-EXE-001.001.M02.T02 | MD-EXE-001.001.M02 | Unit | `submit_signal()` returns None when validation fails | Mock `RiskManager.validate_signal` → `ok=False` | Returns `None`; IBKR `place_order()` NOT called; WARNING logged | Draft |
+| UT-EXE-001.001.M02.T01 | MD-EXE-001.001.M02 | Unit | `submit_signal()` calls IBKR place_order when validation passes | Mock `RiskManager.validate_signal` â†’ `ok=True`; Mock IBKR returns order_id=123 | `submit_signal()` returns 123; IBKR `place_order()` called once | Draft |
+| UT-EXE-001.001.M02.T02 | MD-EXE-001.001.M02 | Unit | `submit_signal()` returns None when validation fails | Mock `RiskManager.validate_signal` â†’ `ok=False` | Returns `None`; IBKR `place_order()` NOT called; WARNING logged | Draft |
 | UT-EXE-001.001.M02.T03 | MD-EXE-001.001.M02 | Unit | `submit_signal()` persists trade to DB on success | Successful submission | `TradeRecord` with `trade_id=123` appears in `trades` table | Draft |
 | UT-EXE-001.001.M02.T04 | MD-EXE-001.001.M02 | Edge | `submit_signal()` raises `OrderSubmissionError` on IBKR timeout | Mock IBKR place_order to hang > timeout=2s | `OrderSubmissionError` raised | Draft |
 | UT-EXE-001.001.M02.T05 | MD-EXE-001.001.M02 | Unit | `handle_order_fill()` on entry fill creates OpenPosition with user_id | Entry fill event for AAPL 500 shares @ $50, user_id=1 | `PositionTracker.has_open(1, "AAPL")` is True; position.state == 'OPEN' | Draft |
@@ -38,7 +38,7 @@
 
 ---
 
-## Module: `execution/position_tracker.py` — PositionTracker
+## Module: `execution/position_tracker.py` â€” PositionTracker
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
@@ -50,7 +50,7 @@
 
 ---
 
-## Module: `execution/circuit_breaker.py` — DailyPnLTracker & CircuitBreaker
+## Module: `execution/circuit_breaker.py` â€” DailyPnLTracker & CircuitBreaker
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
@@ -58,11 +58,11 @@
 | UT-EXE-003.001.M01.T02 | MD-EXE-003.001.M01 | Unit | `reset()` zeroes PnL | `add(-500)` then `reset()` | `daily_pnl == 0` | Draft |
 | UT-EXE-003.001.M01.T03 | MD-EXE-003.001.M01 | Unit | `CircuitBreaker.check()` returns True at threshold | equity=$100,000; max_daily_loss_pct=2%; daily_pnl=-2000 | `True` (breach) | Draft |
 | UT-EXE-003.001.M01.T04 | MD-EXE-003.001.M01 | Unit | `CircuitBreaker.check()` returns False below threshold | daily_pnl=-1999 | `False` | Draft |
-| UT-EXE-003.001.M01.T05 | MD-EXE-003.001.M01 | Edge | Exactly at threshold triggers breach | daily_pnl=-2000.00; threshold=-2000.00 | `True` (≤ is inclusive) | Draft |
+| UT-EXE-003.001.M01.T05 | MD-EXE-003.001.M01 | Edge | Exactly at threshold triggers breach | daily_pnl=-2000.00; threshold=-2000.00 | `True` (â‰¤ is inclusive) | Draft |
 
 ---
 
-## Module: `execution/emergency.py` — EmergencyShutdown
+## Module: `execution/emergency.py` â€” EmergencyShutdown
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
@@ -75,12 +75,12 @@
 
 ---
 
-## Module: `execution/paper_engine.py` — PaperEngine
+## Module: `execution/paper_engine.py` â€” PaperEngine
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-004.001.M01.T01 | MD-EXE-004.001.M01 | Unit | Market order fills immediately at current market price | signal BUY AAPL, order_type='MKT', mock market_price=$150 | `PaperFill` with `fill_price == 150.0` | Draft |
-| UT-EXE-004.001.M01.T02 | MD-EXE-004.001.M01 | Unit | Limit buy fills when market price ≤ limit | signal BUY AAPL limit=$150, mock market_price=$149 | `PaperFill` with `fill_price == 150.0` | Draft |
+| UT-EXE-004.001.M01.T02 | MD-EXE-004.001.M01 | Unit | Limit buy fills when market price â‰¤ limit | signal BUY AAPL limit=$150, mock market_price=$149 | `PaperFill` with `fill_price == 150.0` | Draft |
 | UT-EXE-004.001.M01.T03 | MD-EXE-004.001.M01 | Unit | Limit buy does NOT fill when market price > limit | signal BUY AAPL limit=$150, mock market_price=$151 | Returns None or queues pending order | Draft |
 | UT-EXE-004.001.M01.T04 | MD-EXE-004.001.M01 | Unit | Paper fills stored with `mode='paper'` in DB | Simulate fill for user_id=1. | `trades` row has `mode='paper'`; `positions` row has `mode='paper'` | Draft |
 | UT-EXE-004.001.M01.T05 | MD-EXE-004.001.M01 | Unit | Paper P&L matches live calculation | Entry=$50, exit=$55, qty=500 | `pnl == 2500.0` (identical to live) | Draft |
@@ -89,66 +89,66 @@
 
 ---
 
-## Module: `execution/execution_router.py` — ExecutionRouter
+## Module: `execution/execution_router.py` â€” ExecutionRouter
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-004.001.M02.T01 | MD-EXE-004.001.M02 | Unit | Routes to PaperEngine when user mode is 'paper' | user.mode='paper', valid signal | `PaperEngine.simulate_fill()` called; `ExecutionEngine.submit_signal()` NOT called | Draft |
 | UT-EXE-004.001.M02.T02 | MD-EXE-004.001.M02 | Unit | Routes to live ExecutionEngine when user mode is 'live' | user.mode='live', valid signal | `ExecutionEngine.submit_signal()` called; `PaperEngine.simulate_fill()` NOT called | Draft |
-| UT-EXE-004.001.M02.T03 | MD-EXE-004.001.M02 | Unit | Mode check per-signal, not cached | User starts in 'paper', switches to 'live' mid-session | First signal → PaperEngine; second signal → ExecutionEngine | Draft |
+| UT-EXE-004.001.M02.T03 | MD-EXE-004.001.M02 | Unit | Mode check per-signal, not cached | User starts in 'paper', switches to 'live' mid-session | First signal â†’ PaperEngine; second signal â†’ ExecutionEngine | Draft |
 
 ---
 
-## Module: `execution/position_tracker.py` — Position State Machine
+## Module: `execution/position_tracker.py` â€” Position State Machine
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-005.001.M01.T01 | MD-EXE-002.001.M01 | Unit | New position starts in state NEW | Open position via `open()` | `position.state == 'NEW'` | Draft |
-| UT-EXE-005.001.M01.T02 | MD-EXE-002.001.M01 | Unit | Partial entry fill transitions NEW → PARTIAL_ENTRY | `update_state(user_id, sym, 'PARTIAL_ENTRY', filled_qty=200)` | `state == 'PARTIAL_ENTRY'`; `filled_quantity == 200` | Draft |
-| UT-EXE-005.001.M01.T03 | MD-EXE-002.001.M01 | Unit | Full entry fill transitions NEW → OPEN | `update_state(user_id, sym, 'OPEN', filled_qty=500)` | `state == 'OPEN'`; `filled_quantity == 500` | Draft |
-| UT-EXE-005.001.M01.T04 | MD-EXE-002.001.M01 | Unit | PARTIAL_ENTRY → OPEN on final fill | State currently PARTIAL_ENTRY(200/500); update to OPEN(500/500) | `state == 'OPEN'`; `filled_quantity == total_quantity` | Draft |
-| UT-EXE-005.001.M01.T05 | MD-EXE-002.001.M01 | Unit | OPEN → PARTIAL_EXIT on partial exit | `update_state(user_id, sym, 'PARTIAL_EXIT', filled_qty=300)` | `state == 'PARTIAL_EXIT'` | Draft |
-| UT-EXE-005.001.M01.T06 | MD-EXE-002.001.M01 | Unit | PARTIAL_EXIT → CLOSED on final exit | `update_state(user_id, sym, 'CLOSED', filled_qty=500)` | `state == 'CLOSED'` | Draft |
-| UT-EXE-005.001.M01.T07 | MD-EXE-002.001.M01 | Edge | Invalid transition CLOSED → OPEN raises error | Attempt `update_state(user_id, sym, 'OPEN')` on CLOSED position | `InvalidStateTransitionError` raised | Draft |
-| UT-EXE-005.001.M01.T08 | MD-EXE-002.001.M01 | Edge | Invalid transition NEW → PARTIAL_EXIT raises error | Attempt `update_state(user_id, sym, 'PARTIAL_EXIT')` on NEW position | `InvalidStateTransitionError` raised | Draft |
+| UT-EXE-005.001.M01.T02 | MD-EXE-002.001.M01 | Unit | Partial entry fill transitions NEW â†’ PARTIAL_ENTRY | `update_state(user_id, sym, 'PARTIAL_ENTRY', filled_qty=200)` | `state == 'PARTIAL_ENTRY'`; `filled_quantity == 200` | Draft |
+| UT-EXE-005.001.M01.T03 | MD-EXE-002.001.M01 | Unit | Full entry fill transitions NEW â†’ OPEN | `update_state(user_id, sym, 'OPEN', filled_qty=500)` | `state == 'OPEN'`; `filled_quantity == 500` | Draft |
+| UT-EXE-005.001.M01.T04 | MD-EXE-002.001.M01 | Unit | PARTIAL_ENTRY â†’ OPEN on final fill | State currently PARTIAL_ENTRY(200/500); update to OPEN(500/500) | `state == 'OPEN'`; `filled_quantity == total_quantity` | Draft |
+| UT-EXE-005.001.M01.T05 | MD-EXE-002.001.M01 | Unit | OPEN â†’ PARTIAL_EXIT on partial exit | `update_state(user_id, sym, 'PARTIAL_EXIT', filled_qty=300)` | `state == 'PARTIAL_EXIT'` | Draft |
+| UT-EXE-005.001.M01.T06 | MD-EXE-002.001.M01 | Unit | PARTIAL_EXIT â†’ CLOSED on final exit | `update_state(user_id, sym, 'CLOSED', filled_qty=500)` | `state == 'CLOSED'` | Draft |
+| UT-EXE-005.001.M01.T07 | MD-EXE-002.001.M01 | Edge | Invalid transition CLOSED â†’ OPEN raises error | Attempt `update_state(user_id, sym, 'OPEN')` on CLOSED position | `InvalidStateTransitionError` raised | Draft |
+| UT-EXE-005.001.M01.T08 | MD-EXE-002.001.M01 | Edge | Invalid transition NEW â†’ PARTIAL_EXIT raises error | Attempt `update_state(user_id, sym, 'PARTIAL_EXIT')` on NEW position | `InvalidStateTransitionError` raised | Draft |
 | UT-EXE-005.001.M01.T09 | MD-EXE-002.001.M01 | Unit | `load_from_db()` restores non-CLOSED positions | DB has 2 OPEN, 1 CLOSED for user_id=1 | Tracker has 2 positions; CLOSED position excluded | Draft |
 
 ---
 
-## Module: `execution/risk_manager.py` — Capital Check & Quantity Override
+## Module: `execution/risk_manager.py` â€” Capital Check & Quantity Override
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-005.004.M01.T01 | MD-EXE-001.001.M01 | Unit | `can_enter_new()` returns True when capital available | equity=$100k, open_value=$20k, signal cost=$10k, max_pct=50% | `True` | Draft |
 | UT-EXE-005.004.M01.T02 | MD-EXE-001.001.M01 | Unit | `can_enter_new()` returns False when capital exhausted | equity=$100k, open_value=$45k, signal cost=$10k, max_pct=50% | `False` | Draft |
-| UT-EXE-005.004.M01.T03 | MD-EXE-001.001.M01 | Unit | `can_enter_new()` scoped per user_id | user1 has $40k deployed; user2 has $0; max_pct=50% each | user1 → True for $5k; user2 → True for $45k | Draft |
+| UT-EXE-005.004.M01.T03 | MD-EXE-001.001.M01 | Unit | `can_enter_new()` scoped per user_id | user1 has $40k deployed; user2 has $0; max_pct=50% each | user1 â†’ True for $5k; user2 â†’ True for $45k | Draft |
 | UT-EXE-005.005.M02.T01 | MD-EXE-001.001.M02 | Unit | `submit_signal()` with `quantity_override` uses override quantity | override=100; calculated would be 500 | Order submitted for 100 shares | Draft |
 | UT-EXE-005.005.M02.T02 | MD-EXE-001.001.M02 | Unit | Override quantity still checked by capital availability | override=5000 (exceeds capital), equity=$50k, max_pct=50% | Order rejected; returns None | Draft |
-| UT-EXE-005.005.M02.T03 | MD-EXE-001.001.M02 | Edge | Override quantity ≤ 0 raises ValueError | `quantity_override=0` | `ValueError` raised | Draft |
+| UT-EXE-005.005.M02.T03 | MD-EXE-001.001.M02 | Edge | Override quantity â‰¤ 0 raises ValueError | `quantity_override=0` | `ValueError` raised | Draft |
 
 ---
 
-## Module: `execution/intraday_candle_loader.py` — IntradayCandleLoader
+## Module: `execution/intraday_candle_loader.py` â€” IntradayCandleLoader
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-006.001.M01.T01 | MD-EXE-006.001.M01 | Positive | Full fetch for new symbol inserts 1 m bars into DB | Symbol with no prior `price_1m` rows; mock IBKR returns 1 000 1 m bars across 4 paged requests | `DatabaseManager.insert_bars()` called; `price_1m` has 1 000 rows for symbol | Pass |
 | UT-EXE-006.001.M01.T02 | MD-EXE-006.001.M01 | Positive | Delta fetch inserts only bars after last stored timestamp | Symbol with last `price_1m` timestamp = T; mock IBKR returns 50 bars with datetime > T | 50 rows inserted; IBKR request duration covers only period after T | Pass |
-| UT-EXE-006.001.M01.T03 | MD-EXE-006.001.M01 | Negative | Delta fetch is idempotent — re-run inserts 0 duplicate rows | Symbol already up-to-date; IBKR returns 0 new bars | `insert_bars()` called with empty list; row count unchanged; no error | Pass |
-| UT-EXE-006.001.M01.T04 | MD-EXE-006.001.M01 | Positive | Validation passes when both timeframes (3m, 15m) have ≥ 390 candles | Symbol with 8 190 1 m bars (≈ 21 trading days) in DB; `aggregate_timeframe()` returns: 3 m=2 730, 15 m=546 | `_validate_candle_counts()` returns `CandleLoadResult(ok=True)` | Pass |
-| UT-EXE-006.001.M01.T05 | MD-EXE-006.001.M01 | Negative | Validation fails when a timeframe has < 390 candles | Symbol with only 400 1 m bars; 3 m → 133, 15 m → 26 (both < 390) | `_validate_candle_counts()` returns `CandleLoadResult(ok=False, reason='insufficient_candles:3m:133')` | Pass |
+| UT-EXE-006.001.M01.T03 | MD-EXE-006.001.M01 | Negative | Delta fetch is idempotent â€” re-run inserts 0 duplicate rows | Symbol already up-to-date; IBKR returns 0 new bars | `insert_bars()` called with empty list; row count unchanged; no error | Pass |
+| UT-EXE-006.001.M01.T04 | MD-EXE-006.001.M01 | Positive | Validation passes when both timeframes (3m, 15m) have â‰¥ 390 candles | Symbol with 8 190 1 m bars (â‰ˆ 21 trading days) in DB; `aggregate_timeframe()` returns: 3 m=2 730, 15 m=546 | `_validate_candle_counts()` returns `CandleLoadResult(ok=True)` | Pass |
+| UT-EXE-006.001.M01.T05 | MD-EXE-006.001.M01 | Negative | Validation fails when a timeframe has < 390 candles | Symbol with only 400 1 m bars; 3 m â†’ 133, 15 m â†’ 26 (both < 390) | `_validate_candle_counts()` returns `CandleLoadResult(ok=False, reason='insufficient_candles:3m:133')` | Pass |
 | UT-EXE-006.001.M01.T06 | MD-EXE-006.001.M01 | Negative | IBKR error for one symbol does not abort remaining symbols | 3-symbol list; IBKR raises `IBKRHistoricalDataError` for symbol[1] | symbol[0] and symbol[2] processed successfully; symbol[1] in `load_complete.failed`; WARNING logged | Pass |
 | UT-EXE-006.001.M01.T07 | MD-EXE-006.001.M01 | Positive | `load_complete` signal emitted with full result list | 3 symbols, 1 success + 1 validation fail + 1 IBKR error | `load_complete` fires once; payload is `list[CandleLoadResult]` with 3 items; failed count = 2 | Pass |
 | UT-EXE-006.001.M01.T08 | MD-EXE-006.001.M01 | Positive | `load_progress` signal emitted once per symbol | 5-symbol list | `load_progress` fired 5 times; final call has `done == total == 5` | Pass |
-| UT-EXE-006.001.M01.T09 | MD-EXE-006.001.M01 | Positive | `get_readiness_report()` returns ready=True when all counts ≥ 390 | DB has 14 000 1 m bars for AAPL spanning ≥ 60 trading days | `report['AAPL'].ready == True`; `report['AAPL'].candles_3m >= 390` | Pass |
+| UT-EXE-006.001.M01.T09 | MD-EXE-006.001.M01 | Positive | `get_readiness_report()` returns ready=True when all counts â‰¥ 390 | DB has 14 000 1 m bars for AAPL spanning â‰¥ 60 trading days | `report['AAPL'].ready == True`; `report['AAPL'].candles_3m >= 390` | Pass |
 | UT-EXE-006.001.M01.T10 | MD-EXE-006.001.M01 | Negative | `get_readiness_report()` returns ready=False when any timeframe < 390 | DB has 300 1 m bars for MSFT | `report['MSFT'].ready == False`; at least one candle count < 390 | Pass |
-| UT-EXE-006.001.M01.T11 | MD-EXE-006.001.M01 | Edge | Full-fetch paging: 65 trading-day window requires multiple IBKR requests | New symbol; full fetch mode | `IBKRClient.req_historical_data()` called ≥ 3 times (pages); all results concatenated before insert | Pass |
+| UT-EXE-006.001.M01.T11 | MD-EXE-006.001.M01 | Edge | Full-fetch paging: 65 trading-day window requires multiple IBKR requests | New symbol; full fetch mode | `IBKRClient.req_historical_data()` called â‰¥ 3 times (pages); all results concatenated before insert | Pass |
 | UT-EXE-006.001.M01.T12 | MD-EXE-006.001.M01 | Negative | `load()` with empty symbol list completes immediately with no DB writes | `symbols=[]` | `load_complete` emitted with empty results list; `insert_bars()` never called | Pass |
-| UT-EXE-006.001.M01.T13 | MD-EXE-006.001.M01 | Negative | Minimum candle window check — IBKR returns fewer bars than 65-day target (truncated history for new listing) | New symbol; IBKR returns only 800 1 m bars (≈ 2 days) for full-fetch window | Symbol included in failed list with reason `'insufficient_candles'`; no exception propagates; remaining symbols continue | Pass |
+| UT-EXE-006.001.M01.T13 | MD-EXE-006.001.M01 | Negative | Minimum candle window check â€” IBKR returns fewer bars than 65-day target (truncated history for new listing) | New symbol; IBKR returns only 800 1 m bars (â‰ˆ 2 days) for full-fetch window | Symbol included in failed list with reason `'insufficient_candles'`; no exception propagates; remaining symbols continue | Pass |
 
 ---
 
-## Module: `execution/live_bar_worker.py` — LiveBarWorker
+## Module: `execution/live_bar_worker.py` â€” LiveBarWorker
 
 > Test file: `tests/execution/test_live_bar_worker.py`
 > Fixtures: mock `ib_insync.IB` (records `reqRealTimeBars` calls + fires `updateEvent`), in-memory SQLite for `price_3m`/`price_15m`, `CandleBuilder` instance.
@@ -164,14 +164,14 @@
 | UT-EXE-007.001.M01.T05 | MD-EXE-007.001.M01 | Edge | `_is_rth()` returns False on Saturday regardless of time | `dt_utc` for Saturday 12:00:00 ET | `False` | Draft |
 | UT-EXE-007.001.M01.T06 | MD-EXE-007.001.M01 | Positive | `PartialBar.to_ohlcv_bar()` returns `OHLCVBar` with `timeframe='3m'` and `datetime == window_start` | `PartialBar(symbol='AAPL', window_start=T, open=100, high=105, low=99, close=103, volume=5000, tick_count=6)` | `OHLCVBar(symbol='AAPL', datetime=T, open=100, high=105, low=99, close=103, volume=5000, timeframe='3m')` | Draft |
 
-### Tick processing — `_on_realtime_bar` (SRD-EXE-007.005)
+### Tick processing â€” `_on_realtime_bar` (SRD-EXE-007.005)
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-007.001.M01.T07 | MD-EXE-007.001.M01 | Positive | First tick for a subscribed symbol creates `PartialBar` with `open == bar.open` and `tick_count == 1` | Aggregator subscribed to `'AAPL'`; one `RealtimeBar(symbol='AAPL', datetime=09:31:00 ET, open=150.0, high=150.5, low=149.8, close=150.2, volume=800)` | `_partials['AAPL'].open == 150.0`, `tick_count == 1` | Draft |
 | UT-EXE-007.001.M01.T08 | MD-EXE-007.001.M01 | Positive | Same-window tick updates high, low, close, volume, tick_count; open is unchanged | Existing `PartialBar(open=150.0, high=150.5, low=149.8, close=150.2, volume=800, tick_count=1)`; second bar arrives in same 3m window: `high=151.0, low=149.5, close=150.8, volume=600` | `high=151.0, low=149.5, close=150.8, volume=1400, tick_count=2, open=150.0` (open unchanged) | Draft |
-| UT-EXE-007.001.M01.T09 | MD-EXE-007.001.M01 | Positive | New-window tick finalises old `PartialBar` and creates a fresh one with correct open | One complete partial bar in window 09:30–09:33; new bar arrives at 09:33:05 ET | `candle_closed` emitted for the 09:30 window; new `PartialBar` created with `window_start=09:33` and `open == new_bar.open` | Draft |
-| UT-EXE-007.001.M01.T10 | MD-EXE-007.001.M01 | Negative | Tick before RTH (08:00 ET) is discarded — no `PartialBar` created, no signal emitted | `RealtimeBar` with `datetime=08:00:05 ET` for subscribed `'AAPL'` | `_partials` remains empty; `candle_updated` NOT emitted | Draft |
+| UT-EXE-007.001.M01.T09 | MD-EXE-007.001.M01 | Positive | New-window tick finalises old `PartialBar` and creates a fresh one with correct open | One complete partial bar in window 09:30â€“09:33; new bar arrives at 09:33:05 ET | `candle_closed` emitted for the 09:30 window; new `PartialBar` created with `window_start=09:33` and `open == new_bar.open` | Draft |
+| UT-EXE-007.001.M01.T10 | MD-EXE-007.001.M01 | Negative | Tick before RTH (08:00 ET) is discarded â€” no `PartialBar` created, no signal emitted | `RealtimeBar` with `datetime=08:00:05 ET` for subscribed `'AAPL'` | `_partials` remains empty; `candle_updated` NOT emitted | Draft |
 | UT-EXE-007.001.M01.T11 | MD-EXE-007.001.M01 | Negative | Tick after RTH (16:01 ET) discarded; existing `PartialBar` unchanged | Partial bar exists for `'AAPL'`; bar arrives at 16:01:00 ET | `_partials['AAPL']` unchanged (`tick_count` not incremented); no signal emitted | Draft |
 | UT-EXE-007.001.M01.T12 | MD-EXE-007.001.M01 | Negative | Tick for symbol not in `_subscribed` is silently discarded | `'TSLA'` not subscribed; `RealtimeBar` arrives for `'TSLA'` | `_partials` unchanged; `candle_updated` NOT emitted | Draft |
 
@@ -187,9 +187,9 @@
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-007.001.M01.T15 | MD-EXE-007.001.M01 | Positive | `_close_bar()` calls `insert_bars(symbol, '3m', [bar])` with the finalised `OHLCVBar` | Partial bar with `window_start=T` closed | `DatabaseManager.insert_bars` called with `timeframe='3m'`; in-memory SQLite `price_3m` contains exactly 1 row for `(symbol, T)` | Draft |
-| UT-EXE-007.001.M01.T16 | MD-EXE-007.001.M01 | Edge | `_close_bar()` is idempotent — second call for same `(symbol, window_start)` inserts 0 rows | `_close_bar()` called twice with identical `PartialBar` | `price_3m` row count for `(symbol, T)` remains 1 (INSERT OR IGNORE); no exception | Draft |
+| UT-EXE-007.001.M01.T16 | MD-EXE-007.001.M01 | Edge | `_close_bar()` is idempotent â€” second call for same `(symbol, window_start)` inserts 0 rows | `_close_bar()` called twice with identical `PartialBar` | `price_3m` row count for `(symbol, T)` remains 1 (INSERT OR IGNORE); no exception | Draft |
 
-### Dynamic subscription — `set_symbols` (SRD-EXE-007.004)
+### Dynamic subscription â€” `set_symbols` (SRD-EXE-007.004)
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
@@ -202,7 +202,7 @@
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
 | UT-EXE-007.001.M01.T20 | MD-EXE-007.001.M01 | Positive | `_check_session_end()` at 16:01 ET clears all partial bars without any DB writes | Two partial bars exist for `'AAPL'` and `'MSFT'`; `_check_session_end()` called with mocked time = 16:01 ET | `_partials` is empty; `insert_bars` NOT called; INFO logged with count `"2 partial bar(s) discarded"` | Draft |
-| UT-EXE-007.001.M01.T21 | MD-EXE-007.001.M01 | Edge | `_check_session_end()` during RTH (13:00 ET) — no action | Partial bars exist; call with mocked time = 13:00 ET | `_partials` unchanged; no log message; no DB write | Draft |
+| UT-EXE-007.001.M01.T21 | MD-EXE-007.001.M01 | Edge | `_check_session_end()` during RTH (13:00 ET) â€” no action | Partial bars exist; call with mocked time = 13:00 ET | `_partials` unchanged; no log message; no DB write | Draft |
 
 ### Disconnect / reconnect (SRD-EXE-007.008)
 
@@ -218,3 +218,54 @@
 | UT-EXE-007.001.M01.T24 | MD-EXE-007.001.M01 | Integration | `price_3m` table created by `create_schema(checkfirst=True)` without error; existing `price_1m` unaffected | In-memory SQLite engine with pre-existing `price_1m` rows; call `create_schema(engine)` | `price_3m` table exists and accepts INSERT; `price_1m` row count unchanged | Draft |
 | UT-EXE-007.001.M01.T25 | MD-EXE-007.001.M01 | Integration | After `candle_closed` persists a 3m bar, `get_readiness_report` returns `candles_3m` = prior count + 1 | `price_3m` has 391 rows for `'AAPL'`; `_close_bar()` inserts 1 more row (new window) | `get_readiness_report(['AAPL']).candles_3m == 392` | Draft |
 | UT-EXE-007.001.M01.T26 | MD-EXE-007.001.M01 | Integration | `get_readiness_report` `candles_3m` reads from `price_3m` not `price_1m` | `price_1m` has 0 rows for `'AAPL'`; `price_3m` has 400 rows for `'AAPL'` | `get_readiness_report(['AAPL']).candles_3m == 400` (not 0) | Draft |
+
+---
+
+## Module: `execution/live_tick_worker.py` â€” LiveTickWorker
+
+### Class construction & signals (SRD-EXE-008.001)
+
+| ID | Module | Type | Objective | Input | Expected Output | Status |
+|---|---|---|---|---|---|---|
+| UT-EXE-008.001.M01.T01 | MD-EXE-008.001.M01 | Positive | `LiveTickWorker` is a `QThread` subclass with `tick_price` and `subscription_failed` signals | `LiveTickWorker("127.0.0.1", 7497, 14)` | `isinstance(w, QThread) is True`; `hasattr(w, "tick_price") and hasattr(w, "subscription_failed")` | Pass |
+| UT-EXE-008.001.M01.T02 | MD-EXE-008.001.M01 | Negative | Worker not started â€” no `tick_price` emitted when `_on_pending_tickers` is called directly | Instantiate worker (do not call `start()`); call `_on_pending_tickers({mock_ticker})` | `tick_price` signal not emitted (no running event loop; `_tag_by_conid` is empty) | Pass |
+| UT-EXE-008.001.M01.T16 | MD-EXE-008.001.M01 | Negative | `live_tick_worker` module imports no GUI or DB module at module level | `import us_swing.execution.live_tick_worker`; inspect `sys.modules` | No `PyQt6.QtWidgets`, `gui`, or `db` module present in `sys.modules` as a side-effect of the import | Pass |
+
+### set_contracts() reconciliation (SRD-EXE-008.002)
+
+| ID | Module | Type | Objective | Input | Expected Output | Status |
+|---|---|---|---|---|---|---|
+| UT-EXE-008.001.M01.T03 | MD-EXE-008.001.M01 | Positive | `set_contracts({"AAPL": stk_contract})` calls `ib.reqMktData` exactly once for AAPL | Worker with mocked `ib`; call `set_contracts({"AAPL": stk_contract})` | `mock_ib.reqMktData.call_count == 1`; `"AAPL"` in `worker._active` | Pass |
+| UT-EXE-008.001.M01.T04 | MD-EXE-008.001.M01 | Positive | `set_contracts({})` after subscribing AAPL calls `ib.cancelMktData` for AAPL | Subscribe AAPL; then `set_contracts({})` | `mock_ib.cancelMktData.call_count == 1`; `worker._active == {}` | Pass |
+| UT-EXE-008.001.M01.T05 | MD-EXE-008.001.M01 | Negative | Calling `set_contracts` twice with the same tag does not duplicate the subscription | `set_contracts({"AAPL": c})`; `set_contracts({"AAPL": c})` | `mock_ib.reqMktData.call_count == 1` (not 2); no duplicate in `_active` | Pass |
+| UT-EXE-008.001.M01.T06 | MD-EXE-008.001.M01 | Edge | 15-contract call is split into two batches of 10 + 5 with a pause between | `set_contracts({sym: contract for sym in 15_symbols})` with mocked `time.sleep` | `time.sleep` called exactly once with arg `0.20`; `reqMktData` called 15 times total | Pass |
+
+### tick_price emission (SRD-EXE-008.003)
+
+| ID | Module | Type | Objective | Input | Expected Output | Status |
+|---|---|---|---|---|---|---|
+| UT-EXE-008.001.M01.T07 | MD-EXE-008.001.M01 | Positive | `_on_pending_tickers` emits `tick_price` when `ticker.last` is valid | `ticker.last=150.0`; `ticker.contract.conId=123`; `_tag_by_conid={123: "AAPL"}` | `tick_price` emitted with args `("AAPL", 150.0)` | Pass |
+| UT-EXE-008.001.M01.T08 | MD-EXE-008.001.M01 | Positive | Falls back to `ticker.close` when `ticker.last` is NaN | `ticker.last=nan`; `ticker.close=149.5`; conId mapped to `"AAPL"` | `tick_price` emitted with args `("AAPL", 149.5)` | Pass |
+| UT-EXE-008.001.M01.T09 | MD-EXE-008.001.M01 | Negative | No emission when both `ticker.last` and `ticker.close` are NaN | `ticker.last=nan`; `ticker.close=nan`; conId mapped to `"AAPL"` | `tick_price` signal NOT emitted | Pass |
+
+### Error handling â€” subscription_failed (SRD-EXE-008.004)
+
+| ID | Module | Type | Objective | Input | Expected Output | Status |
+|---|---|---|---|---|---|---|
+| UT-EXE-008.001.M01.T10 | MD-EXE-008.001.M01 | Positive | IBKR error 354 â†’ `subscription_failed("AAPL", 354)` emitted; AAPL removed from `_active` | AAPL subscribed (`reqId=42` mapped); call `_on_ibkr_error(42, 354, "msg", contract)` | `subscription_failed` emitted with `("AAPL", 354)`; `"AAPL" not in worker._active` | Pass |
+| UT-EXE-008.001.M01.T11 | MD-EXE-008.001.M01 | Negative | Non-subscription error code (e.g. 321) â†’ no `subscription_failed`; other subscriptions unaffected | AAPL and MSFT subscribed; call `_on_ibkr_error(reqId_AAPL, 321, "msg", contract)` | `subscription_failed` NOT emitted; `"AAPL"` and `"MSFT"` still in `_active` | Pass |
+
+### request_stop() (SRD-EXE-008.005)
+
+| ID | Module | Type | Objective | Input | Expected Output | Status |
+|---|---|---|---|---|---|---|
+| UT-EXE-008.001.M01.T12 | MD-EXE-008.001.M01 | Positive | `request_stop()` sets `_stop_event` and calls `cancelMktData` for every active subscription | Two symbols subscribed; call `request_stop()` | `worker._stop_event.is_set() is True`; `mock_ib.cancelMktData.call_count == 2` | Pass |
+| UT-EXE-008.001.M01.T13 | MD-EXE-008.001.M01 | Positive | Thread exits within 3 s after `request_stop()` | Start worker (mocked IBKR); call `request_stop()`; join with 3 s timeout | `worker.isFinished() is True` within 3 s | Pass |
+
+### ClientId collision retry (SRD-EXE-008.006)
+
+| ID | Module | Type | Objective | Input | Expected Output | Status |
+|---|---|---|---|---|---|---|
+| UT-EXE-008.001.M01.T14 | MD-EXE-008.001.M01 | Positive | IBKR error 326 on first connect â†’ retry with clientId+1 succeeds; WARNING logged | Mock `ib.connectAsync` to fail with 326 once then succeed; `initial_client_id=14` | Second connect attempt uses clientId=15; WARNING contains "ClientId 14 in use"; worker not stopped | Pass |
+| UT-EXE-008.001.M01.T15 | MD-EXE-008.001.M01 | Negative | 4 consecutive error 326 â†’ logs ERROR; thread exits; no `tick_price` emitted | Mock `ib.connectAsync` to always fail with 326 | `log.error` called with message containing "Cannot connect"; thread exits; `tick_price` never emitted | Pass |
+

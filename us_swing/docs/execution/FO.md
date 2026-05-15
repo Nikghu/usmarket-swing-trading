@@ -1,9 +1,9 @@
 # Functional Objectives — Execution & Risk Management (EXE)
 
 **Document ID:** FO-EXE
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Status:** Draft
-**Last Updated:** 2026-05-06
+**Last Updated:** 2026-05-15
 **Project:** US Swing Trading System
 
 > Traces to: `us_swing/requirements.md` §10, §11, §12, §13, §21.4, §22, §23, §25
@@ -140,3 +140,33 @@
   - At 16:00:00 ET an open partial bar is discarded; no `candle_closed` signal fires and no incomplete bar is written to the database.
   - After a simulated IBKR disconnect at 10:15:30 ET (mid-bar), the in-progress partial bar is cleared; on reconnect at 10:16:45 ET a fresh partial bar starts at the next 3-minute boundary (10:18:00 ET) with no gap row inserted.
   - Running `get_readiness_report(['AAPL'])` after the 09:33:00 `candle_closed` event returns `candles_3m` = (prior count + 1).
+
+---
+
+## FO-EXE-008: Live Market Data Tick Worker
+
+**Status:** Approved
+**Priority:** Must
+**Depends on:** FO-EXE-007 (IBKR ib_insync connection pattern reused)
+**Source:** GUI streaming price requirement — FO-GUI-012
+
+The system shall provide a `LiveTickWorker` QThread module that maintains IBKR `reqMktData` streaming subscriptions for a caller-supplied set of tagged contracts and emits per-symbol last-price signals to the GUI. This worker owns its own `ib_insync.IB()` connection and dedicated IBKR client ID (`SystemConfig.ibkr_tick_client_id`, default 14), keeping it fully isolated from the candle bar worker (clientId 13) and historical loader (clientId 12).
+
+### Requirements
+
+1. `LiveTickWorker` accepts a tagged contract mapping `dict[str, Contract]` (tag → ib_insync Contract). Tags are the caller-visible identifiers (e.g., `"AAPL"`, `"^GSPC"`) used in emitted signals.
+2. The worker emits `tick_price = pyqtSignal(str, float)` — `(tag, last_price)` — whenever `ib.pendingTickersEvent` fires and a non-NaN price is available. Price resolution priority: `ticker.last → ticker.close → skip`.
+3. The worker emits `subscription_failed = pyqtSignal(str, int)` — `(tag, ibkr_error_code)` — on IBKR error codes 162, 354, or 420 for a specific contract, then removes that tag from active subscriptions. Other subscriptions are unaffected.
+4. `set_contracts(contracts: dict[str, Contract])` dynamically reconciles the active subscription set: new tags are subscribed, removed tags have their `reqMktData` cancelled. Subscriptions are batched in groups of 10 with a 200 ms pause between batches to respect IBKR pacing limits.
+5. `request_stop()` cancels all active `reqMktData` subscriptions, then disconnects and exits the event loop — following the same safe-stop pattern as `LiveBarWorker.request_stop()`.
+6. The worker does **not** apply any RTH filter. `reqMktData` market-data streams whenever the exchange publishes quotes; the caller (AppService) decides whether to display or suppress values outside trading hours.
+7. Reconnect on dropped connection is not in scope for this FO; the caller (AppService) tears down and restarts the worker on feed reconnect events.
+
+### Acceptance Criteria
+
+1. Within 500 ms of `set_contracts({"AAPL": stk_contract})` while the IBKR feed is live, at least one `tick_price("AAPL", price)` signal fires.
+2. After `set_contracts({})` removes AAPL, no further `tick_price("AAPL", …)` signals fire.
+3. IBKR error 354 ("No market data permission") for AAPL → `subscription_failed("AAPL", 354)` emitted within 2 s; `tick_price` for all other active symbols continues uninterrupted.
+4. `request_stop()` completes within 3 s: all reqMktData subscriptions cancelled, IBKR connection closed, QThread exits cleanly.
+5. Concurrent `set_contracts()` calls while the worker is running do not cause duplicate subscriptions or segfaults.
+6. A `SystemConfig.ibkr_tick_client_id` collision (IBKR error 326) is logged at WARNING level and the worker retries with `ibkr_tick_client_id + 1` up to 3 times before emitting a connection-failed signal.

@@ -379,12 +379,21 @@ class _SystemTab(QWidget):
         ])
         self._mkt_tz.setCurrentText(cfg.market_timezone)
 
-        form.addRow("IBKR TWS Host:",        self._host)
-        form.addRow("IBKR TWS Port:",        self._port)
-        form.addRow("Log level:",            self._log_level)
-        form.addRow("Market open time:",     self._open_t)
-        form.addRow("Market close time:",    self._close_t)
-        form.addRow("Market timezone:",      self._mkt_tz)
+        self._tick_id = QSpinBox()
+        self._tick_id.setRange(1, 999)
+        self._tick_id.setValue(cfg.ibkr_tick_client_id)
+        self._tick_id.setToolTip(
+            "Dedicated IBKR client ID for live tick streaming (reqMktData). "
+            "Must be unique — not shared with other connections."
+        )
+
+        form.addRow("IBKR TWS Host:",          self._host)
+        form.addRow("IBKR TWS Port:",          self._port)
+        form.addRow("Tick Data Client ID:",    self._tick_id)
+        form.addRow("Log level:",              self._log_level)
+        form.addRow("Market open time:",       self._open_t)
+        form.addRow("Market close time:",      self._close_t)
+        form.addRow("Market timezone:",        self._mkt_tz)
         form.addRow("Enable daily scheduler:", self._sched_en)
 
         save_btn = QPushButton("💾  Save Settings")
@@ -460,13 +469,14 @@ class _SystemTab(QWidget):
     def _on_save(self) -> None:
         from us_swing.gui.system_store import SystemConfig
         cfg = SystemConfig(
-            ibkr_host         = self._host.text().strip() or "127.0.0.1",
-            ibkr_port         = self._port.value(),
-            log_level         = self._log_level.currentText(),
-            scheduler_enabled = self._sched_en.isChecked(),
-            market_open       = self._open_t.text().strip(),
-            market_close      = self._close_t.text().strip(),
-            market_timezone   = self._mkt_tz.currentText(),
+            ibkr_host             = self._host.text().strip() or "127.0.0.1",
+            ibkr_port             = self._port.value(),
+            ibkr_tick_client_id   = self._tick_id.value(),
+            log_level             = self._log_level.currentText(),
+            scheduler_enabled     = self._sched_en.isChecked(),
+            market_open           = self._open_t.text().strip(),
+            market_close          = self._close_t.text().strip(),
+            market_timezone       = self._mkt_tz.currentText(),
         )
         self._demo.save_system_config(cfg)
         self._save_note.setText("✔  Settings saved")

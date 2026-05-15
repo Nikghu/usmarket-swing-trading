@@ -3,7 +3,7 @@
 **Document ID:** TRACE-EXE
 **Version:** 1.2.0
 **Project:** US Swing Trading System
-**Last Updated:** 2026-05-06
+**Last Updated:** 2026-05-15
 
 ---
 
@@ -20,6 +20,7 @@
 | FO-EXE-004 | SRD-EXE-004.005 | DD-EXE-004.001.D01 | MD-EXE-004.001.M02 | T01–T03 | `execution/execution_router.py` | Draft | Pending |
 | FO-EXE-005 | SRD-EXE-005.001–003, 005.006 | DD-EXE-005.001.D01 | MD-EXE-002.001.M01 | 005.001.T01–T09 | `execution/position_tracker.py` | Draft | Pending |
 | FO-EXE-006 | SRD-EXE-006.001–006 | DD-EXE-006.001.D01–D02 | MD-EXE-006.001.M01 | UT-EXE-006.001.M01.T01–T13 | `execution/intraday_candle_loader.py` | Implemented | RN-EXE-1.1.0-20260506 |
+| FO-EXE-008 | SRD-EXE-008.001–006 | DD-EXE-008.001.D01 | MD-EXE-008.001.M01 | UT-EXE-008.001.M01.T01–T16 | `execution/live_tick_worker.py` | Implemented | RN-EXE-1.2.0-20260515 |
 
 ---
 
@@ -35,6 +36,7 @@
 | `execution/paper_engine.py` | MD-EXE-004.001.M01 | SRD-EXE-004.001–004 | FO-EXE-004 |
 | `execution/execution_router.py` | MD-EXE-004.001.M02 | SRD-EXE-004.005 | FO-EXE-004 |
 | `execution/intraday_candle_loader.py` | MD-EXE-006.001.M01 | SRD-EXE-006.001–006 | FO-EXE-006 |
+| `execution/live_tick_worker.py` | MD-EXE-008.001.M01 | SRD-EXE-008.001–006 | FO-EXE-008 |
 
 ---
 
@@ -42,9 +44,9 @@
 
 | Artifact | Total Items | Draft | Approved | Implemented | Verified |
 |---|---|---|---|---|---|
-| FO | 6 | 5 | 1 | 0 | 0 |
-| SRD | 34 | 28 | 6 | 0 | 0 |
-| DD | 8 | 6 | 2 | 0 | 0 |
-| MD | 8 | 7 | 1 | 0 | 0 |
-| UTCD | 67 | 54 | 13 | 0 | 0 |
-| Code | 8 files | — | — | 1 | 0 |
+| FO | 7 | 5 | 1 | 1 | 0 |
+| SRD | 40 | 28 | 6 | 6 | 0 |
+| DD | 9 | 6 | 2 | 1 | 0 |
+| MD | 9 | 7 | 1 | 1 | 0 |
+| UTCD | 83 | 54 | 13 | 16 | 0 |
+| Code | 9 files | — | — | 2 | 0 |
