@@ -1,10 +1,706 @@
 {
-  "generated": "2026-05-16T15:20:14",
+  "generated": "2026-05-16T18:42:06",
   "subfolder": "core",
   "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\core",
-  "tool_code": null,
+  "tool_code": "EXE",
   "files": {
-    "__init__.py": {},
-    "candle_builder.py": {}
+    "__init__.py": {
+      "module_id": "MD-EXE-009.002.M03",
+      "srd_id": "SRD-EXE-009.010",
+      "top_level_functions": [
+        {
+          "name": "build_default_service",
+          "signature": "def build_default_service(\n    engine: Engine,\n    *,\n    today_provider: Callable[[], date] | None                  = None,\n    clock: Callable[[], datetime] | None                       = None,\n    filtered_provider: Callable[[date], frozenset[str]] | None = None,\n) -> tuple[MonitoringQuery, MonitoringCommand, MonitoringEventBus]",
+          "docstring": "Wire up a default ``MonitoringSessionService`` with an in-process event bus.",
+          "line_start": 50,
+          "line_end": 91
+        },
+        {
+          "name": "build_scheduler",
+          "signature": "def build_scheduler(\n    command: MonitoringCommand,\n    bus: MonitoringEventBus,\n    cron_register: Callable[[str, Callable[[], None]], None],\n    *,\n    clock: Callable[[], datetime] | None      = None,\n    today_provider: Callable[[], date] | None = None,\n) -> _ReconcileScheduler",
+          "docstring": "Construct the pre-open reconcile scheduler.",
+          "line_start": 94,
+          "line_end": 113
+        }
+      ]
+    },
+    "candle_builder.py": {},
+    "_dto.py": {
+      "module_id": "MD-EXE-009.001.M01",
+      "srd_id": "SRD-EXE-009.012",
+      "classes": [
+        {
+          "name": "KeepSet",
+          "docstring": "Authoritative answer to 'which symbols should have candles today'.",
+          "class_vars": [
+            "filtered: frozenset[str]",
+            "carryover: frozenset[str]",
+            "as_of: date",
+            "schema_version: int"
+          ],
+          "line_start": 18,
+          "line_end": 24
+        },
+        {
+          "name": "ReconcileError",
+          "class_vars": [
+            "symbol: str",
+            "message: str",
+            "schema_version: int"
+          ],
+          "line_start": 28,
+          "line_end": 31
+        },
+        {
+          "name": "ReconcileReport",
+          "class_vars": [
+            "filtered_n: int",
+            "carryover_n: int",
+            "skipped_n: int",
+            "evicted_n: int",
+            "evicted_symbols: tuple[str, ...]",
+            "duration_ms: int",
+            "errors: tuple[ReconcileError, ...]",
+            "schema_version: int"
+          ],
+          "line_start": 35,
+          "line_end": 43
+        },
+        {
+          "name": "MonitoringSessionRow",
+          "docstring": "One row of the ledger.  Mirrors the ``monitoring_session`` table.",
+          "class_vars": [
+            "session_date: str",
+            "symbol: str",
+            "preset_id: str",
+            "run_timestamp: str",
+            "added_at: str",
+            "lifecycle_state: LifecycleState",
+            "entered_at: str | None",
+            "exited_at: str | None",
+            "evicted_at: str | None",
+            "trade_id: str | None",
+            "schema_version: int"
+          ],
+          "line_start": 47,
+          "line_end": 60
+        },
+        {
+          "name": "FillEvent",
+          "docstring": "Order-fill payload routed to ``MonitoringCommand.on_fill``.",
+          "class_vars": [
+            "symbol: str",
+            "trade_id: str",
+            "side: Side",
+            "qty: int",
+            "price: float",
+            "fill_time: str",
+            "origin: TradeOrigin",
+            "user_id: int",
+            "schema_version: int"
+          ],
+          "line_start": 64,
+          "line_end": 75
+        },
+        {
+          "name": "InvariantReport",
+          "docstring": "Result of `MonitoringQuery.check_invariant()`.",
+          "class_vars": [
+            "ok: bool",
+            "only_in_a: tuple[str, ...]",
+            "only_in_b: tuple[str, ...]",
+            "schema_version: int"
+          ],
+          "line_start": 79,
+          "line_end": 85
+        },
+        {
+          "name": "PositionSnapshot",
+          "docstring": "Post-fill view of a position, returned by the repository so the service",
+          "class_vars": [
+            "symbol: str",
+            "quantity: int",
+            "average_price: float",
+            "state: str",
+            "origin: TradeOrigin",
+            "anchor_session_date: str | None",
+            "realised_pnl: float",
+            "schema_version: int"
+          ],
+          "line_start": 89,
+          "line_end": 100
+        }
+      ]
+    },
+    "_enums.py": {
+      "module_id": "MD-EXE-009.001.M01",
+      "srd_id": "SRD-EXE-009.012",
+      "classes": [
+        {
+          "name": "LifecycleState",
+          "line_start": 10,
+          "line_end": 15
+        },
+        {
+          "name": "TradeOrigin",
+          "line_start": 18,
+          "line_end": 20
+        },
+        {
+          "name": "Side",
+          "line_start": 23,
+          "line_end": 25
+        }
+      ]
+    },
+    "_events.py": {
+      "module_id": "MD-EXE-009.001.M03",
+      "srd_id": "SRD-EXE-009.011",
+      "classes": [
+        {
+          "name": "SymbolStartedMonitoring",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "symbol: str",
+            "session_date: str",
+            "preset_id: str",
+            "run_timestamp: str",
+            "schema_version: int"
+          ],
+          "line_start": 30,
+          "line_end": 37
+        },
+        {
+          "name": "SymbolEnteredPosition",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "symbol: str",
+            "anchor_session_date: str",
+            "trade_id: str",
+            "fill_qty: int",
+            "fill_time: str",
+            "schema_version: int"
+          ],
+          "line_start": 41,
+          "line_end": 49
+        },
+        {
+          "name": "SymbolPositionScaled",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "symbol: str",
+            "anchor_session_date: str",
+            "trade_id: str",
+            "side: Side",
+            "fill_qty: int",
+            "new_position_state: str",
+            "fill_time: str",
+            "schema_version: int"
+          ],
+          "line_start": 53,
+          "line_end": 63
+        },
+        {
+          "name": "SymbolExitedPosition",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "symbol: str",
+            "anchor_session_date: str",
+            "exit_trade_id: str",
+            "exit_time: str",
+            "realised_pnl: float",
+            "schema_version: int"
+          ],
+          "line_start": 67,
+          "line_end": 75
+        },
+        {
+          "name": "SymbolSkipped",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "symbol: str",
+            "session_date: str",
+            "schema_version: int"
+          ],
+          "line_start": 79,
+          "line_end": 84
+        },
+        {
+          "name": "SymbolEvicted",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "symbol: str",
+            "evicted_session_dates: tuple[str, ...]",
+            "schema_version: int"
+          ],
+          "line_start": 88,
+          "line_end": 93
+        },
+        {
+          "name": "ReconcileCompleted",
+          "class_vars": [
+            "event_id: str",
+            "occurred_at: str",
+            "report: ReconcileReport",
+            "schema_version: int"
+          ],
+          "line_start": 97,
+          "line_end": 101
+        },
+        {
+          "name": "_SubscriptionHandle",
+          "docstring": "Concrete ``Subscription`` returned by :class:`_InProcessBus`.",
+          "class_vars": [
+            "_bus: \"_InProcessBus\"",
+            "_event_type: type",
+            "_handler: Callable[[Any], None]",
+            "_alive: bool"
+          ],
+          "methods": [
+            {
+              "name": "cancel",
+              "signature": "def cancel(self) -> None",
+              "line_start": 126,
+              "line_end": 130
+            }
+          ],
+          "line_start": 118,
+          "line_end": 130
+        },
+        {
+          "name": "_InProcessBus",
+          "docstring": "Single-process synchronous event bus.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self) -> None",
+              "line_start": 141,
+              "line_end": 143
+            },
+            {
+              "name": "subscribe",
+              "signature": "def subscribe(\n        self,\n        event_type: type,\n        handler: Callable[[Any], None],\n    ) -> Subscription",
+              "line_start": 145,
+              "line_end": 152
+            },
+            {
+              "name": "publish",
+              "signature": "def publish(self, event: Any) -> None",
+              "line_start": 154,
+              "line_end": 166
+            },
+            {
+              "name": "_unregister",
+              "signature": "def _unregister(\n        self,\n        event_type: type,\n        handler: Callable[[Any], None],\n    ) -> None",
+              "line_start": 168,
+              "line_end": 177
+            }
+          ],
+          "line_start": 133,
+          "line_end": 177
+        }
+      ]
+    },
+    "_protocols.py": {
+      "module_id": "MD-EXE-009.001.M02",
+      "srd_id": "SRD-EXE-009.010",
+      "classes": [
+        {
+          "name": "Subscription",
+          "docstring": "Handle returned by ``MonitoringEventBus.subscribe``.",
+          "methods": [
+            {
+              "name": "cancel",
+              "signature": "def cancel(self) -> None",
+              "line_start": 29,
+              "line_end": 29
+            }
+          ],
+          "line_start": 26,
+          "line_end": 29
+        },
+        {
+          "name": "MonitoringEventBus",
+          "docstring": "Synchronous in-process publish/subscribe surface for lifecycle events.",
+          "methods": [
+            {
+              "name": "subscribe",
+              "signature": "def subscribe(\n        self,\n        event_type: type,\n        handler: Callable[[Any], None],\n    ) -> Subscription",
+              "line_start": 36,
+              "line_end": 40
+            },
+            {
+              "name": "publish",
+              "signature": "def publish(self, event: Any) -> None",
+              "line_start": 42,
+              "line_end": 42
+            }
+          ],
+          "line_start": 33,
+          "line_end": 42
+        },
+        {
+          "name": "MonitoringQuery",
+          "docstring": "Read-only side of the service.  Cheap, side-effect-free, thread-safe.",
+          "methods": [
+            {
+              "name": "keep_set",
+              "signature": "def keep_set(self, today: date) -> KeepSet",
+              "line_start": 49,
+              "line_end": 49
+            },
+            {
+              "name": "open_system_positions",
+              "signature": "def open_system_positions(self) -> frozenset[str]",
+              "line_start": 51,
+              "line_end": 51
+            },
+            {
+              "name": "has_open_system_position",
+              "signature": "def has_open_system_position(self, symbol: str) -> bool",
+              "line_start": 53,
+              "line_end": 53
+            },
+            {
+              "name": "session_for",
+              "signature": "def session_for(\n        self,\n        session_date: date,\n        symbol: str,\n    ) -> MonitoringSessionRow | None",
+              "line_start": 55,
+              "line_end": 59
+            },
+            {
+              "name": "history",
+              "signature": "def history(\n        self,\n        symbol: str,\n        days: int = 30,\n    ) -> tuple[MonitoringSessionRow, ...]",
+              "line_start": 61,
+              "line_end": 65
+            },
+            {
+              "name": "check_invariant",
+              "signature": "def check_invariant(self) -> InvariantReport",
+              "line_start": 67,
+              "line_end": 67
+            }
+          ],
+          "line_start": 46,
+          "line_end": 67
+        },
+        {
+          "name": "MonitoringCommand",
+          "docstring": "Mutating side of the service.  Called only by the order pipeline,",
+          "methods": [
+            {
+              "name": "on_screener_results",
+              "signature": "def on_screener_results(self, result: Any) -> KeepSet",
+              "line_start": 75,
+              "line_end": 75
+            },
+            {
+              "name": "on_fill",
+              "signature": "def on_fill(self, fill: FillEvent) -> None",
+              "line_start": 77,
+              "line_end": 77
+            },
+            {
+              "name": "reconcile_preopen",
+              "signature": "def reconcile_preopen(self, today: date) -> ReconcileReport",
+              "line_start": 79,
+              "line_end": 79
+            }
+          ],
+          "line_start": 71,
+          "line_end": 79
+        }
+      ]
+    },
+    "_repository.py": {
+      "module_id": "MD-EXE-009.002.M01",
+      "srd_id": "SRD-EXE-009.001",
+      "classes": [
+        {
+          "name": "MonitoringRepository",
+          "docstring": "SQLAlchemy-backed repository for the monitoring-session ledger and the",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, engine: Engine) -> None",
+              "line_start": 54,
+              "line_end": 55
+            },
+            {
+              "name": "insert_monitoring_rows",
+              "signature": "def insert_monitoring_rows(\n        self,\n        session_date: date,\n        preset_id: str,\n        run_timestamp: str,\n        symbols: Sequence[str],\n    ) -> tuple[str, ...]",
+              "docstring": "Insert one MONITORING row per symbol for *session_date*.",
+              "line_start": 59,
+              "line_end": 101
+            },
+            {
+              "name": "fetch_earliest_open_monitoring_row",
+              "signature": "def fetch_earliest_open_monitoring_row(\n        self,\n        symbol: str,\n    ) -> MonitoringSessionRow | None",
+              "docstring": "Earliest ``MONITORING`` row for *symbol* across all session_dates.",
+              "line_start": 103,
+              "line_end": 119
+            },
+            {
+              "name": "transition_to_entered",
+              "signature": "def transition_to_entered(\n        self,\n        session_date: str,\n        symbol: str,\n        entered_at: str,\n        trade_id: str,\n    ) -> None",
+              "line_start": 121,
+              "line_end": 140
+            },
+            {
+              "name": "transition_to_exited",
+              "signature": "def transition_to_exited(\n        self,\n        session_date: str,\n        symbol: str,\n        exited_at: str,\n    ) -> None",
+              "line_start": 142,
+              "line_end": 159
+            },
+            {
+              "name": "bulk_skip_stale_monitoring",
+              "signature": "def bulk_skip_stale_monitoring(self, today: date) -> int",
+              "docstring": "Flip prior-day MONITORING rows to SKIPPED.  Returns row count.",
+              "line_start": 161,
+              "line_end": 173
+            },
+            {
+              "name": "evict_symbol_atomic",
+              "signature": "def evict_symbol_atomic(\n        self,\n        symbol: str,\n        today: date,\n        evicted_at: str,\n    ) -> tuple[str, ...]",
+              "docstring": "Single transaction: DELETE from every price_* table for *symbol*",
+              "line_start": 175,
+              "line_end": 220
+            },
+            {
+              "name": "fetch_history",
+              "signature": "def fetch_history(\n        self,\n        symbol: str,\n        days: int = 30,\n    ) -> tuple[MonitoringSessionRow, ...]",
+              "line_start": 224,
+              "line_end": 240
+            },
+            {
+              "name": "fetch_session",
+              "signature": "def fetch_session(\n        self,\n        session_date: date,\n        symbol: str,\n    ) -> MonitoringSessionRow | None",
+              "line_start": 242,
+              "line_end": 253
+            },
+            {
+              "name": "entered_symbols",
+              "signature": "def entered_symbols(self) -> frozenset[str]",
+              "line_start": 255,
+              "line_end": 260
+            },
+            {
+              "name": "stale_lifecycle_symbols",
+              "signature": "def stale_lifecycle_symbols(self, today: date) -> frozenset[str]",
+              "docstring": "Symbols with at least one prior-day MONITORING or SKIPPED row \u2014",
+              "line_start": 262,
+              "line_end": 272
+            },
+            {
+              "name": "open_system_position_symbols",
+              "signature": "def open_system_position_symbols(self) -> frozenset[str]",
+              "docstring": "Symbols of all currently-open system positions across users.",
+              "line_start": 276,
+              "line_end": 283
+            },
+            {
+              "name": "has_open_system_position",
+              "signature": "def has_open_system_position(self, symbol: str) -> bool",
+              "line_start": 285,
+              "line_end": 292
+            },
+            {
+              "name": "position_anchor",
+              "signature": "def position_anchor(self, symbol: str) -> str | None",
+              "docstring": "Anchor session date for the open system position, if any.",
+              "line_start": 294,
+              "line_end": 302
+            },
+            {
+              "name": "insert_trade_with_anchor",
+              "signature": "def insert_trade_with_anchor(\n        self,\n        trade_id: str,\n        user_id: int,\n        symbol: str,\n        side: Side,\n        qty: int,\n        price: float,\n        fill_time: str,\n        origin: TradeOrigin,\n        anchor_session_date: str | None,\n    ) -> None",
+              "line_start": 306,
+              "line_end": 337
+            },
+            {
+              "name": "upsert_position_with_anchor",
+              "signature": "def upsert_position_with_anchor(\n        self,\n        user_id: int,\n        symbol: str,\n        side: Side,\n        fill_qty: int,\n        fill_price: float,\n        origin: TradeOrigin,\n        anchor_session_date: str | None,\n    ) -> PositionSnapshot",
+              "docstring": "Apply a fill to the ``positions`` row for (user_id, symbol).",
+              "line_start": 339,
+              "line_end": 448
+            }
+          ],
+          "line_start": 50,
+          "line_end": 448
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_utcnow_iso",
+          "signature": "def _utcnow_iso() -> str",
+          "line_start": 31,
+          "line_end": 32
+        },
+        {
+          "name": "_row_to_session",
+          "signature": "def _row_to_session(row: sa.engine.RowMapping) -> MonitoringSessionRow",
+          "line_start": 35,
+          "line_end": 47
+        }
+      ],
+      "constants": [
+        "_PRICE_TABLES_FOR_EVICTION: tuple[str, ...] = (\"price_1m\", \"price_3m\", \"price_15m\")"
+      ]
+    },
+    "_scheduler.py": {
+      "module_id": "MD-EXE-010.001.M01",
+      "srd_id": "SRD-EXE-010.004",
+      "classes": [
+        {
+          "name": "_ReconcileScheduler",
+          "docstring": "Registers the daily reconcile cron + provides startup catch-up.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        command: MonitoringCommand,\n        bus: MonitoringEventBus,\n        cron_register: Callable[[str, Callable[[], None]], None],\n        *,\n        clock: Callable[[], datetime] | None      = None,\n        today_provider: Callable[[], date] | None = None,\n    ) -> None",
+              "line_start": 43,
+              "line_end": 58
+            },
+            {
+              "name": "start",
+              "signature": "def start(self) -> None",
+              "docstring": "Register the 09:15 ET weekday cron.",
+              "line_start": 60,
+              "line_end": 62
+            },
+            {
+              "name": "maybe_run_on_startup",
+              "signature": "def maybe_run_on_startup(self) -> ReconcileReport | None",
+              "docstring": "Invoke ``reconcile_preopen`` once if the daily run was missed.",
+              "line_start": 64,
+              "line_end": 78
+            },
+            {
+              "name": "_fire",
+              "signature": "def _fire(self) -> None",
+              "line_start": 80,
+              "line_end": 81
+            },
+            {
+              "name": "_mark_seen",
+              "signature": "def _mark_seen(self, _event: ReconcileCompleted) -> None",
+              "line_start": 83,
+              "line_end": 84
+            }
+          ],
+          "line_start": 35,
+          "line_end": 84
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_today_et",
+          "signature": "def _today_et() -> date",
+          "line_start": 31,
+          "line_end": 32
+        }
+      ],
+      "constants": [
+        "_NY      = ZoneInfo(\"America/New_York\")",
+        "_OPEN_ET = time(9, 15)",
+        "_CLOSE_ET = time(16, 0)",
+        "_CRON_EXPR = \"15 9 * * MON-FRI\""
+      ]
+    },
+    "_service.py": {
+      "module_id": "MD-EXE-009.002.M02",
+      "srd_id": "SRD-EXE-009.004",
+      "classes": [
+        {
+          "name": "MonitoringSessionService",
+          "docstring": "Concrete implementer of both ``MonitoringQuery`` and ``MonitoringCommand``.",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(\n        self,\n        repo: MonitoringRepository,\n        bus: MonitoringEventBus,\n        *,\n        clock: Callable[[], datetime] | None             = None,\n        today_provider: Callable[[], date] | None        = None,\n        filtered_provider: Callable[[date], frozenset[str]] | None = None,\n    ) -> None",
+              "line_start": 72,
+              "line_end": 91
+            },
+            {
+              "name": "keep_set",
+              "signature": "def keep_set(self, today: date) -> KeepSet",
+              "line_start": 95,
+              "line_end": 101
+            },
+            {
+              "name": "open_system_positions",
+              "signature": "def open_system_positions(self) -> frozenset[str]",
+              "line_start": 103,
+              "line_end": 104
+            },
+            {
+              "name": "has_open_system_position",
+              "signature": "def has_open_system_position(self, symbol: str) -> bool",
+              "line_start": 106,
+              "line_end": 107
+            },
+            {
+              "name": "session_for",
+              "signature": "def session_for(\n        self,\n        session_date: date,\n        symbol: str,\n    ) -> MonitoringSessionRow | None",
+              "line_start": 109,
+              "line_end": 114
+            },
+            {
+              "name": "history",
+              "signature": "def history(\n        self,\n        symbol: str,\n        days: int = 30,\n    ) -> tuple[MonitoringSessionRow, ...]",
+              "line_start": 116,
+              "line_end": 121
+            },
+            {
+              "name": "check_invariant",
+              "signature": "def check_invariant(self) -> InvariantReport",
+              "line_start": 123,
+              "line_end": 138
+            },
+            {
+              "name": "on_screener_results",
+              "signature": "def on_screener_results(self, result: Any) -> KeepSet",
+              "docstring": "Insert MONITORING rows for today's passing screener symbols.",
+              "line_start": 142,
+              "line_end": 177
+            },
+            {
+              "name": "on_fill",
+              "signature": "def on_fill(self, fill: FillEvent) -> None",
+              "docstring": "Route a fill through the lifecycle state machine.",
+              "line_start": 179,
+              "line_end": 332
+            },
+            {
+              "name": "reconcile_preopen",
+              "signature": "def reconcile_preopen(self, today: date) -> ReconcileReport",
+              "docstring": "Pre-open candle DB reconciliation.  Single-flight, idempotent.",
+              "line_start": 334,
+              "line_end": 428
+            }
+          ],
+          "line_start": 64,
+          "line_end": 428
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_today_et",
+          "signature": "def _today_et() -> date",
+          "line_start": 47,
+          "line_end": 48
+        }
+      ],
+      "constants": [
+        "_NY = ZoneInfo(\"America/New_York\")",
+        "_RETRY_BACKOFF_S = 0.20",
+        "_SKIPPED_REPORT = ReconcileReport("
+      ]
+    }
   }
 }

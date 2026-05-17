@@ -2,14 +2,28 @@
 
 **Document:** CONTEXT.md
 **Project:** us_swing
-**Last Updated:** 2026-05-15 (Session 42)
-**Updated By:** Claude Sonnet 4.6
+**Last Updated:** 2026-05-17 (Session 43)
+**Updated By:** Claude Opus 4.7
 
 ---
 
 ## 0. Immediate Next Step
 
-**Current:** FO-EXE-008 + FO-GUI-012 (Live Tick Streaming) complete. LiveTickWorker + AppService wiring implemented and all 35 tests pass. Next: resume EXE Phase 2 (FO-EXE-007) or SCR Phase 2 multi-provider AI ranking.
+**Current:** FO-EXE-009 + FO-EXE-010 (Intraday Monitoring Session Ledger + Pre-Open Candle DB Reconciliation) — full artifact chain complete (FO → SRD → DD → MD → UTCD); core code foundation implemented and smoke-test green; `gui/app_service.py` screener-handoff and scheduler-catch-up wiring done. **Next session must (a) wire the on_fill seam once `execution/execution_engine.py` exists (FO-EXE-001 / FO-EXE-002 still Draft), (b) translate the 66 UTCD entries into pytest files under `tests/exe/` and `tests/integration/` via test-writer, (c) write RN-EXE-1.3.0-20260517 once tests pass.**
+
+**FO-EXE-009 + FO-EXE-010 — Intraday Monitoring Session Lifecycle — IN PROGRESS (Session 43, 2026-05-17):**
+- New package `src/us_swing/core/monitoring_session/` (8 files): `_enums.py`, `_dto.py`, `_protocols.py`, `_events.py`, `_repository.py`, `_service.py`, `_scheduler.py`, `__init__.py`
+- New schema: `monitoring_session` ledger table keyed `(session_date, symbol)`; new columns `trade_origin` + `monitoring_session_date` on `trades`; `origin` + `anchor_session_date` on `positions`; idempotent `migrate_lifecycle_columns(engine)` wired into `create_schema()` in `db/schema.py`
+- Cross-tool service: CQRS-lite Protocols (`MonitoringQuery` / `MonitoringCommand` / `MonitoringEventBus`), 7-event sealed union, versioned frozen DTOs (`KeepSet`, `ReconcileReport`, `FillEvent`, `MonitoringSessionRow`, `InvariantReport`, `PositionSnapshot`, `ReconcileError`), `build_default_service` factory; public surface enforced via `__init__.py` only
+- Lifecycle state machine handles first-BUY → ENTERED, scale-in/scale-out invariance, full-close → EXITED, manual-fill bypass, and duplicate-filter case; `check_invariant()` reports `{ENTERED ledger} vs {open system positions}` mismatch
+- Reconciler: single-flight pre-open job — EOD finalize → keep_set computation → per-symbol atomic eviction across `price_1m/3m/15m` + ledger UPDATE → retry-once on `OperationalError`; idempotent; per-symbol failure isolated
+- `gui/app_service.py` patched: lazy-init lifecycle service on first screener-results signal, route through `command.on_screener_results`, feed `keep_set.filtered ∪ carryover` into `_filtered_symbols` / `IntradayCandleLoader` / `LiveBarWorker.set_symbols`; subscribe to `ReconcileCompleted` to push refreshed keep set into running live worker; startup catch-up via `_lifecycle_reconcile_if_due()`
+- Code-style passes: ruff clean on new files; mypy --strict clean for `core/monitoring_session/` (only pre-existing errors in other modules); smoke script `scripts/_smoke_lifecycle.py` validates the full Day-T-1 entry → Day-T reconcile → exit flow against in-memory SQLite (B/C evicted, A/D retained, history survives, invariant holds)
+- **Deferred to next session:**
+  - On-fill seam (`MonitoringCommand.on_fill` call from `ExecutionEngine.handle_order_fill`) — blocked on FO-EXE-001 / FO-EXE-002 implementation
+  - Cron registration for `09:15 ET` reconcile trigger — current implementation uses startup-catch-up only; `build_scheduler` accepts a no-op `cron_register` placeholder
+  - Pytest translation of UTCD entries (66 cases across 7 unit modules + integration); `tests/exe/test_monitoring_session_*.py` not yet written
+  - RN-EXE-1.3.0-20260517 to mark SRD-EXE-009.*/.010.* Implemented and update TRACE Status column
 
 **FO-EXE-008 + FO-GUI-012 — Live Tick Streaming — COMPLETE (Session 42, 2026-05-15):**
 - `LiveTickWorker(QThread)` streams live last-price ticks via IBKR `reqMktData` (clientId=14)

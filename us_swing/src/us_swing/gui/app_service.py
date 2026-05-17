@@ -90,6 +90,28 @@ from us_swing.data.models import (
 from us_swing.gui.system_store import SystemConfig, load_system_config
 from us_swing.gui.user_store import load_users, next_user_id, save_users
 
+# Lifecycle service — see FO-EXE-009 / FO-EXE-010.  Imported eagerly because the
+# Protocols and DTOs are pure-Python and add no GUI dependency.
+from us_swing.core.monitoring_session import (
+    MonitoringCommand,
+    MonitoringEventBus,
+    MonitoringQuery,
+    ReconcileCompleted,
+    build_default_service,
+    build_scheduler,
+)
+
+
+@dataclass(frozen=True)
+class _ScreenerLifecycleAdapter:
+    """Duck-typed adapter exposing the fields
+    ``MonitoringSessionService.on_screener_results`` reads off a
+    ``ScreenerRunResult``: ``preset_id``, ``run_timestamp``, ``results``.
+    """
+    preset_id:     str
+    run_timestamp: str
+    results:       dict[str, dict[str, Any]]
+
 
 # ── Default screener filter definitions (configuration, not data) ─────────────
 
@@ -1026,6 +1048,15 @@ class AppService(QObject):
         self._readiness_worker: _ReadinessWorker | None = None
         self._pending_candle_symbols: list[str] | None = None
 
+        # ── Monitoring session lifecycle (FO-EXE-009 / FO-EXE-010) ───────────
+        # Service is lazy-built on first screener-results signal so a fresh
+        # install with no candle DB yet does not eagerly create the file.
+        self._lifecycle_query:     MonitoringQuery    | None = None
+        self._lifecycle_command:   MonitoringCommand  | None = None
+        self._lifecycle_bus:       MonitoringEventBus | None = None
+        self._lifecycle_scheduler: Any                | None = None
+        self._lifecycle_last_run:  datetime.date      | None = None
+
         self.screener_results_updated.connect(self._on_screener_results_updated)
         # Trigger candle fetch for any results that were saved from a prior screener run.
         QTimer.singleShot(0, self._boot_candle_check)
@@ -1194,8 +1225,11 @@ class AppService(QObject):
             _log.info("[Candles] No previous screener results found — skipping startup fetch")
             return
         _log.info("[Candles] Found %d stock(s) from last screener run — starting candle fetch", len(symbols))
-        self._filtered_symbols = symbols
-        self._start_intraday_loader(symbols)
+        self._lifecycle_record_screener(entries)
+        keep_symbols = self._lifecycle_keep_symbols(symbols)
+        self._filtered_symbols = keep_symbols
+        self._start_intraday_loader(keep_symbols)
+        self._lifecycle_reconcile_if_due()
         if self._market_status.get("nyse") == "open":
             self._start_live_bar_worker()
 
@@ -1204,14 +1238,136 @@ class AppService(QObject):
         if not symbols:
             _log.info("[Candles] Screener returned no stocks — skipping candle fetch")
             return
-        self._filtered_symbols = symbols
+        # FO-EXE-009 — record into the monitoring-session ledger BEFORE
+        # triggering downstream consumers so they always see a consistent state.
+        self._lifecycle_record_screener(entries)
+        keep_symbols = self._lifecycle_keep_symbols(symbols)
+        self._filtered_symbols = keep_symbols
         # No ibkr_enabled guard here — the loader tries IBKR first and falls back
         # to yfinance automatically. Historical candle download must run regardless
         # of market hours so strategy indicators have data ready at market open.
-        self._start_intraday_loader(symbols)
+        self._start_intraday_loader(keep_symbols)
+        # FO-EXE-010 — fire pre-open reconcile if today's run has not yet
+        # executed.  The service's internal single-flight guard makes this safe
+        # to call from any path.
+        self._lifecycle_reconcile_if_due()
         # Restart live bars with the new symbol list if market is currently open.
         if self._market_status.get("nyse") == "open":
             self._start_live_bar_worker()
+
+    # ── Monitoring session lifecycle wiring (FO-EXE-009 / FO-EXE-010) ────────
+    #
+    # NOTE: the order-fill seam (system fills → MonitoringCommand.on_fill) is
+    # NOT wired here.  It will land in execution/execution_engine.py once
+    # FO-EXE-001 / FO-EXE-002 are implemented.  Until then no system positions
+    # are created, so carryover is always empty and only the screener-handoff
+    # and reconcile paths exercise the service.
+
+    def _ensure_lifecycle_service(self) -> bool:
+        """Lazily construct the lifecycle service + scheduler.  Returns True if
+        the service is available, False if the candle DB cannot be opened."""
+        if self._lifecycle_command is not None:
+            return True
+        try:
+            from sqlalchemy import create_engine
+            from us_swing.db.schema import create_schema
+        except Exception as exc:                                      # pragma: no cover
+            _log.warning("[Lifecycle] Unable to import DB layer: %r", exc)
+            return False
+        try:
+            _CANDLE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+            engine = create_engine(f"sqlite:///{_CANDLE_DB_PATH}", future=True)
+            create_schema(engine)
+            query, command, bus = build_default_service(
+                engine,
+                filtered_provider = self._lifecycle_filtered_provider,
+            )
+            scheduler = build_scheduler(
+                command       = command,
+                bus           = bus,
+                cron_register = lambda _expr, _fn: None,  # FO-EXE-010 follow-up
+            )
+        except Exception as exc:
+            _log.warning("[Lifecycle] Service init failed: %r", exc)
+            return False
+        self._lifecycle_query     = query
+        self._lifecycle_command   = command
+        self._lifecycle_bus       = bus
+        self._lifecycle_scheduler = scheduler
+        bus.subscribe(ReconcileCompleted, self._on_lifecycle_reconcile_completed)
+        _log.info("[Lifecycle] Monitoring session service ready")
+        return True
+
+    def _lifecycle_filtered_provider(self, _today: datetime.date) -> frozenset[str]:
+        """Resolve today's filtered set for ``MonitoringQuery.keep_set``."""
+        entries = self.get_latest_screener_results()
+        return frozenset(e.symbol for e in entries)
+
+    def _lifecycle_record_screener(self, entries: list[FilteredStockEntry]) -> None:
+        """Push screener entries into the monitoring-session ledger."""
+        if not entries:
+            return
+        if not self._ensure_lifecycle_service():
+            return
+        # Adapter exposing the duck-typed surface
+        # ``MonitoringSessionService.on_screener_results`` consumes.  Real
+        # `ScreenerRunResult` carries preset_id/run_timestamp; here we derive
+        # them from the entries so the integration works before the screener
+        # storage layer is wired through.
+        screener_name = entries[0].screener_name or "default"
+        date_str      = entries[0].date or datetime.date.today().isoformat()
+        result = _ScreenerLifecycleAdapter(
+            preset_id     = screener_name,
+            run_timestamp = f"{date_str}T00:00:00Z",
+            results       = {e.symbol: {"passed": True} for e in entries},
+        )
+        try:
+            assert self._lifecycle_command is not None
+            self._lifecycle_command.on_screener_results(result)
+        except Exception as exc:
+            _log.warning("[Lifecycle] on_screener_results failed: %r", exc)
+
+    def _lifecycle_keep_symbols(self, fallback: list[str]) -> list[str]:
+        """Return today's keep-set as a sorted list.  Falls back to *fallback*
+        if the lifecycle service is unavailable (preserves legacy behaviour)."""
+        if self._lifecycle_query is None:
+            return fallback
+        try:
+            keep = self._lifecycle_query.keep_set(datetime.date.today())
+        except Exception as exc:
+            _log.warning("[Lifecycle] keep_set lookup failed: %r", exc)
+            return fallback
+        union = keep.filtered | keep.carryover
+        return sorted(union) if union else fallback
+
+    def _lifecycle_reconcile_if_due(self) -> None:
+        """Run pre-open reconcile via the scheduler's catch-up path.  Single-
+        flight protection in the service makes repeated calls safe."""
+        if self._lifecycle_scheduler is None:
+            return
+        today = datetime.date.today()
+        if self._lifecycle_last_run == today:
+            return
+        try:
+            report = self._lifecycle_scheduler.maybe_run_on_startup()
+        except Exception as exc:
+            _log.warning("[Lifecycle] Reconcile catch-up failed: %r", exc)
+            return
+        if report is not None:
+            self._lifecycle_last_run = today
+
+    def _on_lifecycle_reconcile_completed(self, _event: ReconcileCompleted) -> None:
+        """Push the post-reconcile keep set into any running live bar worker."""
+        if self._live_bar_worker is None or not self._live_bar_worker.isRunning():
+            return
+        symbols = self._lifecycle_keep_symbols(self._filtered_symbols)
+        if symbols == self._filtered_symbols:
+            return
+        self._filtered_symbols = symbols
+        try:
+            self._live_bar_worker.set_symbols(symbols)
+        except Exception as exc:
+            _log.warning("[Lifecycle] LiveBarWorker.set_symbols failed: %r", exc)
 
     def _start_intraday_loader(self, symbols: list[str]) -> None:
         loader_busy = self._intraday_loader is not None and self._intraday_loader.isRunning()

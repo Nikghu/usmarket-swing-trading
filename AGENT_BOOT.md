@@ -174,6 +174,10 @@ Modular Python 3.11+ platform for US equity swing trading: Analysis, Screening, 
 > All `/project:*` commands load this automatically. For ad-hoc Class D prompts the
 > prompt-evaluator reframed output will include the instruction to read it.
 
+### §9.1 — Compact-Doc Rule (do not miss)
+
+`process.md` §0 rule #3: **SRD, MD, and UTCD are compact-table artifacts.** One short sentence per Description cell. No embedded SQL/Python code blocks, no `**Bold:**` topic headers, no multi-paragraph prose. Algorithmic detail (state machines, transaction sequences, pseudo-code) belongs in DD — never SRD. Reference style: `us_swing/docs/execution/SRD.md` sections 1–5 (NOT sections 6–8, which drifted verbose). FO allows a short intro paragraph + bullet requirements; DD is the only artifact where detailed prose is expected. See `.claude/rules/artifact-conventions.md` § "Documentation Style — Compact Tables" for the full rule.
+
 ---
 
 ## §10 — Slash Command Registry

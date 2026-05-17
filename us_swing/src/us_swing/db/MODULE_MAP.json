@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-16T15:20:14",
+  "generated": "2026-05-16T18:42:06",
   "subfolder": "db",
   "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\db",
   "tool_code": "INF",
@@ -193,23 +193,31 @@
       "srd_id": "SRD-INF-004.001",
       "top_level_functions": [
         {
+          "name": "migrate_lifecycle_columns",
+          "signature": "def migrate_lifecycle_columns(engine: sa.Engine) -> None",
+          "docstring": "Add monitoring-session lifecycle columns to ``trades`` and ``positions``",
+          "line_start": 199,
+          "line_end": 212
+        },
+        {
           "name": "create_schema",
           "signature": "def create_schema(engine: sa.Engine) -> None",
-          "docstring": "Create all tables and indexes if they do not already exist.",
-          "line_start": 165,
-          "line_end": 167
+          "docstring": "Create all tables and indexes if they do not already exist, then run",
+          "line_start": 215,
+          "line_end": 219
         },
         {
           "name": "drop_schema",
           "signature": "def drop_schema(engine: sa.Engine) -> None",
           "docstring": "Drop all tables (test use only).",
-          "line_start": 170,
-          "line_end": 172
+          "line_start": 222,
+          "line_end": 224
         }
       ],
       "constants": [
         "_PRICE_INDEXES = [",
-        "PRICE_TABLES: dict[str, sa.Table] = {"
+        "PRICE_TABLES: dict[str, sa.Table] = {",
+        "_LIFECYCLE_COLUMN_ADDITIONS: tuple[tuple[str, str, str], ...] = ("
       ]
     }
   }

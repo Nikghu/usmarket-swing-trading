@@ -1,10 +1,10 @@
 # Design Document — Execution & Risk Management (EXE)
 
 **Document ID:** DD-EXE
-**Version:** 1.4.0
-**Traces To:** SRD-EXE v1.5.0
+**Version:** 1.5.0
+**Traces To:** SRD-EXE v1.6.0
 **Status:** Draft
-**Last Updated:** 2026-05-15
+**Last Updated:** 2026-05-16
 **Project:** US Swing Trading System
 
 ---
@@ -1118,3 +1118,815 @@ def _on_ibkr_error(self, reqId: int, code: int, msg: str,
 | Same tag appears in successive `set_contracts` calls | No duplicate `reqMktData` — `to_add` excludes existing tags |
 | conId is 0 at reqMktData return time | `_tag_by_conid` populated lazily on first `pendingTickersEvent` where `ticker.contract.conId` becomes non-zero |
 | `ticker.last` and `ticker.close` both NaN | Signal suppressed; handler called again on next price update |
+
+---
+
+## DD-EXE-009.001.D01 — Schema Additions & Idempotent Migration
+
+**Parent SRD:** SRD-EXE-009.001, SRD-EXE-009.002, SRD-EXE-009.003
+- **Status:** Draft
+
+### `monitoring_session` Table Definition (addition to `db/schema.py`)
+
+```python
+monitoring_session = Table(
+    "monitoring_session",
+    metadata,
+    Column("session_date",    Text,  nullable=False),
+    Column("symbol",          Text,  nullable=False),
+    Column("preset_id",       Text,  nullable=False),
+    Column("run_timestamp",   Text,  nullable=False),
+    Column("added_at",        Text,  nullable=False),
+    Column("lifecycle_state", Text,  nullable=False, server_default="MONITORING"),
+    Column("entered_at",      Text,  nullable=True),
+    Column("exited_at",       Text,  nullable=True),
+    Column("evicted_at",      Text,  nullable=True),
+    Column("trade_id",        Text,  nullable=True),
+    PrimaryKeyConstraint("session_date", "symbol", name="pk_monitoring_session"),
+)
+Index("idx_monitoring_session_state",  monitoring_session.c.lifecycle_state)
+Index("idx_monitoring_session_symbol", monitoring_session.c.symbol)
+```
+
+Applied via the existing `create_schema(engine, checkfirst=True)` — additive, no-op on already-provisioned DBs.
+
+### `trades` and `positions` Column Migration
+
+`db/schema.py` declares the columns on the table objects so fresh DBs get them via `create_schema`. Existing DBs run a one-shot idempotent migration on app start:
+
+```python
+def migrate_lifecycle_columns(engine: Engine) -> None:
+    """Add lifecycle columns to trades + positions if missing. Idempotent."""
+    with engine.begin() as conn:
+        existing_trades = {row["name"] for row in conn.execute(text("PRAGMA table_info(trades)")).mappings()}
+        if "trade_origin" not in existing_trades:
+            conn.execute(text("ALTER TABLE trades ADD COLUMN trade_origin TEXT"))
+        if "monitoring_session_date" not in existing_trades:
+            conn.execute(text("ALTER TABLE trades ADD COLUMN monitoring_session_date TEXT"))
+
+        existing_positions = {row["name"] for row in conn.execute(text("PRAGMA table_info(positions)")).mappings()}
+        if "origin" not in existing_positions:
+            conn.execute(text("ALTER TABLE positions ADD COLUMN origin TEXT"))
+        if "anchor_session_date" not in existing_positions:
+            conn.execute(text("ALTER TABLE positions ADD COLUMN anchor_session_date TEXT"))
+```
+
+Called once from `DatabaseManager.__init__` after `create_schema(...)`. Legacy rows keep NULL — all lifecycle queries explicitly filter `origin = 'system'` / `trade_origin = 'system'`, so NULL rows are naturally excluded.
+
+### State Enum (application-layer)
+
+```python
+class LifecycleState(str, Enum):
+    MONITORING = "MONITORING"
+    ENTERED    = "ENTERED"
+    SKIPPED    = "SKIPPED"
+    EVICTED    = "EVICTED"
+    EXITED     = "EXITED"
+
+class TradeOrigin(str, Enum):
+    SYSTEM = "system"
+    MANUAL = "manual"
+
+class Side(str, Enum):
+    BUY  = "BUY"
+    SELL = "SELL"
+```
+
+DB stores raw strings; `_repository` validates on read.
+
+---
+
+## DD-EXE-009.001.D02 — `_repository.py` — DB Access Layer
+
+**Parent SRD:** SRD-EXE-009.001, SRD-EXE-009.005, SRD-EXE-009.006, SRD-EXE-009.007, SRD-EXE-009.009, SRD-EXE-009.012
+- **Status:** Draft
+
+Only file under `core/monitoring_session/` that imports SQLAlchemy. Wraps every DB operation in a typed method so `_service.py` stays SQL-free.
+
+### Public Interface
+
+```python
+class MonitoringRepository:
+    def __init__(self, engine: Engine) -> None: ...
+
+    # Ledger
+    def insert_monitoring_rows(
+        self,
+        session_date: date,
+        preset_id: str,
+        run_timestamp: str,
+        symbols: Sequence[str],
+    ) -> tuple[str, ...]:
+        """Returns symbols actually inserted (ON CONFLICT DO NOTHING semantics)."""
+
+    def fetch_earliest_open_monitoring_row(self, symbol: str) -> MonitoringSessionRow | None:
+        """Earliest MONITORING row across all session_dates for symbol."""
+
+    def transition_to_entered(
+        self,
+        session_date: date,
+        symbol: str,
+        entered_at: str,
+        trade_id: str,
+    ) -> None: ...
+
+    def transition_to_exited(
+        self,
+        session_date: date,
+        symbol: str,
+        exited_at: str,
+    ) -> None: ...
+
+    def bulk_skip_stale_monitoring(self, today: date) -> int:
+        """UPDATE ... SET state='SKIPPED' WHERE session_date < today AND state='MONITORING'. Returns row count."""
+
+    def evict_symbol_atomic(self, symbol: str, evicted_at: str) -> tuple[str, ...]:
+        """Single transaction: DELETE from price_1m/3m/15m + UPDATE ledger rows to EVICTED.
+        Returns the session_dates marked EVICTED. Raises ReconcileError on any failure."""
+
+    def fetch_history(self, symbol: str, days: int) -> tuple[MonitoringSessionRow, ...]: ...
+    def fetch_session(self, session_date: date, symbol: str) -> MonitoringSessionRow | None: ...
+
+    # Positions / trades
+    def open_system_position_symbols(self) -> frozenset[str]:
+        """SELECT symbol FROM positions WHERE state != 'CLOSED' AND origin = 'system'."""
+
+    def has_open_system_position(self, symbol: str) -> bool: ...
+
+    def insert_trade_with_anchor(
+        self,
+        trade_id: str,
+        symbol: str,
+        side: Side,
+        qty: int,
+        price: float,
+        fill_time: str,
+        origin: TradeOrigin,
+        anchor_session_date: str | None,
+    ) -> None: ...
+
+    def upsert_position_with_anchor(
+        self,
+        symbol: str,
+        qty_delta: int,
+        side: Side,
+        price: float,
+        origin: TradeOrigin,
+        anchor_session_date: str | None,
+    ) -> PositionSnapshot:
+        """Updates positions.quantity, state, average_price, origin, anchor_session_date.
+        Returns post-update snapshot so caller can decide if the fill closes the position."""
+
+    # Diagnostics
+    def entered_symbols(self) -> frozenset[str]:
+        """SELECT symbol FROM monitoring_session WHERE lifecycle_state = 'ENTERED'."""
+```
+
+### `evict_symbol_atomic` Implementation
+
+```python
+def evict_symbol_atomic(self, symbol: str, evicted_at: str) -> tuple[str, ...]:
+    with self._engine.begin() as conn:        # SAVEPOINT-style single transaction
+        for tf in ("price_1m", "price_3m", "price_15m"):
+            conn.execute(
+                text(f"DELETE FROM {tf} WHERE symbol = :sym"),
+                {"sym": symbol},
+            )
+        result = conn.execute(
+            text(
+                "UPDATE monitoring_session "
+                "SET lifecycle_state = 'EVICTED', evicted_at = :ts "
+                "WHERE symbol = :sym "
+                "  AND lifecycle_state IN ('SKIPPED', 'MONITORING') "
+                "  AND session_date < :today "
+                "RETURNING session_date"
+            ),
+            {"sym": symbol, "ts": evicted_at, "today": _today_str_et()},
+        )
+        return tuple(row[0] for row in result)
+    # SQLAlchemy auto-rollback on exception; caller wraps in retry-once
+```
+
+SQLite supports `RETURNING` from 3.35.0+; project pins ≥ 3.39.
+
+### Thread Safety
+
+All methods are stateless on the repository (no caches). SQLAlchemy's `Engine` connection pool serialises writes via SQLite's process-wide lock; reads use shared connections. Repository is safe to share across threads — `_service` holds one instance per `MonitoringSessionService`.
+
+---
+
+## DD-EXE-009.002.D01 — `_service.py` — Lifecycle State Machine
+
+**Parent SRD:** SRD-EXE-009.004, SRD-EXE-009.005, SRD-EXE-009.006, SRD-EXE-009.007, SRD-EXE-009.008, SRD-EXE-009.009, SRD-EXE-009.010
+- **Status:** Draft
+
+### Class Skeleton
+
+```python
+class MonitoringSessionService:                # implements MonitoringQuery + MonitoringCommand
+    def __init__(
+        self,
+        repo: MonitoringRepository,
+        bus:  MonitoringEventBus,
+        clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+        today_provider: Callable[[], date] = _today_et,
+    ) -> None:
+        self._repo  = repo
+        self._bus   = bus
+        self._clock = clock
+        self._today = today_provider
+        self._lock  = threading.RLock()
+        self._reconcile_lock     = threading.Lock()
+        self._reconcile_running_for: date | None = None
+```
+
+`clock` and `today_provider` are injected for deterministic tests.
+
+### `on_screener_results` Algorithm
+
+```python
+def on_screener_results(self, result: ScreenerRunResult) -> KeepSet:
+    today = self._today()
+    symbols = sorted({s for s, r in result.results.items() if r.get("passed")})
+    with self._lock:
+        inserted = self._repo.insert_monitoring_rows(
+            session_date=today,
+            preset_id=result.preset_id,
+            run_timestamp=result.run_timestamp,
+            symbols=symbols,
+        )
+    for symbol in inserted:
+        self._bus.publish(SymbolStartedMonitoring(
+            event_id=str(uuid4()),
+            occurred_at=self._clock().isoformat(),
+            symbol=symbol,
+            session_date=str(today),
+            preset_id=result.preset_id,
+            run_timestamp=result.run_timestamp,
+            schema_version=1,
+        ))
+    return KeepSet(
+        filtered=frozenset(symbols),
+        carryover=self._repo.open_system_position_symbols(),
+        as_of=today,
+        schema_version=1,
+    )
+```
+
+### `on_fill` Decision Tree
+
+```
+on_fill(fill):
+    if fill.origin == MANUAL:
+        repo.insert_trade_with_anchor(..., origin=MANUAL, anchor=None)
+        repo.upsert_position_with_anchor(..., origin=MANUAL, anchor=None)
+        return                                              # SRD-009.008 (a)
+
+    # origin == SYSTEM
+    with self._lock:
+        has_open = repo.has_open_system_position(fill.symbol)
+
+        if not has_open and fill.side == BUY:
+            anchor = repo.fetch_earliest_open_monitoring_row(fill.symbol)
+            if anchor is None:
+                log.error("[Lifecycle] System BUY for %s without monitoring row", fill.symbol)
+                # Defensive: still record the trade with anchor=None so audit is preserved.
+                repo.insert_trade_with_anchor(..., origin=SYSTEM, anchor=None)
+                repo.upsert_position_with_anchor(..., origin=SYSTEM, anchor=None)
+                return
+            # First-BUY transition (SRD-009.005)
+            anchor_date = anchor.session_date
+            repo.transition_to_entered(anchor_date, fill.symbol,
+                                       entered_at=fill.fill_time, trade_id=fill.trade_id)
+            repo.insert_trade_with_anchor(..., origin=SYSTEM, anchor=anchor_date)
+            snap = repo.upsert_position_with_anchor(..., origin=SYSTEM, anchor=anchor_date)
+            event = SymbolEnteredPosition(...)
+            self._bus.publish(event)
+            return
+
+        # has_open == True  →  scale-in / scale-out / close
+        anchor_date = repo.position_anchor(fill.symbol)
+        repo.insert_trade_with_anchor(..., origin=SYSTEM, anchor=anchor_date)
+        snap = repo.upsert_position_with_anchor(..., origin=SYSTEM, anchor=anchor_date)
+
+        if snap.state == "CLOSED":
+            # Exit transition (SRD-009.007)
+            repo.transition_to_exited(anchor_date, fill.symbol, exited_at=fill.fill_time)
+            self._bus.publish(SymbolExitedPosition(
+                symbol=fill.symbol, anchor_session_date=anchor_date,
+                exit_trade_id=fill.trade_id, exit_time=fill.fill_time,
+                realised_pnl=snap.realised_pnl, ...))
+        else:
+            # Scale-in or scale-out (SRD-009.006)
+            self._bus.publish(SymbolPositionScaled(
+                symbol=fill.symbol, anchor_session_date=anchor_date,
+                trade_id=fill.trade_id, side=fill.side, fill_qty=fill.qty,
+                new_position_state=snap.state, fill_time=fill.fill_time, ...))
+```
+
+The `self._lock` (`RLock`) guards the decision-tree window so two concurrent `on_fill` calls for the same symbol see a consistent `has_open_system_position` reading. All repository methods involved in a single call execute in one DB transaction — SQLite serialises writes process-wide, so the lock plus the transaction yield the invariant required by SRD-EXE-009.009.
+
+### `MonitoringQuery` Read Methods
+
+```python
+def keep_set(self, today: date) -> KeepSet:
+    return KeepSet(
+        filtered=self._latest_filtered_for(today),
+        carryover=self._repo.open_system_position_symbols(),
+        as_of=today, schema_version=1,
+    )
+
+def open_system_positions(self) -> frozenset[str]:
+    return self._repo.open_system_position_symbols()
+
+def has_open_system_position(self, symbol: str) -> bool:
+    return self._repo.has_open_system_position(symbol)
+
+def check_invariant(self) -> InvariantReport:
+    a = self._repo.entered_symbols()
+    b = self._repo.open_system_position_symbols()
+    return InvariantReport(
+        ok=(a == b),
+        only_in_a=tuple(sorted(a - b)),
+        only_in_b=tuple(sorted(b - a)),
+        schema_version=1,
+    )
+```
+
+`_latest_filtered_for(today)` calls into the existing `ScreenerResultsStorage.load_for_execution(preset_id=SystemConfig.active_screener_preset_id, today=today)`.
+
+### Anchor Resolution Rule
+
+"Earliest open `MONITORING` row" = `SELECT * FROM monitoring_session WHERE symbol = :sym AND lifecycle_state = 'MONITORING' ORDER BY session_date ASC LIMIT 1`. Once consumed by an entry, that row becomes `ENTERED` and is no longer "open" for future fills (which see `has_open_system_position == True` instead).
+
+---
+
+## DD-EXE-009.002.D02 — `_events.py` — Sealed Event Union & In-Process Bus
+
+**Parent SRD:** SRD-EXE-009.011
+- **Status:** Draft
+
+### Event Dataclasses
+
+```python
+@dataclass(frozen=True, slots=True)
+class _EventBase:
+    event_id:       str   # UUID4 hex
+    occurred_at:    str   # ISO-8601 UTC
+    schema_version: int = 1
+
+@dataclass(frozen=True, slots=True)
+class SymbolStartedMonitoring(_EventBase):
+    symbol:        str = ""
+    session_date:  str = ""
+    preset_id:     str = ""
+    run_timestamp: str = ""
+
+@dataclass(frozen=True, slots=True)
+class SymbolEnteredPosition(_EventBase):
+    symbol:               str = ""
+    anchor_session_date:  str = ""
+    trade_id:             str = ""
+    fill_qty:             int = 0
+    fill_time:            str = ""
+
+@dataclass(frozen=True, slots=True)
+class SymbolPositionScaled(_EventBase):
+    symbol:               str = ""
+    anchor_session_date:  str = ""
+    trade_id:             str = ""
+    side:                 Side = Side.BUY
+    fill_qty:             int = 0
+    new_position_state:   str = ""
+    fill_time:            str = ""
+
+@dataclass(frozen=True, slots=True)
+class SymbolExitedPosition(_EventBase):
+    symbol:               str = ""
+    anchor_session_date:  str = ""
+    exit_trade_id:        str = ""
+    exit_time:            str = ""
+    realised_pnl:         float = 0.0
+
+@dataclass(frozen=True, slots=True)
+class SymbolSkipped(_EventBase):
+    symbol:       str = ""
+    session_date: str = ""
+
+@dataclass(frozen=True, slots=True)
+class SymbolEvicted(_EventBase):
+    symbol:                 str = ""
+    evicted_session_dates:  tuple[str, ...] = ()
+
+@dataclass(frozen=True, slots=True)
+class ReconcileCompleted(_EventBase):
+    report: ReconcileReport = field(default_factory=lambda: ReconcileReport(
+        0, 0, 0, 0, (), 0, (), 1))
+
+MonitoringEvent = (
+    SymbolStartedMonitoring | SymbolEnteredPosition | SymbolPositionScaled |
+    SymbolExitedPosition  | SymbolSkipped         | SymbolEvicted        |
+    ReconcileCompleted
+)
+```
+
+The `_EventBase` default args + concrete-class additional defaults are required because `frozen=True` dataclasses with a non-default `_EventBase` field would forbid subclasses adding fields without defaults; pinning defaults here keeps the inheritance chain valid in Python 3.11.
+
+### Subscription & Dispatch
+
+```python
+@dataclass
+class Subscription:
+    _bus:        "_InProcessBus"
+    _event_type: type
+    _handler:    Callable[[Any], None]
+    _alive:      bool = True
+
+    def cancel(self) -> None:
+        if self._alive:
+            self._bus._unregister(self._event_type, self._handler)
+            self._alive = False
+
+
+class _InProcessBus:                          # implements MonitoringEventBus
+    def __init__(self) -> None:
+        self._lock = threading.RLock()
+        self._handlers: dict[type, list[Callable]] = defaultdict(list)
+
+    def subscribe(self, event_type: type, handler: Callable) -> Subscription:
+        with self._lock:
+            self._handlers[event_type].append(handler)
+        return Subscription(self, event_type, handler)
+
+    def publish(self, event: MonitoringEvent) -> None:
+        with self._lock:
+            handlers = list(self._handlers.get(type(event), ()))
+        for h in handlers:                    # outside the lock — handlers may re-enter
+            try:
+                h(event)
+            except Exception as exc:
+                log.error("[Lifecycle] Handler %s raised on %s: %r",
+                          getattr(h, "__qualname__", repr(h)),
+                          type(event).__name__, exc)
+```
+
+Dispatch is synchronous on the publishing thread. Handlers are responsible for their own non-blocking behaviour (e.g., GUI handlers must `QMetaObject.invokeMethod(..., Qt.QueuedConnection)` to hop to the GUI thread). One bad handler cannot block sibling handlers — exceptions are caught and logged.
+
+### Why a Plain `list[Callable]`, Not `WeakSet`
+
+GUI bridges register a bound method as the handler; bound methods are non-hashable for `WeakSet` and need `WeakMethod`. Choosing `WeakMethod` would silently drop subscriptions if the bridge dropped its reference. Instead, the bridge holds the `Subscription` object and explicitly calls `subscription.cancel()` on teardown. This makes subscription lifetimes explicit and debuggable.
+
+---
+
+## DD-EXE-009.003.D01 — Public Surface, Package Layout & Factory
+
+**Parent SRD:** SRD-EXE-009.010, SRD-EXE-009.011, SRD-EXE-009.012
+- **Status:** Draft
+
+### File Layout
+
+```
+src/us_swing/core/monitoring_session/
+    __init__.py          # public surface — Protocols, DTOs, events, build_default_service
+    _service.py          # MonitoringSessionService concrete class
+    _repository.py       # MonitoringRepository (SQLAlchemy)
+    _events.py           # _InProcessBus + 7 event dataclasses + sealed union
+    _scheduler.py        # pre-open trigger glue (DD-EXE-010.002.D01)
+    _dto.py              # KeepSet, ReconcileReport, MonitoringSessionRow, FillEvent,
+                         # InvariantReport, ReconcileError, PositionSnapshot
+    _enums.py            # LifecycleState, TradeOrigin, Side
+```
+
+### `__init__.py` Public Surface
+
+```python
+"""Cross-tool monitoring-session service. The only module any non-internal
+consumer should import from."""
+
+from us_swing.core.monitoring_session._dto import (
+    KeepSet, ReconcileReport, MonitoringSessionRow, FillEvent,
+    InvariantReport, ReconcileError, PositionSnapshot,
+)
+from us_swing.core.monitoring_session._enums import (
+    LifecycleState, TradeOrigin, Side,
+)
+from us_swing.core.monitoring_session._events import (
+    MonitoringEvent,
+    SymbolStartedMonitoring, SymbolEnteredPosition, SymbolPositionScaled,
+    SymbolExitedPosition, SymbolSkipped, SymbolEvicted, ReconcileCompleted,
+)
+from us_swing.core.monitoring_session._protocols import (
+    MonitoringQuery, MonitoringCommand, MonitoringEventBus, Subscription,
+)
+
+# Factory only — concrete classes are NOT re-exported
+def build_default_service(
+    engine: Engine,
+    *,
+    today_provider: Callable[[], date] | None = None,
+    clock: Callable[[], datetime]       | None = None,
+) -> tuple[MonitoringQuery, MonitoringCommand, MonitoringEventBus]:
+    from us_swing.core.monitoring_session._repository import MonitoringRepository
+    from us_swing.core.monitoring_session._events     import _InProcessBus
+    from us_swing.core.monitoring_session._service    import MonitoringSessionService
+
+    bus     = _InProcessBus()
+    repo    = MonitoringRepository(engine)
+    service = MonitoringSessionService(
+        repo=repo, bus=bus,
+        today_provider=today_provider or _today_et,
+        clock=clock or (lambda: datetime.now(timezone.utc)),
+    )
+    return service, service, bus            # one object implements query + command
+
+__all__ = [
+    "MonitoringQuery", "MonitoringCommand", "MonitoringEventBus", "Subscription",
+    "KeepSet", "ReconcileReport", "MonitoringSessionRow", "FillEvent",
+    "InvariantReport", "ReconcileError", "PositionSnapshot",
+    "LifecycleState", "TradeOrigin", "Side",
+    "MonitoringEvent",
+    "SymbolStartedMonitoring", "SymbolEnteredPosition", "SymbolPositionScaled",
+    "SymbolExitedPosition", "SymbolSkipped", "SymbolEvicted", "ReconcileCompleted",
+    "build_default_service",
+]
+```
+
+`_protocols.py` (new minor file) holds the four `Protocol` declarations; broken out to avoid a circular import between `_service.py` (implementer) and `_dto.py` (DTO consumers).
+
+### Import-Graph Test (enforces Qt-free constraint)
+
+```python
+# tests/core/test_monitoring_session_imports.py
+def test_no_pyqt6_dependency() -> None:
+    """SRD-EXE-009.012: core/monitoring_session must not pull in PyQt6."""
+    pkg_root = Path(__file__).parents[2] / "src" / "us_swing" / "core" / "monitoring_session"
+    for py in pkg_root.rglob("*.py"):
+        src = py.read_text(encoding="utf-8")
+        assert "PyQt6" not in src, f"{py.name} imports PyQt6"
+        assert "pyqtSignal" not in src, f"{py.name} references pyqtSignal"
+
+def test_consumers_only_import_from_init() -> None:
+    """Underscore-prefixed modules must not be imported outside the package."""
+    src_root = Path(__file__).parents[2] / "src" / "us_swing"
+    banned   = re.compile(r"from\s+us_swing\.core\.monitoring_session\._\w+")
+    for py in src_root.rglob("*.py"):
+        if "monitoring_session" in py.parts:        # internal — allowed
+            continue
+        text = py.read_text(encoding="utf-8")
+        assert not banned.search(text), f"{py} imports a private monitoring_session module"
+```
+
+These two tests live in `tests/core/` and run on every CI invocation.
+
+---
+
+## DD-EXE-010.001.D01 — Reconciliation Algorithm
+
+**Parent SRD:** SRD-EXE-010.001, SRD-EXE-010.002, SRD-EXE-010.003, SRD-EXE-010.005
+- **Status:** Draft
+
+### `reconcile_preopen` Top-Level
+
+```python
+def reconcile_preopen(self, today: date) -> ReconcileReport:
+    if not self._reconcile_lock.acquire(blocking=False):
+        log.warning("[Lifecycle] Reconcile already running — skipping duplicate call")
+        return _SKIPPED_REPORT
+    started_at = time.perf_counter()
+    try:
+        self._reconcile_running_for = today
+
+        # ── Step 1: EOD finalize ────────────────────────────────────────
+        skipped_n = self._repo.bulk_skip_stale_monitoring(today)
+
+        # ── Step 2: compute eviction set ────────────────────────────────
+        keep   = self.keep_set(today)
+        ent    = self._repo.entered_symbols()              # invariant guard
+        stale  = self._repo.stale_lifecycle_symbols(today) # SKIPPED ∪ MONITORING < today
+        evict  = stale - keep.filtered - keep.carryover - ent
+
+        # ── Step 3: per-symbol eviction (failure-isolated) ──────────────
+        evicted_ok:    list[str] = []
+        errors:        list[ReconcileError] = []
+        now_iso = self._clock().isoformat()
+        for symbol in sorted(evict):
+            try:
+                dates = self._repo.evict_symbol_atomic(symbol, evicted_at=now_iso)
+                evicted_ok.append(symbol)
+                self._bus.publish(SymbolEvicted(
+                    event_id=str(uuid4()), occurred_at=now_iso,
+                    symbol=symbol, evicted_session_dates=dates, schema_version=1,
+                ))
+            except sqlalchemy.exc.OperationalError as exc:
+                # Retry-once for transient SQLite contention
+                time.sleep(0.20)
+                try:
+                    dates = self._repo.evict_symbol_atomic(symbol, evicted_at=now_iso)
+                    evicted_ok.append(symbol)
+                    self._bus.publish(SymbolEvicted(..., dates, ...))
+                except Exception as retry_exc:
+                    errors.append(ReconcileError(symbol, repr(retry_exc), 1))
+                    log.warning("[Lifecycle] Eviction failed for %s: %r", symbol, retry_exc)
+            except Exception as exc:
+                errors.append(ReconcileError(symbol, repr(exc), 1))
+                log.warning("[Lifecycle] Eviction failed for %s: %r", symbol, exc)
+
+        # ── Step 4: report & event ──────────────────────────────────────
+        duration_ms = int((time.perf_counter() - started_at) * 1000)
+        report = ReconcileReport(
+            filtered_n=len(keep.filtered),
+            carryover_n=len(keep.carryover),
+            skipped_n=skipped_n,
+            evicted_n=len(evicted_ok),
+            evicted_symbols=tuple(sorted(evicted_ok)),
+            duration_ms=duration_ms,
+            errors=tuple(errors),
+            schema_version=1,
+        )
+        log.info(
+            "[Lifecycle] Reconcile complete — %d filtered, %d carryover, "
+            "%d marked skipped, %d evicted in %d ms",
+            report.filtered_n, report.carryover_n, report.skipped_n,
+            report.evicted_n, report.duration_ms,
+        )
+        self._bus.publish(ReconcileCompleted(
+            event_id=str(uuid4()), occurred_at=now_iso,
+            report=report, schema_version=1,
+        ))
+        return report
+    finally:
+        self._reconcile_running_for = None
+        self._reconcile_lock.release()
+```
+
+### Retention Invariant Cross-Check
+
+If `ent != self._repo.open_system_position_symbols()`, log ERROR and abort eviction for the conflicting symbols. The mismatch is reported in `ReconcileReport.errors` with `message='invariant_violation'`. The reconciler does NOT auto-repair — repair is an operator action (separate `service.repair_invariant()` admin method, future work, out of scope).
+
+### `_SKIPPED_REPORT` Sentinel
+
+```python
+_SKIPPED_REPORT = ReconcileReport(
+    filtered_n=0, carryover_n=0, skipped_n=0, evicted_n=0,
+    evicted_symbols=(), duration_ms=0,
+    errors=(ReconcileError("__skipped__", "already_running", 1),),
+    schema_version=1,
+)
+```
+
+---
+
+## DD-EXE-010.002.D01 — Scheduler & Startup Catch-Up
+
+**Parent SRD:** SRD-EXE-010.004
+- **Status:** Draft
+
+### `_scheduler.py` Module
+
+```python
+import zoneinfo
+from datetime import datetime, time
+
+_NY = zoneinfo.ZoneInfo("America/New_York")
+_OPEN  = time(9, 15)
+_CLOSE = time(16, 0)
+
+class _ReconcileScheduler:
+    def __init__(
+        self,
+        command: MonitoringCommand,
+        bus:     MonitoringEventBus,
+        cron_register: Callable[[str, Callable], None],   # injected from existing scheduler infra
+    ) -> None:
+        self._command  = command
+        self._bus      = bus
+        self._cron     = cron_register
+        self._seen_for: date | None = None
+        self._bus.subscribe(ReconcileCompleted, self._mark_seen)
+
+    def start(self) -> None:
+        # 09:15 ET weekdays
+        self._cron("15 9 * * MON-FRI", lambda: self._fire(_today_et()))
+
+    def maybe_run_on_startup(self) -> ReconcileReport | None:
+        today = _today_et()
+        now_et = datetime.now(_NY).time()
+        if today.weekday() >= 5:
+            return None                          # weekend
+        if not (_OPEN <= now_et <= _CLOSE):
+            return None                          # outside the catch-up window
+        if self._seen_for == today:
+            return None                          # already ran this process
+        return self._fire(today)
+
+    def _fire(self, today: date) -> ReconcileReport:
+        return self._command.reconcile_preopen(today)
+
+    def _mark_seen(self, evt: ReconcileCompleted) -> None:
+        # event lacks a date field today; use the clock at completion time.
+        self._seen_for = _today_et()
+```
+
+### Hook Into Existing Scheduler
+
+The project already runs a `SchedulerService` consumed by `scheduler_dialog.py`. `_ReconcileScheduler.__init__` takes a `cron_register` callable injected by `AppService` — typically `app_service.scheduler.register_cron` — keeping `_scheduler.py` ignorant of the wider scheduler implementation. This matches the project's dependency-injection convention and keeps the module unit-testable with an in-memory cron stub.
+
+### Single-Flight
+
+Single-flight protection is implemented inside `MonitoringSessionService.reconcile_preopen` itself (DD-EXE-010.001.D01), not in the scheduler — so manual invocations, scheduled invocations, and startup catch-up all share the same guard.
+
+---
+
+## DD-EXE-010.003.D01 — AppService Handoff Wiring
+
+**Parent SRD:** SRD-EXE-010.006, SRD-EXE-009.004
+- **Status:** Draft
+
+### `AppService.__init__` Additions
+
+```python
+def __init__(self, ...) -> None:
+    ...
+    # Build the lifecycle service exactly once for the process
+    self._lifecycle_query, self._lifecycle_command, self._lifecycle_bus = \
+        build_default_service(engine=self._db.engine)
+
+    # Wire GUI bridge (gui/lifecycle_bridge.py — DD-EXE-009.003.D01 follow-up)
+    self._lifecycle_bridge = LifecycleBridge(self._lifecycle_bus, parent=self)
+
+    # Hook startup catch-up before LiveBarWorker.start()
+    self._reconcile_scheduler = _ReconcileScheduler(
+        command=self._lifecycle_command,
+        bus=self._lifecycle_bus,
+        cron_register=self._scheduler.register_cron,
+    )
+    self._reconcile_scheduler.start()
+    self._reconcile_scheduler.maybe_run_on_startup()
+
+    # Subscribe AppService to ReconcileCompleted so we can push the new
+    # keep_set into the live feed before it starts subscribing.
+    self._lifecycle_bus.subscribe(ReconcileCompleted, self._on_reconcile_completed)
+```
+
+### Replace `_on_screener_results_updated` Body
+
+```python
+@pyqtSlot(list)
+def _on_screener_results_updated(self, entries: list[FilteredStockEntry]) -> None:
+    if not entries:
+        return
+    # Reconstruct a ScreenerRunResult from entries (or accept the full result if
+    # the signal payload is upgraded — small refactor; see implementation phase).
+    result = self._latest_screener_result()
+    keep   = self._lifecycle_command.on_screener_results(result)
+
+    symbols = sorted(keep.filtered | keep.carryover)
+    if not symbols:
+        return
+
+    self._start_intraday_loader(symbols)        # SRD-EXE-006.007 logic, fed from KeepSet
+    if self._live_bar_worker is not None and self._live_bar_worker.isRunning():
+        self._live_bar_worker.set_symbols(symbols)
+```
+
+### `_on_reconcile_completed` Handler
+
+```python
+def _on_reconcile_completed(self, evt: ReconcileCompleted) -> None:
+    today  = _today_et()
+    keep   = self._lifecycle_query.keep_set(today)
+    symbols = sorted(keep.filtered | keep.carryover)
+    log.info("[Lifecycle] Post-reconcile keep set has %d symbol(s)", len(symbols))
+    if self._live_bar_worker is not None and self._live_bar_worker.isRunning():
+        self._live_bar_worker.set_symbols(symbols)
+    # Loader is triggered on the next screener results update — no eager fetch here
+```
+
+### Fill Routing (from `strategy_engine` / `execution_engine`)
+
+The single fill seam is `ExecutionEngine.handle_order_fill` (existing — SRD-EXE-002.002). One additional line after the existing `PositionTracker` mutation:
+
+```python
+self._lifecycle_command.on_fill(FillEvent(
+    symbol=fill.contract.symbol,
+    trade_id=str(fill.execution.orderId),
+    side=Side.BUY if fill.execution.side == "BOT" else Side.SELL,
+    qty=int(fill.execution.shares),
+    price=float(fill.execution.price),
+    fill_time=fill.execution.time.isoformat(),
+    origin=TradeOrigin.SYSTEM if signal.strategy_id != "manual" else TradeOrigin.MANUAL,
+    schema_version=1,
+))
+```
+
+The `origin` resolution uses `signal.strategy_id` for the immediate implementation; once SRD-EXE-009.002 column population is in place, the call site sets origin explicitly based on whether the order originated from `StrategyEngine` (system) or the GUI execution panel (manual).
+
+### Process Ordering on Startup
+
+1. `DatabaseManager.__init__` → `create_schema(...)` → `migrate_lifecycle_columns(...)`
+2. `build_default_service(engine)` → returns `(query, command, bus)`
+3. `_ReconcileScheduler.start()` + `maybe_run_on_startup()` — may run reconcile synchronously here
+4. `LiveBarWorker` constructed but NOT yet started
+5. `LiveBarWorker.start()` only after reconcile completes (or is confirmed not needed for today)
+
+Step 3's `maybe_run_on_startup()` is synchronous to enforce the ordering. If the user opens the app mid-session, reconcile completes before any tick subscription begins — preventing the brief window where evicted symbols could re-acquire ticks.
