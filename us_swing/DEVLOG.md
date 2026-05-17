@@ -2,6 +2,32 @@
 
 ---
 
+## [20260518] EXE — FO-EXE-009 + FO-EXE-010 Intraday Monitoring Session lifecycle — COMPLETE
+
+- Type: Feature (completion of work begun Session 43)
+- Tests: 66 UTCD cases translated via `test-writer` — 65 pass / 2 skip (skips blocked on FO-EXE-001/002 ExecutionEngine, stubbed for ID traceability)
+- Source fix during test phase: `_service.reconcile_preopen` adds per-symbol `ReconcileError(...,"invariant_violation",...)` per SRD-EXE-010.003 (previously log-only); T17 tightened to assert it
+- Status: 18 SRDs Approved → Implemented; UTCD Draft → Pass; TRACE Status → Implemented with RN=RN-EXE-1.3.0-20260518; doc bumps SRD 1.6.1 / UTCD 1.5.1 / TRACE 1.4.0
+- New: `docs/execution/revisions/RN-EXE-1.3.0-20260518.md`; `tests/core/monitoring_session/` (conftest + 7 unit files); `tests/integration/test_lifecycle_e2e.py`
+- Branch `feature/fo-exe-009-monitoring-session` pushed; PR [#9](https://github.com/Nikghu/agentqt/pull/9) open; 3 commits (`ca1d0db0`, `69dd20c7`, `add16c21`)
+
+---
+
+## [20260517] EXE — FO-EXE-009 + FO-EXE-010 Intraday Monitoring Session lifecycle — core foundation + GUI handoff
+
+- Type: Feature (in progress — code foundation complete, fill seam + tests pending)
+- Artifacts updated:
+  - Docs: `docs/execution/FO.md` v1.5.0 (FO-EXE-009 + FO-EXE-010 Draft), `SRD.md` v1.6.0 (18 SRDs Approved, compacted after rule alignment), `DD.md` v1.5.0 (8 design items), `MD.md` v1.5.0 (7 new MDs + 5 cross-tool patches), `UTCD.md` v1.5.0 (66 test cases Draft), `TRACE.md` v1.3.0
+  - Rules: added "Documentation Style — Compact Tables" section to `.claude/rules/artifact-conventions.md` and `AGENT_BOOT.md` §9.1 (codifies the SRD/MD/UTCD one-sentence-per-cell rule that surfaced mid-feature)
+  - New code: `src/us_swing/core/monitoring_session/` (8 files — `_enums.py`, `_dto.py`, `_protocols.py`, `_events.py`, `_repository.py`, `_service.py`, `_scheduler.py`, `__init__.py`)
+  - Patched code: `db/schema.py` (monitoring_session table + 4 new lifecycle columns + idempotent `migrate_lifecycle_columns()`), `gui/app_service.py` (lazy service init, screener handoff via `command.on_screener_results`, keep_set feed into loader + live worker, startup catch-up reconcile, ReconcileCompleted subscription)
+  - Smoke script: `scripts/_smoke_lifecycle.py` (manual end-to-end validation, in-memory SQLite, green)
+  - Memory: `feedback_srd_compact_style.md`, `feedback_extensible_core_design.md`
+- Summary:
+  Introduced a cross-tool monitoring-session ledger that keeps the intraday candle DB (`price_1m/3m/15m`) in sync with each day's screener-filtered universe plus any open system positions, and preserves full lifecycle history (filtered → monitored → entered/skipped → exited/evicted) even after candle rows for an evicted symbol are deleted. Architecture is CQRS-lite (read-only `MonitoringQuery` and mutating `MonitoringCommand` Protocols) with an in-process `MonitoringEventBus` and a 7-event sealed union, designed so the upcoming Intraday Strategy Execution module and future Backtesting tool can subscribe without any core edits. All cross-module DTOs are frozen+slotted with `schema_version`. State machine in `_service.py` correctly handles first-BUY entry, scale-in / scale-out invariance, full-close exit, manual-fill bypass, and the duplicate-filter case (re-emitted held symbol stays MONITORING). Reconciler is single-flight, idempotent, runs per-symbol atomic eviction transactions across all three price tables with retry-once on `OperationalError`. `gui/app_service.py` lazy-builds the service on first screener-results signal and feeds `keep_set.filtered ∪ carryover` into the existing loader and live worker; the order-fill seam will land once `ExecutionEngine` (FO-EXE-001 / FO-EXE-002) is implemented. Ruff clean, mypy --strict clean for the new package, end-to-end smoke test confirms B/C evicted, A/D retained, invariant holds across entry → reconcile → exit. Pytest translation of the 66 UTCD entries and RN-EXE-1.3.0 are deferred to the next session.
+
+---
+
 ## [20260515] EXE+GUI — FO-EXE-008 + FO-GUI-012 Live Tick Streaming complete
 
 - Type: Feature

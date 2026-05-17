@@ -1,9 +1,9 @@
 # Functional Objectives — Execution & Risk Management (EXE)
 
 **Document ID:** FO-EXE
-**Version:** 1.4.0
+**Version:** 1.5.0
 **Status:** Draft
-**Last Updated:** 2026-05-15
+**Last Updated:** 2026-05-16
 **Project:** US Swing Trading System
 
 > Traces to: `us_swing/requirements.md` §10, §11, §12, §13, §21.4, §22, §23, §25
@@ -170,3 +170,124 @@ The system shall provide a `LiveTickWorker` QThread module that maintains IBKR `
 4. `request_stop()` completes within 3 s: all reqMktData subscriptions cancelled, IBKR connection closed, QThread exits cleanly.
 5. Concurrent `set_contracts()` calls while the worker is running do not cause duplicate subscriptions or segfaults.
 6. A `SystemConfig.ibkr_tick_client_id` collision (IBKR error 326) is logged at WARNING level and the worker retries with `ibkr_tick_client_id + 1` up to 3 times before emitting a connection-failed signal.
+
+---
+
+## FO-EXE-009: Intraday Monitoring Session Ledger & Lifecycle
+
+**Status:** Approved
+**Priority:** Must
+**Depends on:** FO-EXE-006 (intraday candle download), FO-EXE-007 (live 3m formation), FO-SCR-008 (screener result persistence)
+**Source:** User requirement — keep candle DB in sync with daily screener-filtered universe and open system positions; preserve lifecycle history (filtered → monitored → entered/skipped → exited/evicted) for audit; build a single cross-module integration seam that the upcoming Intraday Strategy Execution module will consume.
+
+The system shall maintain a persistent **monitoring session ledger** — one row per `(session_date, symbol)` — that records every stock the screener emits intraday, its lifecycle outcome (monitored only, entered into a system position, skipped at end of day, evicted from the candle DB, or exited), and its linkage to the underlying trade fills. The ledger is the single source of truth for "what the system is currently watching" and "what the system is currently holding," and is exposed to other modules through a narrow Protocol-typed service surface with an event bus so future consumers (Intraday Strategy Execution, Backtesting, Risk Engine) can integrate without modifying core code.
+
+### Requirements
+
+1. **Ledger table.** The system shall provide a `monitoring_session` table keyed on `(session_date, symbol)` recording: `preset_id`, `run_timestamp`, `added_at`, `lifecycle_state` ∈ {`MONITORING`, `ENTERED`, `SKIPPED`, `EVICTED`, `EXITED`}, `entered_at`, `exited_at`, `evicted_at`, and `trade_id` (anchor system trade). Ledger rows are never deleted — they are the audit history even after candle rows for the symbol are evicted.
+
+2. **Screener handoff.** When a new `ScreenerRunResult` lands for the current trading date, the system shall insert one `monitoring_session` row in state `MONITORING` for each newly-passed symbol. The insert shall be idempotent: re-running the same preset on the same date does not duplicate rows. Symbols that drop out of a later same-day re-run are NOT removed — the row remains as a historical record.
+
+3. **System vs manual discrimination.** The `trades` table shall carry a new `trade_origin` column (`'system'` | `'manual'`) and a `monitoring_session_date` column linking each fill back to its anchor session. The `positions` table shall carry an `origin` column and `anchor_session_date` column. Only `trade_origin = 'system'` fills shall affect the monitoring ledger lifecycle; manual fills are recorded for PnL/audit but invisible to this feature.
+
+4. **Lifecycle transitions on fills.** Fills are routed through a single entry point on the service. The state machine:
+   - First system BUY fill against a `MONITORING` row → row flips to `ENTERED`; `positions.anchor_session_date` is set to that row's `session_date`; `entered_at` set to fill time; anchor `trade_id` recorded.
+   - Subsequent system BUY fills on the same anchor (scale-in) → no state change; a new `trades` row is inserted tagged with the anchor `monitoring_session_date`.
+   - Partial system SELL fills before full close → no state change; new `trades` row tagged to anchor.
+   - The system SELL fill that drives `positions.state = CLOSED` (qty = 0) → flip the anchor `monitoring_session` row to `EXITED`; `exited_at` set to fill time.
+   - Duplicate-filter case: if the screener re-emits a symbol already covered by an open anchor (e.g., next day), a new `MONITORING` row is inserted for the new `session_date`. That row shall NOT transition to `ENTERED` (the symbol is already held via the prior anchor) and shall be marked `SKIPPED` at end-of-day reconciliation — an accurate "filtered again, already held" record.
+
+5. **Consistency invariant.** At all times: `{symbol : monitoring_session.lifecycle_state == ENTERED}` shall equal `{symbol : positions.state != 'CLOSED' AND positions.origin = 'system'}`. Every state transition must preserve this invariant; integration tests shall assert it.
+
+6. **Cross-module service contract.** The system shall expose three Protocol-typed surfaces from `core/monitoring_session/__init__.py`:
+   - `MonitoringQuery` — read-only methods (`keep_set`, `open_system_positions`, `has_open_system_position`, `session_for`, `history`). Cheap, side-effect-free, safe to call from any thread. Consumed by all downstream modules.
+   - `MonitoringCommand` — state-mutating methods (`on_screener_results`, `on_fill`, `reconcile_preopen`). Consumed only by the order pipeline and the reconciler (FO-EXE-010).
+   - `MonitoringEventBus` — publish/subscribe surface emitting a sealed `MonitoringEvent` union: `SymbolStartedMonitoring`, `SymbolEnteredPosition`, `SymbolPositionScaled`, `SymbolExitedPosition`, `SymbolSkipped`, `SymbolEvicted`, `ReconcileCompleted`.
+
+7. **Versioned DTOs.** All cross-module payloads (`MonitoringSessionRow`, `KeepSet`, `ReconcileReport`, `FillEvent`, every `MonitoringEvent` subclass) shall be immutable frozen `@dataclass(slots=True)` containers with a `schema_version: int` field. Field additions are non-breaking; renames or removals bump the version.
+
+8. **Core stays GUI-free.** No module under `src/us_swing/core/monitoring_session/` shall import from PyQt6. The GUI shall bridge events into Qt signals at its own boundary; headless tooling (Backtesting, MCP) shall consume the same events without requiring a Qt installation.
+
+9. **Concrete-class isolation.** Consumers (EXE, GUI, future ISE, future BKT) shall type-annotate dependencies against the Protocols, never the concrete `_service.py` class, enabling in-memory test doubles and future replay implementations to be substituted without consumer code changes.
+
+### Acceptance Criteria
+
+1. After `service.on_screener_results(result)` with symbols `[A, B, C]` for `today`, the `monitoring_session` table contains exactly three rows with `lifecycle_state = 'MONITORING'`, `preset_id` and `run_timestamp` matching the input, and a `SymbolStartedMonitoring` event has been published for each symbol.
+2. Calling `service.on_screener_results(same_result)` a second time produces no new rows and no duplicate events (idempotent).
+3. A system BUY fill of 100 shares of A flips `monitoring_session(today, A).lifecycle_state` to `ENTERED`, sets `entered_at`, sets `positions(A).anchor_session_date = today` and `positions(A).origin = 'system'`, inserts a `trades` row with `trade_origin = 'system'` and `monitoring_session_date = today`, and publishes exactly one `SymbolEnteredPosition` event.
+4. A second BUY fill of 50 shares of A (scale-in) does NOT change the lifecycle state, inserts a new `trades` row tagged to the same anchor, and publishes a `SymbolPositionScaled` event (not `SymbolEnteredPosition`).
+5. A partial SELL of 80 shares of A (positions still open at qty = 70) does NOT change the lifecycle state and publishes `SymbolPositionScaled`. The final SELL closing the position flips `monitoring_session(today, A)` to `EXITED`, sets `exited_at`, and publishes exactly one `SymbolExitedPosition` event.
+6. A manual-origin fill (`trade_origin = 'manual'`) for any symbol produces NO `monitoring_session` change and NO lifecycle event, but the trade is still recorded in `trades` for audit.
+7. For every state transition, the invariant `{ENTERED symbols} == {open system position symbols}` holds (asserted in integration tests).
+8. A new module placed under `src/us_swing/ise/` can implement its full integration by importing only from `us_swing.core.monitoring_session` (Protocols, DTOs, events, factory). No other `core/monitoring_session/*` module is imported and no concrete `_service.py` symbol is referenced.
+9. Any `MonitoringEvent` payload exposes `schema_version: int`. A consumer compiled against `schema_version == 1` continues to receive valid events after a backwards-compatible field addition (version unchanged); a breaking change bumps `schema_version` and consumers are updated explicitly.
+
+---
+
+## FO-EXE-010: Pre-Open Candle DB Reconciliation
+
+**Status:** Approved
+**Priority:** Must
+**Depends on:** FO-EXE-009 (ledger and service surface), FO-EXE-006 (intraday candle download), FO-EXE-007 (live 3m formation)
+**Source:** User requirement — stocks monitored yesterday but never entered must not pollute today's candle DB ("failed entry" must not appear synced); stocks with open system positions must keep streaming candles until exit even if today's screener does not re-emit them.
+
+Once per trading day, before the live feed subscribes for that day, the system shall reconcile the intraday candle database (`price_1m`, `price_3m`, `price_15m`) against the union of today's screener-filtered universe and the currently open system positions. Symbols outside that union and not currently held shall have their candle rows hard-deleted; their `monitoring_session` row is preserved and marked `EVICTED` so the history of the symbol's lifecycle remains queryable.
+
+### Requirements
+
+1. **Keep set.** The reconciler shall compute `keep_set(today) = filtered(today) ∪ open_system_positions()` where `filtered(today)` is the set of symbols passed by today's most recent screener run for the active preset (`MonitoringQuery.keep_set`) and `open_system_positions()` is `SELECT symbol FROM positions WHERE state != 'CLOSED' AND origin = 'system'`. The keep set is the authoritative answer to "which symbols should have candles in the database today."
+
+2. **End-of-day finalization (run as the first step of pre-open).** All `monitoring_session` rows with `session_date < today` and `lifecycle_state = 'MONITORING'` (i.e., never anchored a system entry) shall be marked `SKIPPED` with `evicted_at = NULL`.
+
+3. **Eviction.** For every `SKIPPED` symbol that is NOT in `keep_set(today)`, the reconciler shall, within a single database transaction:
+   - `DELETE FROM price_1m WHERE symbol = X`
+   - `DELETE FROM price_3m WHERE symbol = X`
+   - `DELETE FROM price_15m WHERE symbol = X`
+   - `UPDATE monitoring_session SET lifecycle_state = 'EVICTED', evicted_at = now WHERE session_date < today AND symbol = X AND lifecycle_state = 'SKIPPED'`
+   - Publish `SymbolEvicted(symbol, evicted_session_dates)` after commit.
+   - The full transaction is per-symbol: a failure on one symbol does not poison the others; failed symbols are retried once, logged, and reported in the `ReconcileReport`.
+
+4. **Retention guarantees.** Symbols satisfying ANY of the following are retained (candles untouched, `monitoring_session` rows untouched):
+   - Symbol is in `filtered(today)` (today's screener)
+   - Symbol has an open system position (`positions.state != 'CLOSED' AND origin = 'system'`)
+   - Symbol has any `monitoring_session` row in state `ENTERED` (consistency check)
+   The duplicate-filter case (symbol in today's filtered set AND in an open anchor) keeps candles via both retention rules — no double-deletion risk.
+
+5. **Idempotency.** `reconcile_preopen(today)` shall be safe to invoke multiple times on the same trading date: subsequent invocations produce zero deletions and zero state changes, and publish a `ReconcileCompleted` event with all eviction counts equal to zero.
+
+6. **Trigger and scheduling.** The reconciler shall run automatically once per trading day before market open. Trigger sources:
+   - Scheduled job at `09:15 ET` (configurable via the existing scheduler infrastructure used by `scheduler_dialog.py`).
+   - On application startup, if no `ReconcileCompleted` event has fired for `today` and the local clock is between `09:15 ET` and `16:00 ET`, run immediately.
+   Both paths invoke the same `MonitoringCommand.reconcile_preopen(today)` method. If the scheduled trigger fires while a prior invocation is still running, the second call is dropped (single-flight).
+
+7. **Report.** Each invocation returns and publishes a `ReconcileReport(filtered_n, carryover_n, skipped_n, evicted_n, evicted_symbols: tuple[str, ...], duration_ms, errors: tuple[ReconcileError, ...])`. The report is logged at INFO level with topic prefix `[Lifecycle]` per `.claude/rules/logging.md`.
+
+8. **History preservation.** After eviction, `MonitoringQuery.history(symbol, days=30)` for an evicted symbol shall return the full lifecycle row(s) — including `lifecycle_state = 'EVICTED'` and `evicted_at` — even though no candle rows remain. The user can inspect "why this stock used to be tracked" from the GUI.
+
+9. **Live feed handoff.** The live bar worker (`LiveBarWorker.set_symbols`) and intraday historical loader (`IntradayCandleLoader`) shall pull their working symbol list from `MonitoringQuery.keep_set(today)` immediately after `reconcile_preopen` completes. They never receive evicted symbols.
+
+### Acceptance Criteria
+
+1. **Happy path eviction.** Given on day T-1 `monitoring_session` rows exist for symbols `[A, B, C]` all in state `MONITORING` and a system position is open on `A` only, when `reconcile_preopen(T)` runs with `filtered(T) = {A, D}`, then:
+   - `B` and `C` lose all rows in `price_1m`, `price_3m`, `price_15m`.
+   - `A` and `D` retain all candle rows.
+   - `monitoring_session(T-1, B)` and `(T-1, C)` are marked `EVICTED` with `evicted_at` set.
+   - `monitoring_session(T-1, A)` remains `ENTERED` (untouched).
+   - One `SymbolEvicted` event fires for `B`, one for `C`; none for `A` or `D`.
+   - A new `MONITORING` row is created by the upstream `on_screener_results` for `(T, D)`; the reconciler does not duplicate it.
+
+2. **Carryover position retention.** Given `A` has been in state `ENTERED` since T-1 (open system position) and `filtered(T)` does not include `A`, after `reconcile_preopen(T)` runs, `A`'s candle rows in all three timeframes remain intact and `monitoring_session(T-1, A).lifecycle_state` is still `ENTERED`.
+
+3. **Duplicate-filter retention.** Given `A` has been `ENTERED` since T-1 and `filtered(T)` ALSO includes `A` (so a new `(T, A)` `MONITORING` row exists), after `reconcile_preopen(T)` runs, `A`'s candles remain; the anchor row `(T-1, A)` remains `ENTERED`; the `(T, A)` row stays `MONITORING` (will be `SKIPPED` next day if never anchored). No deletion fires for `A`.
+
+4. **Idempotency.** Calling `reconcile_preopen(T)` twice in succession produces, on the second call, `ReconcileReport.evicted_n == 0` and zero `SymbolEvicted` events.
+
+5. **Per-symbol transaction atomicity.** If `DELETE FROM price_3m WHERE symbol = B` fails due to a transient lock, the same transaction's `price_1m` delete and the corresponding `monitoring_session` update are rolled back; `B` is reported in `ReconcileReport.errors`; `C`'s eviction proceeds unaffected.
+
+6. **Startup catch-up.** If the application starts at `10:30 ET` on a trading day with no prior `ReconcileCompleted` event for that date, `reconcile_preopen(today)` is invoked exactly once during app initialization, before `LiveBarWorker.start()` is called.
+
+7. **History after eviction.** After `B` is evicted in (1), `MonitoringQuery.history('B', days=7)` returns at least one row with `session_date = T-1` and `lifecycle_state = 'EVICTED'`. No `price_*` row for `B` exists.
+
+8. **Logging.** Every reconcile invocation emits exactly one INFO log line with prefix `[Lifecycle]` summarising `filtered_n`, `carryover_n`, `skipped_n`, `evicted_n`, and `duration_ms`. Eviction errors emit one WARNING log line per failed symbol, also `[Lifecycle]`-prefixed.
+
+9. **Live feed alignment.** Immediately after `reconcile_preopen(T)` completes, the symbol set passed to `LiveBarWorker.set_symbols(...)` equals `MonitoringQuery.keep_set(T).filtered ∪ MonitoringQuery.keep_set(T).carryover`; no evicted symbol appears in that set.

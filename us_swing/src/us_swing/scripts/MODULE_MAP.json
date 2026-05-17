@@ -1,10 +1,47 @@
 {
-  "generated": "2026-05-16T15:20:15",
+  "generated": "2026-05-16T18:42:06",
   "subfolder": "scripts",
   "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\scripts",
   "tool_code": null,
   "files": {
     "__init__.py": {},
+    "_smoke_lifecycle.py": {
+      "classes": [
+        {
+          "name": "_FakeRun",
+          "methods": [
+            {
+              "name": "__init__",
+              "signature": "def __init__(self, preset_id: str, ts: str, passed: list[str]) -> None",
+              "line_start": 48,
+              "line_end": 51
+            }
+          ],
+          "line_start": 47,
+          "line_end": 51
+        }
+      ],
+      "top_level_functions": [
+        {
+          "name": "_seed_user",
+          "signature": "def _seed_user(engine) -> None",
+          "line_start": 24,
+          "line_end": 31
+        },
+        {
+          "name": "_seed_price_rows",
+          "signature": "def _seed_price_rows(engine, symbol: str, n: int = 3) -> None",
+          "line_start": 34,
+          "line_end": 44
+        },
+        {
+          "name": "main",
+          "signature": "def main() -> None",
+          "line_start": 54,
+          "line_end": 137
+        }
+      ]
+    },
     "qualify_sp500_ibkr.py": {
       "top_level_functions": [
         {

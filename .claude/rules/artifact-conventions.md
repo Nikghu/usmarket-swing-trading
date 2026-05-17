@@ -10,6 +10,24 @@ Every feature follows this mandatory order — no skipping:
 FO → SRD → DD → MD → UTCD → Code → Tests → RN
 ```
 
+## Documentation Style — Compact Tables (Critical)
+
+`process.md` §0 rules #3 and #7:
+> Use compact table format for **SRD, MD, and UTCD** artifacts where possible. **Avoid verbose prose.** Keep process documents minimal — every edit must add specific value.
+
+| Artifact | Style | Description-cell budget |
+|---|---|---|
+| **SRD, MD, UTCD** | Compact table rows | **One short sentence** per Description cell. No embedded SQL/code blocks. No `**Bold:**` topic labels inside cells. Reference style: `us_swing/docs/execution/SRD.md` sections 1–5. |
+| **FO** | Bullet list per FO; intro paragraph allowed but tight | One bullet = one shall-statement. No multi-paragraph narration. |
+| **DD** | Detailed prose / code blocks expected | Pseudo-code, state machines, transaction sequences belong here — not in SRD. |
+
+**Rule of thumb:** If you're typing more than two sentences into a Description cell, it belongs in the DD instead. The SRD says *what*, the DD says *how*.
+
+Common drift to avoid — these patterns violate the rule:
+- `**Topic header:** Long explanation...` inside a table cell.
+- Embedded `INSERT INTO ...` / `def foo(): ...` blocks in an SRD row.
+- Restating the same constraint in Description, Constraints, and Notes.
+
 ## ID Formats
 
 | Artifact | Format | Example |
