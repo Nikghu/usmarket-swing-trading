@@ -1,10 +1,10 @@
-﻿# Unit Test Case Document â€” Execution & Risk Management (EXE)
+# Unit Test Case Document â€” Execution & Risk Management (EXE)
 
 **Document ID:** UTCD-EXE
-**Version:** 1.5.0
+**Version:** 1.5.1
 **Traces To:** MD-EXE v1.5.0
 **Status:** Draft
-**Last Updated:** 2026-05-16
+**Last Updated:** 2026-05-18
 **Project:** US Swing Trading System
 
 > Tests written BEFORE implementation per process.md Â§7.
@@ -275,10 +275,10 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-009.001.M01.T01 | MD-EXE-009.001.M01 | Positive | Every DTO is frozen and slotted | Construct `KeepSet`, `ReconcileReport`, `MonitoringSessionRow`, `FillEvent`, `InvariantReport`, `ReconcileError` | Each instance has `__slots__`; assignment to any field raises `FrozenInstanceError` | Draft |
-| UT-EXE-009.001.M02.T01 | MD-EXE-009.001.M01 | Positive | Every DTO exposes `schema_version: int = 1` | Default-construct each DTO | `instance.schema_version == 1` for every DTO type | Draft |
-| UT-EXE-009.001.M03.T01 | MD-EXE-009.001.M01 | Negative | Mutation attempt fails on a frozen DTO | `ks = KeepSet(...); ks.filtered = frozenset({"X"})` | `dataclasses.FrozenInstanceError` raised | Draft |
-| UT-EXE-009.001.M04.T01 | MD-EXE-009.001.M01 | Positive | `LifecycleState`, `TradeOrigin`, `Side` round-trip raw strings | `LifecycleState("ENTERED")`, `TradeOrigin("system")`, `Side("BUY")` | Each enum resolves; `.value` returns the raw string | Draft |
+| UT-EXE-009.001.M01.T01 | MD-EXE-009.001.M01 | Positive | Every DTO is frozen and slotted | Construct `KeepSet`, `ReconcileReport`, `MonitoringSessionRow`, `FillEvent`, `InvariantReport`, `ReconcileError` | Each instance has `__slots__`; assignment to any field raises `FrozenInstanceError` | Pass |
+| UT-EXE-009.001.M02.T01 | MD-EXE-009.001.M01 | Positive | Every DTO exposes `schema_version: int = 1` | Default-construct each DTO | `instance.schema_version == 1` for every DTO type | Pass |
+| UT-EXE-009.001.M03.T01 | MD-EXE-009.001.M01 | Negative | Mutation attempt fails on a frozen DTO | `ks = KeepSet(...); ks.filtered = frozenset({"X"})` | `dataclasses.FrozenInstanceError` raised | Pass |
+| UT-EXE-009.001.M04.T01 | MD-EXE-009.001.M01 | Positive | `LifecycleState`, `TradeOrigin`, `Side` round-trip raw strings | `LifecycleState("ENTERED")`, `TradeOrigin("system")`, `Side("BUY")` | Each enum resolves; `.value` returns the raw string | Pass |
 
 ---
 
@@ -286,8 +286,8 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-009.001.M02.T02 | MD-EXE-009.001.M02 | Positive | All three Protocols are `@runtime_checkable` | Inspect `MonitoringQuery`, `MonitoringCommand`, `MonitoringEventBus` | `typing.get_protocol_attrs(...)` non-empty; each is `runtime_checkable` | Draft |
-| UT-EXE-009.001.M02.T03 | MD-EXE-009.001.M02 | Positive | Concrete service passes `isinstance` checks against both Protocols | `svc, cmd, bus = build_default_service(engine)` (svc is the same object) | `isinstance(svc, MonitoringQuery)` and `isinstance(svc, MonitoringCommand)` both `True` | Draft |
+| UT-EXE-009.001.M02.T02 | MD-EXE-009.001.M02 | Positive | All three Protocols are `@runtime_checkable` | Inspect `MonitoringQuery`, `MonitoringCommand`, `MonitoringEventBus` | `typing.get_protocol_attrs(...)` non-empty; each is `runtime_checkable` | Pass |
+| UT-EXE-009.001.M02.T03 | MD-EXE-009.001.M02 | Positive | Concrete service passes `isinstance` checks against both Protocols | `svc, cmd, bus = build_default_service(engine)` (svc is the same object) | `isinstance(svc, MonitoringQuery)` and `isinstance(svc, MonitoringCommand)` both `True` | Pass |
 
 ---
 
@@ -295,11 +295,11 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-009.001.M03.T02 | MD-EXE-009.001.M03 | Positive | `publish` invokes the registered handler synchronously | Subscribe handler for `SymbolStartedMonitoring`; publish one event | Handler called exactly once before `publish` returns; payload equals input | Draft |
-| UT-EXE-009.001.M03.T03 | MD-EXE-009.001.M03 | Positive | `Subscription.cancel()` detaches the handler | Subscribe, cancel, publish | Handler is NOT called | Draft |
-| UT-EXE-009.001.M03.T04 | MD-EXE-009.001.M03 | Negative | A handler exception is caught, logged, and sibling handlers still run | Two handlers; first raises `RuntimeError` | Second handler still called; ERROR log with `[Lifecycle]` topic; `publish` returns normally | Draft |
-| UT-EXE-009.001.M03.T05 | MD-EXE-009.001.M03 | Edge | `publish` with no subscribers is a no-op | Publish `SymbolEvicted` with no subscriptions | No error, no log; returns immediately | Draft |
-| UT-EXE-009.001.M03.T06 | MD-EXE-009.001.M03 | Positive | Subscriptions are scoped by event type | Subscribe handler A for `SymbolEnteredPosition`, B for `SymbolExitedPosition`; publish only `SymbolEnteredPosition` | A called once; B not called | Draft |
+| UT-EXE-009.001.M03.T02 | MD-EXE-009.001.M03 | Positive | `publish` invokes the registered handler synchronously | Subscribe handler for `SymbolStartedMonitoring`; publish one event | Handler called exactly once before `publish` returns; payload equals input | Pass |
+| UT-EXE-009.001.M03.T03 | MD-EXE-009.001.M03 | Positive | `Subscription.cancel()` detaches the handler | Subscribe, cancel, publish | Handler is NOT called | Pass |
+| UT-EXE-009.001.M03.T04 | MD-EXE-009.001.M03 | Negative | A handler exception is caught, logged, and sibling handlers still run | Two handlers; first raises `RuntimeError` | Second handler still called; ERROR log with `[Lifecycle]` topic; `publish` returns normally | Pass |
+| UT-EXE-009.001.M03.T05 | MD-EXE-009.001.M03 | Edge | `publish` with no subscribers is a no-op | Publish `SymbolEvicted` with no subscriptions | No error, no log; returns immediately | Pass |
+| UT-EXE-009.001.M03.T06 | MD-EXE-009.001.M03 | Positive | Subscriptions are scoped by event type | Subscribe handler A for `SymbolEnteredPosition`, B for `SymbolExitedPosition`; publish only `SymbolEnteredPosition` | A called once; B not called | Pass |
 
 ---
 
@@ -307,20 +307,20 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-009.002.M01.T01 | MD-EXE-009.002.M01 | Positive | `insert_monitoring_rows` inserts new symbols in MONITORING state | Empty table; insert symbols=`["A","B"]` for `today` | 2 rows present with `lifecycle_state='MONITORING'`; returned tuple == `("A","B")` | Draft |
-| UT-EXE-009.002.M01.T02 | MD-EXE-009.002.M01 | Positive | `insert_monitoring_rows` is idempotent on same-day re-run | Run T01 twice with identical input | Second call returns `()`; row count unchanged | Draft |
-| UT-EXE-009.002.M01.T03 | MD-EXE-009.002.M01 | Negative | `insert_monitoring_rows` with empty symbols inserts nothing | symbols=`[]` | Returns `()`; row count unchanged | Draft |
-| UT-EXE-009.002.M01.T04 | MD-EXE-009.002.M01 | Positive | `fetch_earliest_open_monitoring_row` returns row with `MIN(session_date)` | MONITORING rows for X exist on `2026-05-14` and `2026-05-15` | Returned row has `session_date == "2026-05-14"` | Draft |
-| UT-EXE-009.002.M01.T05 | MD-EXE-009.002.M01 | Negative | `fetch_earliest_open_monitoring_row` returns None when no MONITORING row | Only ENTERED rows for X | Returns `None` | Draft |
-| UT-EXE-009.002.M01.T06 | MD-EXE-009.002.M01 | Positive | `transition_to_entered` flips MONITORING → ENTERED with timestamps | Existing MONITORING row for (`today`, "A"); call with `entered_at`, `trade_id` | Row's `lifecycle_state='ENTERED'`, `entered_at` and `trade_id` populated | Draft |
-| UT-EXE-009.002.M01.T07 | MD-EXE-009.002.M01 | Positive | `transition_to_exited` flips ENTERED → EXITED | ENTERED row for ("2026-05-14", "A"); call with `exited_at` | `lifecycle_state='EXITED'`, `exited_at` set | Draft |
-| UT-EXE-009.002.M01.T08 | MD-EXE-009.002.M01 | Positive | `bulk_skip_stale_monitoring` flips only stale MONITORING rows | Rows: ("2026-05-14","A")=MONITORING, ("2026-05-15","B")=MONITORING, today=2026-05-15 | Row A → SKIPPED; row B untouched; returned count == 1 | Draft |
-| UT-EXE-009.002.M01.T09 | MD-EXE-009.002.M01 | Positive | `evict_symbol_atomic` deletes from all 3 price tables + flips ledger | Seed 5 rows in each of price_1m/3m/15m for "B"; SKIPPED ledger row for ("2026-05-14","B") | All price_* rows for "B" deleted; ledger row → EVICTED with `evicted_at`; returned dates == ("2026-05-14",) | Draft |
-| UT-EXE-009.002.M01.T10 | MD-EXE-009.002.M01 | Negative | `evict_symbol_atomic` rolls back fully on mid-transaction failure | Patch `price_15m` DELETE to raise `OperationalError` | price_1m and price_3m rows for "B" still present; ledger row still SKIPPED | Draft |
-| UT-EXE-009.002.M01.T11 | MD-EXE-009.002.M01 | Positive | `open_system_position_symbols` returns only system, non-CLOSED positions | Positions: A (system, OPEN), B (system, CLOSED), C (manual, OPEN) | Returned frozenset == `frozenset({"A"})` | Draft |
-| UT-EXE-009.002.M01.T12 | MD-EXE-009.002.M01 | Negative | `open_system_position_symbols` excludes legacy NULL-origin rows | Positions: D (origin=NULL, OPEN) | "D" not in returned set | Draft |
-| UT-EXE-009.002.M01.T13 | MD-EXE-009.002.M01 | Edge | `entered_symbols` equals `open_system_position_symbols` after fill round-trip | Apply T06 + corresponding `upsert_position_with_anchor` | Both queries return the same frozenset | Draft |
-| UT-EXE-009.002.M01.T14 | MD-EXE-009.002.M01 | Positive | `fetch_history(symbol, days)` returns ledger rows including EVICTED | Symbol "B" with one EVICTED row from 7 days ago | Returned tuple contains the EVICTED row with `evicted_at` populated | Draft |
+| UT-EXE-009.002.M01.T01 | MD-EXE-009.002.M01 | Positive | `insert_monitoring_rows` inserts new symbols in MONITORING state | Empty table; insert symbols=`["A","B"]` for `today` | 2 rows present with `lifecycle_state='MONITORING'`; returned tuple == `("A","B")` | Pass |
+| UT-EXE-009.002.M01.T02 | MD-EXE-009.002.M01 | Positive | `insert_monitoring_rows` is idempotent on same-day re-run | Run T01 twice with identical input | Second call returns `()`; row count unchanged | Pass |
+| UT-EXE-009.002.M01.T03 | MD-EXE-009.002.M01 | Negative | `insert_monitoring_rows` with empty symbols inserts nothing | symbols=`[]` | Returns `()`; row count unchanged | Pass |
+| UT-EXE-009.002.M01.T04 | MD-EXE-009.002.M01 | Positive | `fetch_earliest_open_monitoring_row` returns row with `MIN(session_date)` | MONITORING rows for X exist on `2026-05-14` and `2026-05-15` | Returned row has `session_date == "2026-05-14"` | Pass |
+| UT-EXE-009.002.M01.T05 | MD-EXE-009.002.M01 | Negative | `fetch_earliest_open_monitoring_row` returns None when no MONITORING row | Only ENTERED rows for X | Returns `None` | Pass |
+| UT-EXE-009.002.M01.T06 | MD-EXE-009.002.M01 | Positive | `transition_to_entered` flips MONITORING → ENTERED with timestamps | Existing MONITORING row for (`today`, "A"); call with `entered_at`, `trade_id` | Row's `lifecycle_state='ENTERED'`, `entered_at` and `trade_id` populated | Pass |
+| UT-EXE-009.002.M01.T07 | MD-EXE-009.002.M01 | Positive | `transition_to_exited` flips ENTERED → EXITED | ENTERED row for ("2026-05-14", "A"); call with `exited_at` | `lifecycle_state='EXITED'`, `exited_at` set | Pass |
+| UT-EXE-009.002.M01.T08 | MD-EXE-009.002.M01 | Positive | `bulk_skip_stale_monitoring` flips only stale MONITORING rows | Rows: ("2026-05-14","A")=MONITORING, ("2026-05-15","B")=MONITORING, today=2026-05-15 | Row A → SKIPPED; row B untouched; returned count == 1 | Pass |
+| UT-EXE-009.002.M01.T09 | MD-EXE-009.002.M01 | Positive | `evict_symbol_atomic` deletes from all 3 price tables + flips ledger | Seed 5 rows in each of price_1m/3m/15m for "B"; SKIPPED ledger row for ("2026-05-14","B") | All price_* rows for "B" deleted; ledger row → EVICTED with `evicted_at`; returned dates == ("2026-05-14",) | Pass |
+| UT-EXE-009.002.M01.T10 | MD-EXE-009.002.M01 | Negative | `evict_symbol_atomic` rolls back fully on mid-transaction failure | Patch `price_15m` DELETE to raise `OperationalError` | price_1m and price_3m rows for "B" still present; ledger row still SKIPPED | Pass |
+| UT-EXE-009.002.M01.T11 | MD-EXE-009.002.M01 | Positive | `open_system_position_symbols` returns only system, non-CLOSED positions | Positions: A (system, OPEN), B (system, CLOSED), C (manual, OPEN) | Returned frozenset == `frozenset({"A"})` | Pass |
+| UT-EXE-009.002.M01.T12 | MD-EXE-009.002.M01 | Negative | `open_system_position_symbols` excludes legacy NULL-origin rows | Positions: D (origin=NULL, OPEN) | "D" not in returned set | Pass |
+| UT-EXE-009.002.M01.T13 | MD-EXE-009.002.M01 | Edge | `entered_symbols` equals `open_system_position_symbols` after fill round-trip | Apply T06 + corresponding `upsert_position_with_anchor` | Both queries return the same frozenset | Pass |
+| UT-EXE-009.002.M01.T14 | MD-EXE-009.002.M01 | Positive | `fetch_history(symbol, days)` returns ledger rows including EVICTED | Symbol "B" with one EVICTED row from 7 days ago | Returned tuple contains the EVICTED row with `evicted_at` populated | Pass |
 
 ---
 
@@ -328,27 +328,27 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-009.002.M02.T01 | MD-EXE-009.002.M02 | Positive | `on_screener_results` inserts MONITORING rows for passed symbols and publishes `SymbolStartedMonitoring` per insert | `ScreenerRunResult` with `{A: passed=True, B: passed=True, C: passed=False}` | 2 ledger rows in MONITORING; 2 `SymbolStartedMonitoring` events for A and B; returned `KeepSet.filtered == {"A","B"}` | Draft |
-| UT-EXE-009.002.M02.T02 | MD-EXE-009.002.M02 | Positive | `on_screener_results` is idempotent on same-day re-run | Call twice with identical result | Second call produces 0 new rows and 0 events | Draft |
-| UT-EXE-009.002.M02.T03 | MD-EXE-009.002.M02 | Negative | `on_screener_results` ignores `passed=False` symbols | All symbols `passed=False` | 0 ledger rows inserted; 0 events; returned `KeepSet.filtered == frozenset()` | Draft |
-| UT-EXE-009.002.M02.T04 | MD-EXE-009.002.M02 | Positive | First system BUY fill flips earliest MONITORING row → ENTERED + anchor + event | MONITORING row exists for ("2026-05-14","A"); `FillEvent(system, BUY, qty=100)` | Ledger row → ENTERED; `positions(A).anchor_session_date == "2026-05-14"`; one `SymbolEnteredPosition` event | Draft |
-| UT-EXE-009.002.M02.T05 | MD-EXE-009.002.M02 | Positive | Scale-in BUY leaves ledger state unchanged, publishes `SymbolPositionScaled` | Position open at qty=100; `FillEvent(system, BUY, qty=50)` | Ledger row still ENTERED; trade row inserted with same `monitoring_session_date`; one `SymbolPositionScaled` event | Draft |
-| UT-EXE-009.002.M02.T06 | MD-EXE-009.002.M02 | Positive | Partial SELL leaves ledger state unchanged, publishes `SymbolPositionScaled` | Position open at qty=150; SELL fill qty=70 → positions.state=PARTIAL_EXIT | Ledger row still ENTERED; one `SymbolPositionScaled` event | Draft |
-| UT-EXE-009.002.M02.T07 | MD-EXE-009.002.M02 | Positive | Closing SELL flips ledger → EXITED, publishes `SymbolExitedPosition` | Position at qty=80; SELL fill qty=80 → positions.state=CLOSED | Ledger row → EXITED with `exited_at`; one `SymbolExitedPosition` event | Draft |
-| UT-EXE-009.002.M02.T08 | MD-EXE-009.002.M02 | Negative | Manual-origin fill is a ledger no-op | `FillEvent(manual, BUY)` for a symbol with an open MONITORING row | Ledger row unchanged; no event published; `trades` row inserted with `trade_origin='manual'` | Draft |
-| UT-EXE-009.002.M02.T09 | MD-EXE-009.002.M02 | Edge | System BUY with no MONITORING row logs ERROR and defensively records trade | Empty ledger; `FillEvent(system, BUY)` | ERROR log with `[Lifecycle]`; trade inserted with `monitoring_session_date=NULL`; no event | Draft |
-| UT-EXE-009.002.M02.T10 | MD-EXE-009.002.M02 | Edge | Duplicate-filter case — re-emitted symbol stays MONITORING while prior anchor stays ENTERED | A is ENTERED via ("2026-05-14","A"); `on_screener_results` re-emits A on 2026-05-15 | New row ("2026-05-15","A") in MONITORING; old row still ENTERED; `SymbolStartedMonitoring` event for new row | Draft |
-| UT-EXE-009.002.M02.T11 | MD-EXE-009.002.M02 | Positive | `keep_set(today)` returns filtered ∪ carryover | Screener for today emitted [A,B]; open system position on C | `keep_set.filtered == {"A","B"}`; `keep_set.carryover == {"C"}` | Draft |
-| UT-EXE-009.002.M02.T12 | MD-EXE-009.002.M02 | Negative | `keep_set(today)` returns empty filtered when no screener run for today | No screener result file for today | `keep_set.filtered == frozenset()`; carryover still populated | Draft |
-| UT-EXE-009.002.M02.T13 | MD-EXE-009.002.M02 | Positive | `check_invariant()` returns ok=True when ledger and positions agree | A in ENTERED ledger + open system position | `InvariantReport.ok is True`; both diff tuples empty | Draft |
-| UT-EXE-009.002.M02.T14 | MD-EXE-009.002.M02 | Negative | `check_invariant()` flags symbol in ledger ENTERED but not in positions | Force-insert ENTERED ledger row for "X" without a position | `ok is False`; `only_in_a == ("X",)`; ERROR log emitted | Draft |
-| UT-EXE-009.002.M02.T15 | MD-EXE-009.002.M02 | Positive | `reconcile_preopen` happy path evicts SKIPPED-not-in-keep-set and retains the rest | T-1 rows: A=MONITORING (entered), B=MONITORING (no entry), C=MONITORING (no entry); today=T, filtered={A,D}, A has open position | B and C → EVICTED with price_* rows deleted; A and D retained; one `SymbolEvicted` event per evicted symbol; `ReconcileCompleted` event with report | Draft |
-| UT-EXE-009.002.M02.T16 | MD-EXE-009.002.M02 | Positive | `reconcile_preopen` is idempotent for the same `today` | Run T15 twice | Second `ReconcileReport.evicted_n == 0`; no further `SymbolEvicted` events | Draft |
-| UT-EXE-009.002.M02.T17 | MD-EXE-009.002.M02 | Negative | Invariant violation aborts that symbol's eviction with reason `invariant_violation` | Force ledger ENTERED for "X" with no matching position; X is in stale eviction candidate set | `ReconcileReport.errors` contains `ReconcileError("X","invariant_violation",1)`; X's price_* rows untouched | Draft |
-| UT-EXE-009.002.M02.T18 | MD-EXE-009.002.M02 | Negative | Concurrent `reconcile_preopen` returns sentinel report | Two threads call simultaneously | One returns normal report; the other returns `ReconcileReport(evicted_n=0, errors=(ReconcileError("__skipped__","already_running",1),))` | Draft |
-| UT-EXE-009.002.M02.T19 | MD-EXE-009.002.M02 | Edge | Per-symbol failure isolates other symbols | Two SKIPPED-not-in-keep-set symbols; patch `evict_symbol_atomic` to fail permanently on first only | Failed symbol in `errors`; second symbol successfully evicted; one `SymbolEvicted` event | Draft |
-| UT-EXE-009.002.M02.T20 | MD-EXE-009.002.M02 | Edge | Retry-once on transient `OperationalError` succeeds on second attempt | Patch `evict_symbol_atomic` to raise `OperationalError` first call, succeed second call | Symbol evicted; no entry in `errors`; ~200 ms back-off observed | Draft |
-| UT-EXE-009.002.M02.T21 | MD-EXE-009.002.M02 | Positive | `ReconcileReport` carries expected counts and INFO log emitted | Run T15 | `filtered_n==2, carryover_n==1, skipped_n>=2, evicted_n==2`; `duration_ms > 0`; exactly one INFO log with `[Lifecycle]` topic | Draft |
+| UT-EXE-009.002.M02.T01 | MD-EXE-009.002.M02 | Positive | `on_screener_results` inserts MONITORING rows for passed symbols and publishes `SymbolStartedMonitoring` per insert | `ScreenerRunResult` with `{A: passed=True, B: passed=True, C: passed=False}` | 2 ledger rows in MONITORING; 2 `SymbolStartedMonitoring` events for A and B; returned `KeepSet.filtered == {"A","B"}` | Pass |
+| UT-EXE-009.002.M02.T02 | MD-EXE-009.002.M02 | Positive | `on_screener_results` is idempotent on same-day re-run | Call twice with identical result | Second call produces 0 new rows and 0 events | Pass |
+| UT-EXE-009.002.M02.T03 | MD-EXE-009.002.M02 | Negative | `on_screener_results` ignores `passed=False` symbols | All symbols `passed=False` | 0 ledger rows inserted; 0 events; returned `KeepSet.filtered == frozenset()` | Pass |
+| UT-EXE-009.002.M02.T04 | MD-EXE-009.002.M02 | Positive | First system BUY fill flips earliest MONITORING row → ENTERED + anchor + event | MONITORING row exists for ("2026-05-14","A"); `FillEvent(system, BUY, qty=100)` | Ledger row → ENTERED; `positions(A).anchor_session_date == "2026-05-14"`; one `SymbolEnteredPosition` event | Pass |
+| UT-EXE-009.002.M02.T05 | MD-EXE-009.002.M02 | Positive | Scale-in BUY leaves ledger state unchanged, publishes `SymbolPositionScaled` | Position open at qty=100; `FillEvent(system, BUY, qty=50)` | Ledger row still ENTERED; trade row inserted with same `monitoring_session_date`; one `SymbolPositionScaled` event | Pass |
+| UT-EXE-009.002.M02.T06 | MD-EXE-009.002.M02 | Positive | Partial SELL leaves ledger state unchanged, publishes `SymbolPositionScaled` | Position open at qty=150; SELL fill qty=70 → positions.state=PARTIAL_EXIT | Ledger row still ENTERED; one `SymbolPositionScaled` event | Pass |
+| UT-EXE-009.002.M02.T07 | MD-EXE-009.002.M02 | Positive | Closing SELL flips ledger → EXITED, publishes `SymbolExitedPosition` | Position at qty=80; SELL fill qty=80 → positions.state=CLOSED | Ledger row → EXITED with `exited_at`; one `SymbolExitedPosition` event | Pass |
+| UT-EXE-009.002.M02.T08 | MD-EXE-009.002.M02 | Negative | Manual-origin fill is a ledger no-op | `FillEvent(manual, BUY)` for a symbol with an open MONITORING row | Ledger row unchanged; no event published; `trades` row inserted with `trade_origin='manual'` | Pass |
+| UT-EXE-009.002.M02.T09 | MD-EXE-009.002.M02 | Edge | System BUY with no MONITORING row logs ERROR and defensively records trade | Empty ledger; `FillEvent(system, BUY)` | ERROR log with `[Lifecycle]`; trade inserted with `monitoring_session_date=NULL`; no event | Pass |
+| UT-EXE-009.002.M02.T10 | MD-EXE-009.002.M02 | Edge | Duplicate-filter case — re-emitted symbol stays MONITORING while prior anchor stays ENTERED | A is ENTERED via ("2026-05-14","A"); `on_screener_results` re-emits A on 2026-05-15 | New row ("2026-05-15","A") in MONITORING; old row still ENTERED; `SymbolStartedMonitoring` event for new row | Pass |
+| UT-EXE-009.002.M02.T11 | MD-EXE-009.002.M02 | Positive | `keep_set(today)` returns filtered ∪ carryover | Screener for today emitted [A,B]; open system position on C | `keep_set.filtered == {"A","B"}`; `keep_set.carryover == {"C"}` | Pass |
+| UT-EXE-009.002.M02.T12 | MD-EXE-009.002.M02 | Negative | `keep_set(today)` returns empty filtered when no screener run for today | No screener result file for today | `keep_set.filtered == frozenset()`; carryover still populated | Pass |
+| UT-EXE-009.002.M02.T13 | MD-EXE-009.002.M02 | Positive | `check_invariant()` returns ok=True when ledger and positions agree | A in ENTERED ledger + open system position | `InvariantReport.ok is True`; both diff tuples empty | Pass |
+| UT-EXE-009.002.M02.T14 | MD-EXE-009.002.M02 | Negative | `check_invariant()` flags symbol in ledger ENTERED but not in positions | Force-insert ENTERED ledger row for "X" without a position | `ok is False`; `only_in_a == ("X",)`; ERROR log emitted | Pass |
+| UT-EXE-009.002.M02.T15 | MD-EXE-009.002.M02 | Positive | `reconcile_preopen` happy path evicts SKIPPED-not-in-keep-set and retains the rest | T-1 rows: A=MONITORING (entered), B=MONITORING (no entry), C=MONITORING (no entry); today=T, filtered={A,D}, A has open position | B and C → EVICTED with price_* rows deleted; A and D retained; one `SymbolEvicted` event per evicted symbol; `ReconcileCompleted` event with report | Pass |
+| UT-EXE-009.002.M02.T16 | MD-EXE-009.002.M02 | Positive | `reconcile_preopen` is idempotent for the same `today` | Run T15 twice | Second `ReconcileReport.evicted_n == 0`; no further `SymbolEvicted` events | Pass |
+| UT-EXE-009.002.M02.T17 | MD-EXE-009.002.M02 | Negative | Invariant violation aborts that symbol's eviction with reason `invariant_violation` | Force ledger ENTERED for "X" with no matching position; X is in stale eviction candidate set | `ReconcileReport.errors` contains `ReconcileError("X","invariant_violation",1)`; X's price_* rows untouched | Pass |
+| UT-EXE-009.002.M02.T18 | MD-EXE-009.002.M02 | Negative | Concurrent `reconcile_preopen` returns sentinel report | Two threads call simultaneously | One returns normal report; the other returns `ReconcileReport(evicted_n=0, errors=(ReconcileError("__skipped__","already_running",1),))` | Pass |
+| UT-EXE-009.002.M02.T19 | MD-EXE-009.002.M02 | Edge | Per-symbol failure isolates other symbols | Two SKIPPED-not-in-keep-set symbols; patch `evict_symbol_atomic` to fail permanently on first only | Failed symbol in `errors`; second symbol successfully evicted; one `SymbolEvicted` event | Pass |
+| UT-EXE-009.002.M02.T20 | MD-EXE-009.002.M02 | Edge | Retry-once on transient `OperationalError` succeeds on second attempt | Patch `evict_symbol_atomic` to raise `OperationalError` first call, succeed second call | Symbol evicted; no entry in `errors`; ~200 ms back-off observed | Pass |
+| UT-EXE-009.002.M02.T21 | MD-EXE-009.002.M02 | Positive | `ReconcileReport` carries expected counts and INFO log emitted | Run T15 | `filtered_n==2, carryover_n==1, skipped_n>=2, evicted_n==2`; `duration_ms > 0`; exactly one INFO log with `[Lifecycle]` topic | Pass |
 
 ---
 
@@ -356,10 +356,10 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-009.002.M03.T01 | MD-EXE-009.002.M03 | Positive | Qt-free guarantee — no module under `core/monitoring_session/` imports PyQt6 | Static scan of every `*.py` in the package | No file contains the string `PyQt6` or `pyqtSignal` | Draft |
-| UT-EXE-009.002.M03.T02 | MD-EXE-009.002.M03 | Positive | Underscore-prefixed modules are not imported outside the package | Static scan of every `*.py` under `src/us_swing/` except `core/monitoring_session/` | No match for `from us_swing.core.monitoring_session._` | Draft |
-| UT-EXE-009.002.M03.T03 | MD-EXE-009.002.M03 | Positive | `build_default_service(engine)` returns three references implementing the three Protocols | Call factory with an in-memory SQLite engine | `isinstance(query, MonitoringQuery)`, `isinstance(cmd, MonitoringCommand)`, `isinstance(bus, MonitoringEventBus)` all True; `query is cmd` (single concrete) | Draft |
-| UT-EXE-009.002.M03.T04 | MD-EXE-009.002.M03 | Negative | Public `__all__` does not expose any underscore-prefixed name | Inspect `core.monitoring_session.__all__` | No element starts with `_`; concrete `MonitoringSessionService` not in `__all__` | Draft |
+| UT-EXE-009.002.M03.T01 | MD-EXE-009.002.M03 | Positive | Qt-free guarantee — no module under `core/monitoring_session/` imports PyQt6 | Static scan of every `*.py` in the package | No file contains the string `PyQt6` or `pyqtSignal` | Pass |
+| UT-EXE-009.002.M03.T02 | MD-EXE-009.002.M03 | Positive | Underscore-prefixed modules are not imported outside the package | Static scan of every `*.py` under `src/us_swing/` except `core/monitoring_session/` | No match for `from us_swing.core.monitoring_session._` | Pass |
+| UT-EXE-009.002.M03.T03 | MD-EXE-009.002.M03 | Positive | `build_default_service(engine)` returns three references implementing the three Protocols | Call factory with an in-memory SQLite engine | `isinstance(query, MonitoringQuery)`, `isinstance(cmd, MonitoringCommand)`, `isinstance(bus, MonitoringEventBus)` all True; `query is cmd` (single concrete) | Pass |
+| UT-EXE-009.002.M03.T04 | MD-EXE-009.002.M03 | Negative | Public `__all__` does not expose any underscore-prefixed name | Inspect `core.monitoring_session.__all__` | No element starts with `_`; concrete `MonitoringSessionService` not in `__all__` | Pass |
 
 ---
 
@@ -367,11 +367,11 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-EXE-010.001.M01.T01 | MD-EXE-010.001.M01 | Positive | `start()` registers a `15 9 * * MON-FRI` cron job on the injected callable | Spy `cron_register`; call `start()` | Spy received cron expression `"15 9 * * MON-FRI"` and a callable | Draft |
-| UT-EXE-010.001.M01.T02 | MD-EXE-010.001.M01 | Positive | `maybe_run_on_startup()` invokes `reconcile_preopen(today)` when conditions hold | Frozen clock to weekday at 10:30 ET; no prior `ReconcileCompleted` | `command.reconcile_preopen` called once with today's date | Draft |
-| UT-EXE-010.001.M01.T03 | MD-EXE-010.001.M01 | Negative | `maybe_run_on_startup()` returns None on weekends | Frozen clock to Saturday 10:30 ET | Returns `None`; `command.reconcile_preopen` NOT called | Draft |
-| UT-EXE-010.001.M01.T04 | MD-EXE-010.001.M01 | Negative | `maybe_run_on_startup()` returns None outside the [09:15, 16:00] ET window | Frozen clock to weekday 08:30 ET | Returns `None`; reconcile NOT called | Draft |
-| UT-EXE-010.001.M01.T05 | MD-EXE-010.001.M01 | Negative | `maybe_run_on_startup()` skips when `ReconcileCompleted` already observed for today | Bus has already published `ReconcileCompleted` for today | Returns `None`; reconcile NOT called | Draft |
+| UT-EXE-010.001.M01.T01 | MD-EXE-010.001.M01 | Positive | `start()` registers a `15 9 * * MON-FRI` cron job on the injected callable | Spy `cron_register`; call `start()` | Spy received cron expression `"15 9 * * MON-FRI"` and a callable | Pass |
+| UT-EXE-010.001.M01.T02 | MD-EXE-010.001.M01 | Positive | `maybe_run_on_startup()` invokes `reconcile_preopen(today)` when conditions hold | Frozen clock to weekday at 10:30 ET; no prior `ReconcileCompleted` | `command.reconcile_preopen` called once with today's date | Pass |
+| UT-EXE-010.001.M01.T03 | MD-EXE-010.001.M01 | Negative | `maybe_run_on_startup()` returns None on weekends | Frozen clock to Saturday 10:30 ET | Returns `None`; `command.reconcile_preopen` NOT called | Pass |
+| UT-EXE-010.001.M01.T04 | MD-EXE-010.001.M01 | Negative | `maybe_run_on_startup()` returns None outside the [09:15, 16:00] ET window | Frozen clock to weekday 08:30 ET | Returns `None`; reconcile NOT called | Pass |
+| UT-EXE-010.001.M01.T05 | MD-EXE-010.001.M01 | Negative | `maybe_run_on_startup()` skips when `ReconcileCompleted` already observed for today | Bus has already published `ReconcileCompleted` for today | Returns `None`; reconcile NOT called | Pass |
 
 ---
 
@@ -379,11 +379,11 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| UT-INF-004.001.M01.T20 | MD-INF-004.001.M01 | Positive | `migrate_lifecycle_columns` adds the 4 new columns when absent | Fresh DB missing all 4 columns | `PRAGMA table_info(trades)` shows `trade_origin`, `monitoring_session_date`; `PRAGMA table_info(positions)` shows `origin`, `anchor_session_date` | Draft |
-| UT-INF-004.001.M01.T21 | MD-INF-004.001.M01 | Positive | `migrate_lifecycle_columns` is idempotent | Run T20 twice | Second call produces no `ALTER TABLE` execution; column count unchanged | Draft |
-| UT-INF-004.001.M02.T05 | MD-INF-004.001.M02 | Positive | `create_schema(checkfirst=True)` provisions `monitoring_session` table + indexes | Fresh engine; call `create_schema` | Table exists; both indexes (`idx_monitoring_session_state`, `idx_monitoring_session_symbol`) present | Draft |
-| UT-EXE-001.001.M02.T08 | MD-EXE-001.001.M02 | Positive | `handle_order_fill` routes system fills to `lifecycle_command.on_fill` | Inject mock `MonitoringCommand`; submit system entry fill | `on_fill` called exactly once with `origin=TradeOrigin.SYSTEM` and matching qty/price/trade_id | Draft |
-| UT-EXE-001.001.M02.T09 | MD-EXE-001.001.M02 | Negative | `handle_order_fill` routes manual fills with `origin=TradeOrigin.MANUAL` | Submit fill where source signal had `strategy_id='manual'` | `on_fill` called with `origin=TradeOrigin.MANUAL` | Draft |
+| UT-INF-004.001.M01.T20 | MD-INF-004.001.M01 | Positive | `migrate_lifecycle_columns` adds the 4 new columns when absent | Fresh DB missing all 4 columns | `PRAGMA table_info(trades)` shows `trade_origin`, `monitoring_session_date`; `PRAGMA table_info(positions)` shows `origin`, `anchor_session_date` | Pass |
+| UT-INF-004.001.M01.T21 | MD-INF-004.001.M01 | Positive | `migrate_lifecycle_columns` is idempotent | Run T20 twice | Second call produces no `ALTER TABLE` execution; column count unchanged | Pass |
+| UT-INF-004.001.M02.T05 | MD-INF-004.001.M02 | Positive | `create_schema(checkfirst=True)` provisions `monitoring_session` table + indexes | Fresh engine; call `create_schema` | Table exists; both indexes (`idx_monitoring_session_state`, `idx_monitoring_session_symbol`) present | Pass |
+| UT-EXE-001.001.M02.T08 | MD-EXE-001.001.M02 | Positive | `handle_order_fill` routes system fills to `lifecycle_command.on_fill` | Inject mock `MonitoringCommand`; submit system entry fill | `on_fill` called exactly once with `origin=TradeOrigin.SYSTEM` and matching qty/price/trade_id | Skip |
+| UT-EXE-001.001.M02.T09 | MD-EXE-001.001.M02 | Negative | `handle_order_fill` routes manual fills with `origin=TradeOrigin.MANUAL` | Submit fill where source signal had `strategy_id='manual'` | `on_fill` called with `origin=TradeOrigin.MANUAL` | Skip |
 
 ---
 
@@ -391,10 +391,10 @@
 
 | ID | Module | Type | Objective | Input | Expected Output | Status |
 |---|---|---|---|---|---|---|
-| IT-EXE-009.001 | integration | Positive | Full happy path: T-1 monitor+enter A; T-1 monitor B,C without entry; T+1 reconcile retains A, evicts B,C | Seed `ScreenerRunResult` T-1=[A,B,C]; simulate system entry on A; seed `ScreenerRunResult` T=[A,D]; run `reconcile_preopen(T)` | `price_1m/3m/15m` rows: B and C deleted, A and D retained; ledger: (T-1,A)=ENTERED, (T-1,B)=EVICTED, (T-1,C)=EVICTED, (T,D)=MONITORING; `SymbolEvicted` fired for B and C only | Draft |
-| IT-EXE-009.002 | integration | Positive | Carryover position retention — A entered T-1, not filtered T | Seed: A ENTERED via T-1; screener T does not include A; A position open | After `reconcile_preopen(T)`: A's candles retained; ledger (T-1,A) still ENTERED; no `SymbolEvicted` for A | Draft |
-| IT-EXE-009.003 | integration | Edge | Duplicate-filter case — A entered T-1, filtered again T | A ENTERED via T-1; screener T re-emits A; A position open | New ledger row (T,A)=MONITORING; old (T-1,A) still ENTERED; A's candles retained via keep_set; (T,A) → SKIPPED at next-day reconcile | Draft |
-| IT-EXE-009.004 | integration | Positive | Scale-in across days carries the anchor forward | Day T-1: system BUY 100 A; Day T: system BUY 50 A | Both `trades` rows have `monitoring_session_date=T-1`; ledger row (T-1,A) stays ENTERED through both fills | Draft |
-| IT-EXE-009.005 | integration | Positive | Lifecycle invariant holds across the full flow | Replay IT-001 + IT-002 + IT-003 + IT-004 in one test | After every state transition: `check_invariant().ok is True` | Draft |
-| IT-EXE-010.001 | integration | Positive | Live feed handoff — evicted symbol never reaches `LiveBarWorker.set_symbols` | Spy `LiveBarWorker.set_symbols`; run IT-EXE-009.001 with a running worker | Spy receives `{A, D}` after reconcile; B and C never appear in any call | Draft |
-| IT-EXE-010.002 | integration | Positive | History survives eviction | After IT-EXE-009.001 completes | `query.history("B", days=7)` returns at least one row with `lifecycle_state='EVICTED'`; `SELECT * FROM price_1m WHERE symbol='B'` is empty | Draft |
+| IT-EXE-009.001 | integration | Positive | Full happy path: T-1 monitor+enter A; T-1 monitor B,C without entry; T+1 reconcile retains A, evicts B,C | Seed `ScreenerRunResult` T-1=[A,B,C]; simulate system entry on A; seed `ScreenerRunResult` T=[A,D]; run `reconcile_preopen(T)` | `price_1m/3m/15m` rows: B and C deleted, A and D retained; ledger: (T-1,A)=ENTERED, (T-1,B)=EVICTED, (T-1,C)=EVICTED, (T,D)=MONITORING; `SymbolEvicted` fired for B and C only | Pass |
+| IT-EXE-009.002 | integration | Positive | Carryover position retention — A entered T-1, not filtered T | Seed: A ENTERED via T-1; screener T does not include A; A position open | After `reconcile_preopen(T)`: A's candles retained; ledger (T-1,A) still ENTERED; no `SymbolEvicted` for A | Pass |
+| IT-EXE-009.003 | integration | Edge | Duplicate-filter case — A entered T-1, filtered again T | A ENTERED via T-1; screener T re-emits A; A position open | New ledger row (T,A)=MONITORING; old (T-1,A) still ENTERED; A's candles retained via keep_set; (T,A) → SKIPPED at next-day reconcile | Pass |
+| IT-EXE-009.004 | integration | Positive | Scale-in across days carries the anchor forward | Day T-1: system BUY 100 A; Day T: system BUY 50 A | Both `trades` rows have `monitoring_session_date=T-1`; ledger row (T-1,A) stays ENTERED through both fills | Pass |
+| IT-EXE-009.005 | integration | Positive | Lifecycle invariant holds across the full flow | Replay IT-001 + IT-002 + IT-003 + IT-004 in one test | After every state transition: `check_invariant().ok is True` | Pass |
+| IT-EXE-010.001 | integration | Positive | Live feed handoff — evicted symbol never reaches `LiveBarWorker.set_symbols` | Spy `LiveBarWorker.set_symbols`; run IT-EXE-009.001 with a running worker | Spy receives `{A, D}` after reconcile; B and C never appear in any call | Pass |
+| IT-EXE-010.002 | integration | Positive | History survives eviction | After IT-EXE-009.001 completes | `query.history("B", days=7)` returns at least one row with `lifecycle_state='EVICTED'`; `SELECT * FROM price_1m WHERE symbol='B'` is empty | Pass |

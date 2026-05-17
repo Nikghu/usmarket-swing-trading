@@ -2,14 +2,24 @@
 
 **Document:** CONTEXT.md
 **Project:** us_swing
-**Last Updated:** 2026-05-17 (Session 43)
+**Last Updated:** 2026-05-18 (Session 44)
 **Updated By:** Claude Opus 4.7
 
 ---
 
 ## 0. Immediate Next Step
 
-**Current:** FO-EXE-009 + FO-EXE-010 (Intraday Monitoring Session Ledger + Pre-Open Candle DB Reconciliation) — full artifact chain complete (FO → SRD → DD → MD → UTCD); core code foundation implemented and smoke-test green; `gui/app_service.py` screener-handoff and scheduler-catch-up wiring done. **Next session must (a) wire the on_fill seam once `execution/execution_engine.py` exists (FO-EXE-001 / FO-EXE-002 still Draft), (b) translate the 66 UTCD entries into pytest files under `tests/exe/` and `tests/integration/` via test-writer, (c) write RN-EXE-1.3.0-20260517 once tests pass.**
+**Current:** FO-EXE-009 + FO-EXE-010 (Intraday Monitoring Session Ledger + Pre-Open Candle DB Reconciliation) — **COMPLETE**. 65 unit + integration tests pass, 2 skipped (blocked on FO-EXE-001/002). All 18 Must-priority SRDs set to Implemented. RN-EXE-1.3.0-20260518 written. Feature branch `feature/fo-exe-009-monitoring-session` has two commits ready to push and open as PR. **Next session options: (a) push branch + open PR for FO-EXE-009/010 (manual step or `gh pr create`); (b) start FO-EXE-001 / FO-EXE-002 (ExecutionEngine + PositionTracker — 18 SRDs Approved, 0 code) which will also unblock the deferred `on_fill` seam; (c) implement the deferred `09:15 ET` cron registration for the reconciler.**
+
+**FO-EXE-009 + FO-EXE-010 — Intraday Monitoring Session Lifecycle — COMPLETE (Session 44, 2026-05-18):**
+- 65 pass / 2 skip pytest suite (`tests/core/monitoring_session/` + `tests/integration/test_lifecycle_e2e.py`). Two skips are blocked on FO-EXE-001/002 ExecutionEngine and are stubbed with `pytest.skip` for traceability.
+- All 18 SRDs (SRD-EXE-009.001–012, SRD-EXE-010.001–006) flipped Approved → Implemented; UTCD entries flipped Draft → Pass; TRACE rows show Status=Implemented + RN=RN-EXE-1.3.0-20260518; doc versions bumped (SRD v1.6.1, UTCD v1.5.1, TRACE v1.4.0).
+- Source code fix during test phase: per SRD-EXE-010.003, reconciler now adds `ReconcileError("X","invariant_violation",1)` to the report when ledger ENTERED and open-system-positions disagree on a symbol (previously logged only). Tightened test T17 to assert the error entry.
+- Feature branch: `feature/fo-exe-009-monitoring-session`, two commits: `ca1d0db0` (foundation), `69dd20c7` (test suite + spec fix). Not yet pushed.
+- Deferred follow-ups carried forward to next session:
+  - On-fill seam in `ExecutionEngine.handle_order_fill` — blocked on FO-EXE-001/002
+  - `09:15 ET` cron registration — currently startup-catch-up only via `_ReconcileScheduler.maybe_run_on_startup()`
+  - `gui/lifecycle_bridge.py` Qt bridge — for future "Lifecycle History" panel
 
 **FO-EXE-009 + FO-EXE-010 — Intraday Monitoring Session Lifecycle — IN PROGRESS (Session 43, 2026-05-17):**
 - New package `src/us_swing/core/monitoring_session/` (8 files): `_enums.py`, `_dto.py`, `_protocols.py`, `_events.py`, `_repository.py`, `_service.py`, `_scheduler.py`, `__init__.py`
