@@ -369,38 +369,42 @@ class _FillWorker(QThread):
 
         u32 = ctypes.windll.user32  # type: ignore[attr-defined]
         u32.ShowWindow(hwnd, 9)  # SW_RESTORE
-
-        # AttachThreadInput lets us bypass Windows foreground-lock protection,
-        # which silently ignores SetForegroundWindow when another app owns focus.
-        cur_fg = u32.GetForegroundWindow()
-        cur_tid = u32.GetWindowThreadProcessId(cur_fg, None)
-        our_tid = ctypes.windll.kernel32.GetCurrentThreadId()  # type: ignore[attr-defined]
-        attached = False
-        if cur_tid and cur_tid != our_tid:
-            attached = bool(u32.AttachThreadInput(our_tid, cur_tid, True))
+        _SWP_NO_MOVE_SIZE = 0x0003  # SWP_NOMOVE | SWP_NOSIZE
+        u32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, _SWP_NO_MOVE_SIZE)  # HWND_TOPMOST
         try:
-            u32.SetForegroundWindow(hwnd)
-        except Exception:
-            pass
-        if attached:
-            u32.AttachThreadInput(our_tid, cur_tid, False)
+            # AttachThreadInput lets us bypass Windows foreground-lock protection,
+            # which silently ignores SetForegroundWindow when another app owns focus.
+            cur_fg = u32.GetForegroundWindow()
+            cur_tid = u32.GetWindowThreadProcessId(cur_fg, None)
+            our_tid = ctypes.windll.kernel32.GetCurrentThreadId()  # type: ignore[attr-defined]
+            attached = False
+            if cur_tid and cur_tid != our_tid:
+                attached = bool(u32.AttachThreadInput(our_tid, cur_tid, True))
+            try:
+                u32.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+            if attached:
+                u32.AttachThreadInput(our_tid, cur_tid, False)
 
-        # Confirm TWS actually has focus before typing (up to 2 s)
-        deadline = time.time() + 2.0
-        while time.time() < deadline:
-            if u32.GetForegroundWindow() == hwnd:
-                break
-            time.sleep(0.05)
-        else:
-            self.done.emit(
-                "[Credentials] TWS login did not come to front.\n"
-                "Click the TWS window to focus it, then try Fill again."
-            )
-            return
+            # Confirm TWS actually has focus before typing (up to 2 s)
+            deadline = time.time() + 2.0
+            while time.time() < deadline:
+                if u32.GetForegroundWindow() == hwnd:
+                    break
+                time.sleep(0.05)
+            else:
+                self.done.emit(
+                    "[Credentials] TWS login did not come to front.\n"
+                    "Click the TWS window to focus it, then try Fill again."
+                )
+                return
 
-        time.sleep(0.3)
-        error = _winapi_fill(self._username, self._password, hwnd)
-        self.done.emit(error)
+            time.sleep(0.3)
+            error = _winapi_fill(self._username, self._password, hwnd)
+            self.done.emit(error)
+        finally:
+            u32.SetWindowPos(hwnd, -2, 0, 0, 0, 0, _SWP_NO_MOVE_SIZE)  # HWND_NOTOPMOST
 
 
 # Public alias — used by main_window for startup auto-fill.

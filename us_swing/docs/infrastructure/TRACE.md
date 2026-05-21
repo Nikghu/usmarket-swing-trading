@@ -3,28 +3,28 @@
 **Document ID:** TRACE-INF
 **Version:** 1.1.0
 **Project:** US Swing Trading System
-**Last Updated:** 2026-03-06
+**Last Updated:** 2026-05-19
 
 ---
 
 ## Forward Traceability: FO → SRD → DD → MD → UTCD
 
-| FO ID | SRD ID | DD ID | MD ID | UTCD IDs | Code File | Status |
-|---|---|---|---|---|---|---|
-| FO-INF-001 | SRD-INF-001.001 | DD-INF-001.001.D01 | MD-INF-001.001.M01 | T01–T05 | `broker/client.py` | Draft |
-| FO-INF-001 | SRD-INF-001.005 | DD-INF-001.001.D01 | MD-INF-001.001.M02 | T01–T04 | `broker/pacing.py` | Draft |
-| FO-INF-002 | SRD-INF-002.001–004 | DD-INF-002.001.D01 | MD-INF-002.001.M01 | T01–T04 | `universe/manager.py` | Draft |
-| FO-INF-003 | SRD-INF-003.001–005 | DD-INF-003.001.D01 | MD-INF-003.001.M01 | T01–T05 | `data_engine/engine.py` | Draft |
-| FO-INF-004 | SRD-INF-004.001–006 | DD-INF-004.001.D01 | MD-INF-004.001.M01 | T01–T06 | `db/manager.py` | Draft |
-| FO-INF-004 | SRD-INF-004.001–002 | DD-INF-004.001.D01 | MD-INF-004.001.M02 | — | `db/schema.py` | Draft |
-| FO-INF-001–005 | SRD-INF-001.001 | — | MD-INF-004.001.M03 | — | `data/models.py` | Draft |
-| FO-INF-005 | SRD-INF-005.001–002 | DD-INF-005.001.D01 | MD-INF-005.001.M01 | T01–T02 | `monitoring/logging_setup.py` | Draft |
-| FO-INF-005 | SRD-INF-005.003 | DD-INF-005.001.D01 | MD-INF-005.001.M02 | T01–T02 | `monitoring/alerts.py` | Draft |
-| FO-INF-005 | SRD-INF-005.004 | DD-INF-005.001.D01 | MD-INF-005.001.M03 | T01 | `monitoring/health.py` | Draft |
-| FO-INF-001 | SRD-INF-001.001 | — | MD-INF-001.001.M03 | — | `config/settings.py` | Draft |
-| FO-INF-006 | SRD-INF-006.001–007 | DD-INF-006.001.D01 | MD-INF-006.001.M01 | T01–T09 | `user/manager.py` | Draft |
-| FO-INF-007 | SRD-INF-007.001–002 | DD-INF-007.001.D01 | MD-INF-007.001.M01 | — | `data/providers/ibkr_provider.py` | Draft |
-| FO-INF-007 | SRD-INF-007.003, 005 | DD-INF-007.001.D01 | MD-INF-007.001.M02 | T01–T04 | `data/providers/dummy_provider.py` | Draft |
+| FO ID | SRD ID | DD ID | MD ID | UTCD IDs | Code File | Status | RN |
+|---|---|---|---|---|---|---|---|
+| FO-INF-001 | SRD-INF-001.001 | DD-INF-001.001.D01 | MD-INF-001.001.M01 | T01–T05 | `broker/client.py` | Draft | — |
+| FO-INF-001 | SRD-INF-001.005 | DD-INF-001.001.D01 | MD-INF-001.001.M02 | T01–T04 | `broker/pacing.py` | Draft | — |
+| FO-INF-002 | SRD-INF-002.001–004 | DD-INF-002.001.D01 | MD-INF-002.001.M01 | T01–T04 | `universe/manager.py` | Draft | — |
+| FO-INF-003 | SRD-INF-003.001–005 | DD-INF-003.001.D01 | MD-INF-003.001.M01 | T01–T05 | `data_engine/engine.py` | Draft | — |
+| FO-INF-004 | SRD-INF-004.001–006 | DD-INF-004.001.D01 | MD-INF-004.001.M01 | T01–T06 | `db/manager.py` | Draft | — |
+| FO-INF-004 | SRD-INF-004.001–002 | DD-INF-004.001.D01 | MD-INF-004.001.M02 | — | `db/schema.py` | Draft | — |
+| FO-INF-001–005 | SRD-INF-001.001 | — | MD-INF-004.001.M03 | — | `data/models.py` | Draft | — |
+| FO-INF-005 | SRD-INF-005.001–002 | DD-INF-005.001.D01 | MD-INF-005.001.M01 | T01–T02 | `monitoring/logging_setup.py` | Draft | RN-INF-1.0.1-20260519 |
+| FO-INF-005 | SRD-INF-005.003 | DD-INF-005.001.D01 | MD-INF-005.001.M02 | T01–T02 | `monitoring/alerts.py` | Draft | — |
+| FO-INF-005 | SRD-INF-005.004 | DD-INF-005.001.D01 | MD-INF-005.001.M03 | T01 | `monitoring/health.py` | Draft | — |
+| FO-INF-001 | SRD-INF-001.001 | — | MD-INF-001.001.M03 | — | `config/settings.py` | Draft | — |
+| FO-INF-006 | SRD-INF-006.001–007 | DD-INF-006.001.D01 | MD-INF-006.001.M01 | T01–T09 | `user/manager.py` | Draft | — |
+| FO-INF-007 | SRD-INF-007.001–002 | DD-INF-007.001.D01 | MD-INF-007.001.M01 | — | `data/providers/ibkr_provider.py` | Draft | — |
+| FO-INF-007 | SRD-INF-007.003, 005 | DD-INF-007.001.D01 | MD-INF-007.001.M02 | T01–T04 | `data/providers/dummy_provider.py` | Draft | — |
 
 ---
 

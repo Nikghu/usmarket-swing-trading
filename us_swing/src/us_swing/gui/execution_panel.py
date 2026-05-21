@@ -14,13 +14,14 @@ from PyQt6.QtCore import (
     QAbstractTableModel,
     QModelIndex,
     QPoint,
+    QSize,
     QSortFilterProxyModel,
     Qt,
     QTimer,
     QUrl,
     pyqtSignal,
 )
-from PyQt6.QtGui import QColor, QMouseEvent
+from PyQt6.QtGui import QColor, QIcon, QMouseEvent, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -55,6 +56,26 @@ from us_swing.gui.strategy_builder_dialog import (
     load_strategies,
     save_strategies,
 )
+from us_swing.gui.strategy_table_model import (
+    COL_CAPITAL,
+    COL_DELETE,
+    COL_EDIT,
+    COL_END,
+    COL_END_DATE,
+    COL_MODE,
+    COL_NAME,
+    COL_SCOPE,
+    COL_START,
+    COL_START_DATE,
+    COL_STATUS,
+    COL_STOPLOSS,
+    COL_STOPLOSS_TYPE,
+    COL_TARGET,
+    COL_TARGET_TYPE,
+    COL_TRADE_TYPE,
+    StatusBadgeDelegate,
+    StrategyTableModel,
+)
 from us_swing.gui.theme import C, active_palette, colors
 
 
@@ -63,21 +84,66 @@ from us_swing.gui.theme import C, active_palette, colors
 _SHOW_DB_DIAGNOSTICS: bool = True
 _INTRADAY_DB_PATH: Path = Path.home() / ".usswing" / "candles.db"
 
-_STRAT_COLS = ["Name", "Strategy", "Scope", "Mode", "Capital", "Start", "End", "Status"]
+_CELL_BTN_SS = (
+    "QPushButton {{ background: transparent; border: 1px solid {border};"
+    " border-radius: 3px; color: {fg}; font-size: 8pt;"
+    " min-height: 20px; max-height: 20px; outline: none; }}"
+    "QPushButton:hover {{ background: {fg}22; border-color: {fg}; }}"
+    "QPushButton:focus {{ outline: none; }}"
+)
 
-_STATUS_COLORS: dict[str, str] = {
-    "Inactive":   C.MUTED,
-    "Active":     C.GREEN,
-    "UnderEntry": C.BLUE,
-    "Running":    C.TEAL,
-    "SquareOff":  C.ORANGE,
-}
+_CELL_ICON_BTN_SS = (
+    "QPushButton {{ background: transparent; border: 1px solid transparent;"
+    " border-radius: 4px; outline: none; }}"
+    "QPushButton:hover {{ background: {hover_bg}; border: 1px solid {fg}; }}"
+    "QPushButton:focus {{ outline: none; }}"
+)
+
+
+def _cell_icon(kind: str, color_hex: str) -> QIcon:
+    """Draw a 14×14 pencil (edit) or trash-can (delete) icon for table cell buttons."""
+    SIZE = 14
+    pm = QPixmap(SIZE, SIZE)
+    pm.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    c = QColor(color_hex)
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(c)
+
+    if kind == "edit":
+        # Pencil body — diagonal filled polygon
+        path = QPainterPath()
+        path.moveTo(10.5, 1.5)
+        path.lineTo(12.5, 3.5)
+        path.lineTo(4.5, 11.5)
+        path.lineTo(1.5, 12.5)
+        path.lineTo(2.5, 9.5)
+        path.closeSubpath()
+        painter.drawPath(path)
+        # Eraser cap — small semi-transparent rect at the top
+        painter.setBrush(QColor(c.red(), c.green(), c.blue(), 170))
+        painter.drawRect(9, 1, 4, 2)
+    else:
+        # Trash handle
+        painter.drawRoundedRect(5, 1, 4, 2, 1, 1)
+        # Lid bar
+        painter.drawRoundedRect(1, 3, 12, 2, 1, 1)
+        # Body
+        painter.drawRoundedRect(2, 6, 10, 7, 1, 1)
+        # Ribs (dark cutouts to simulate vertical lines)
+        painter.setBrush(QColor(0, 0, 0, 110))
+        painter.drawRect(5, 7, 1, 5)
+        painter.drawRect(8, 7, 1, 5)
+
+    painter.end()
+    return QIcon(pm)
 
 
 # ── Strategy Table Pane ───────────────────────────────────────────────────────
 
 class _StrategyTablePane(QWidget):
-    """Strategy Builder tab — shows all configured strategies and an Add button."""
+    """Strategy Builder tab — all configured strategies with inline edit and delete."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -87,7 +153,7 @@ class _StrategyTablePane(QWidget):
         root.setContentsMargins(0, 6, 0, 0)
         root.setSpacing(6)
 
-        # ── Header row ─────────────────────────────────────────────────────────
+        # ── Header ─────────────────────────────────────────────────────────────
         hdr = QHBoxLayout()
         title_lbl = QLabel("STRATEGY EXECUTOR")
         title_lbl.setStyleSheet(
@@ -102,56 +168,91 @@ class _StrategyTablePane(QWidget):
         hdr.addWidget(add_btn)
         root.addLayout(hdr)
 
-        # ── Table ──────────────────────────────────────────────────────────────
-        self._table = QTableWidget()
-        self._table.setColumnCount(len(_STRAT_COLS))
-        self._table.setHorizontalHeaderLabels(_STRAT_COLS)
-        self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self._table.setAlternatingRowColors(True)
-        self._table.setShowGrid(False)
-        self._table.setWordWrap(False)
-        vh = self._table.verticalHeader()
+        # ── Model + proxy ──────────────────────────────────────────────────────
+        self._model = StrategyTableModel(self)
+        self._proxy = QSortFilterProxyModel(self)
+        self._proxy.setSourceModel(self._model)
+
+        # ── View ───────────────────────────────────────────────────────────────
+        self._view = QTableView()
+        self._view.setModel(self._proxy)
+        self._view.setSortingEnabled(True)
+        self._view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._view.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._view.setAlternatingRowColors(True)
+        self._view.setShowGrid(False)
+        self._view.setWordWrap(False)
+        self._view.setItemDelegateForColumn(COL_STATUS, StatusBadgeDelegate(self._view))
+        self._view.setStyleSheet(
+            f"QTableCornerButton::section {{ background: {C.BG}; border: none; }}"
+        )
+
+        vh = self._view.verticalHeader()
         if vh:
-            vh.setVisible(False)
-        hh = self._table.horizontalHeader()
+            vh.setVisible(True)
+            vh.setDefaultSectionSize(28)
+            vh.setMinimumWidth(32)
+
+        hh = self._view.horizontalHeader()
         if hh:
-            hh.setStretchLastSection(True)
-            hh.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(0, 130)
-            hh.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(1, 100)
-            hh.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(2, 70)
-            hh.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(3, 70)
-            hh.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(4, 45)
-            hh.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(5, 52)
-            hh.setSectionResizeMode(6, QHeaderView.ResizeMode.Interactive)
-            hh.resizeSection(6, 52)
-        root.addWidget(self._table, 1)
+            hh.setStretchLastSection(False)
+            for col, width, mode in [
+                (COL_STATUS,      110, QHeaderView.ResizeMode.Interactive),
+                (COL_NAME,        130, QHeaderView.ResizeMode.Interactive),
+                (COL_EDIT,         42, QHeaderView.ResizeMode.Fixed),
+                (COL_DELETE,       62, QHeaderView.ResizeMode.Fixed),
+                (COL_SCOPE,        90, QHeaderView.ResizeMode.Interactive),
+                (COL_MODE,         70, QHeaderView.ResizeMode.Interactive),
+                (COL_CAPITAL,      60, QHeaderView.ResizeMode.Interactive),
+                (COL_START,        55, QHeaderView.ResizeMode.Interactive),
+                (COL_END,          55, QHeaderView.ResizeMode.Interactive),
+                (COL_TRADE_TYPE,   80, QHeaderView.ResizeMode.Interactive),
+                (COL_START_DATE,   90, QHeaderView.ResizeMode.Interactive),
+                (COL_END_DATE,     90, QHeaderView.ResizeMode.Interactive),
+                (COL_TARGET,        60, QHeaderView.ResizeMode.Interactive),
+                (COL_TARGET_TYPE,   70, QHeaderView.ResizeMode.Interactive),
+                (COL_STOPLOSS,      60, QHeaderView.ResizeMode.Interactive),
+                (COL_STOPLOSS_TYPE, 70, QHeaderView.ResizeMode.Stretch),
+            ]:
+                hh.setSectionResizeMode(col, mode)
+                if mode != QHeaderView.ResizeMode.Stretch:
+                    hh.resizeSection(col, width)
 
-        # ── Action buttons ─────────────────────────────────────────────────────
-        act_row = QHBoxLayout()
-        act_row.setSpacing(6)
-        edit_btn = QPushButton("Edit")
-        edit_btn.setFixedHeight(C.BTN_H)
-        edit_btn.setFixedWidth(80)
-        edit_btn.clicked.connect(self._on_edit)
-        del_btn = QPushButton("Delete")
-        del_btn.setObjectName("danger_btn")
-        del_btn.setFixedHeight(C.BTN_H)
-        del_btn.setFixedWidth(80)
-        del_btn.clicked.connect(self._on_delete)
-        act_row.addStretch()
-        act_row.addWidget(edit_btn)
-        act_row.addWidget(del_btn)
-        root.addLayout(act_row)
-
+        self._proxy.layoutChanged.connect(lambda: self._reinject_row_widgets())
+        root.addWidget(self._view, 1)
         self._refresh_table()
+
+    # ── Data helpers ──────────────────────────────────────────────────────────
+
+    def _refresh_table(self) -> None:
+        self._model.load(self._configs)
+        self._reinject_row_widgets()
+
+    def _reinject_row_widgets(self) -> None:
+        ct = active_palette()
+        for proxy_row in range(self._proxy.rowCount()):
+            src_row = self._proxy.mapToSource(self._proxy.index(proxy_row, 0)).row()
+            self._view.setIndexWidget(
+                self._proxy.index(proxy_row, COL_EDIT),
+                self._make_cell_btn("edit", ct.BLUE, lambda _, r=src_row: self._on_edit(r)),
+            )
+            self._view.setIndexWidget(
+                self._proxy.index(proxy_row, COL_DELETE),
+                self._make_cell_btn("delete", ct.RED, lambda _, r=src_row: self._on_delete(r)),
+            )
+
+    @staticmethod
+    def _make_cell_btn(kind: str, color: str, slot: Any) -> QPushButton:
+        ct = active_palette()
+        btn = QPushButton()
+        btn.setIcon(_cell_icon(kind, color))
+        btn.setIconSize(QSize(14, 14))
+        btn.setToolTip("Edit" if kind == "edit" else "Delete")
+        btn.setStyleSheet(_CELL_ICON_BTN_SS.format(fg=color, hover_bg=ct.OVERLAY))
+        btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        btn.clicked.connect(slot)
+        return btn
 
     # ── Slots ─────────────────────────────────────────────────────────────────
 
@@ -161,28 +262,25 @@ class _StrategyTablePane(QWidget):
         dlg.strategy_saved.connect(self._append_config)
         dlg.exec()
 
-    def _on_edit(self) -> None:
-        row = self._table.currentRow()
-        if row < 0 or row >= len(self._configs):
+    def _on_edit(self, src_row: int) -> None:
+        if src_row < 0 or src_row >= len(self._configs):
             return
-        original = self._configs[row]
+        original = self._configs[src_row]
         existing_names = {c.name for c in self._configs}
-
         dlg = StrategyBuilderDialog(self, existing=original, existing_names=existing_names)
 
         def _on_saved(cfg: StrategyConfig) -> None:
-            self._configs[row] = cfg
+            self._configs[src_row] = cfg
             save_strategies(self._configs)
             self._refresh_table()
 
         dlg.strategy_saved.connect(_on_saved)
         dlg.exec()
 
-    def _on_delete(self) -> None:
-        row = self._table.currentRow()
-        if row < 0 or row >= len(self._configs):
+    def _on_delete(self, src_row: int) -> None:
+        if src_row < 0 or src_row >= len(self._configs):
             return
-        cfg = self._configs[row]
+        cfg = self._configs[src_row]
         ret = QMessageBox.question(
             self,
             "Delete Strategy",
@@ -191,7 +289,7 @@ class _StrategyTablePane(QWidget):
             QMessageBox.StandardButton.No,
         )
         if ret == QMessageBox.StandardButton.Yes:
-            self._configs.pop(row)
+            self._configs.pop(src_row)
             save_strategies(self._configs)
             self._refresh_table()
 
@@ -200,48 +298,13 @@ class _StrategyTablePane(QWidget):
         save_strategies(self._configs)
         self._refresh_table()
 
-    def update_signal_status(self, name: str, signal: dict) -> None:
-        """Refresh the live Strategy_Signal for a named config and repaint."""
+    def update_signal_status(self, name: str, signal: dict[str, Any]) -> None:
+        """Refresh the live strategy signal for a named config and repaint."""
         for cfg in self._configs:
             if cfg.name == name:
                 cfg.strategy_signal.update(signal)
                 break
         self._refresh_table()
-
-    # ── Helpers ───────────────────────────────────────────────────────────────
-
-    def _refresh_table(self) -> None:
-        self._table.setRowCount(0)
-        for cfg in self._configs:
-            row = self._table.rowCount()
-            self._table.insertRow(row)
-            stype_display = cfg.strategy_type.replace("_", " ").upper()
-            status = cfg.strategy_signal.get("Status", "Inactive")
-            values = [
-                cfg.name,
-                stype_display,
-                {
-                    "all": "All S&P 500",
-                    "include": f"Include ({len(cfg.symbols_include)})",
-                    "exclude": f"Exclude ({len(cfg.symbols_exclude)})",
-                }.get(cfg.symbol_mode, cfg.symbol_mode),
-                cfg.mode.capitalize(),
-                f"{cfg.capital_max} %",
-                cfg.start_time,
-                cfg.end_time,
-                status,
-            ]
-            for col, val in enumerate(values):
-                item = QTableWidgetItem(val)
-                align = Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
-                if col == 0:
-                    align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-                item.setTextAlignment(int(align))
-                if col == 0:
-                    item.setForeground(QColor(C.BLUE))
-                elif col == 7:
-                    item.setForeground(QColor(_STATUS_COLORS.get(val, C.MUTED)))
-                self._table.setItem(row, col, item)
 
 
 # ── Diagnostics title bar ─────────────────────────────────────────────────────
