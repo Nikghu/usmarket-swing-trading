@@ -60,8 +60,6 @@ class _DailyDateHandler(BaseRotatingHandler):
     def _compute_next_rollover(self) -> None:
         """Set self.rolloverAt to the next local midnight (seconds since epoch)."""
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        midnight  = datetime.datetime(tomorrow.year, tomorrow.month, tomorrow.day,
-                                      tzinfo=datetime.timezone.utc)
         # Use local midnight so logs rotate at the user's day boundary.
         local_midnight = datetime.datetime.combine(
             tomorrow, datetime.time.min,
@@ -108,6 +106,7 @@ def configure_logging(log_dir: Path, level: str = "INFO", retention_days: int = 
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     root = logging.getLogger()
     root.setLevel(numeric_level)
+    logging.getLogger("ib_insync").setLevel(logging.WARNING)
 
     # Avoid duplicate handlers when called more than once (e.g. in tests).
     if not any(isinstance(h, _DailyDateHandler) for h in root.handlers):

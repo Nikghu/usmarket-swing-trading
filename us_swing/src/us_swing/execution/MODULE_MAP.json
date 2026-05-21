@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-18T17:26:44",
+  "generated": "2026-05-21T07:41:33",
   "subfolder": "execution",
   "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\execution",
   "tool_code": "EXE",
@@ -297,7 +297,7 @@
           "methods": [
             {
               "name": "__init__",
-              "signature": "def __init__(\n        self,\n        host: str,\n        port: int,\n        client_id: int,\n        parent: QObject | None = None,\n    ) -> None",
+              "signature": "def __init__(\r\n        self,\r\n        host: str,\r\n        port: int,\r\n        client_id: int,\r\n        parent: QObject | None = None,\r\n    ) -> None",
               "line_start": 40,
               "line_end": 59
             },

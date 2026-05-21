@@ -9,7 +9,7 @@
 
 ## 0. Immediate Next Step
 
-**Current:** Strategy Builder Dialog (Phase-1 prototype) **ENHANCED** — Trade Type selector (Intraday/Positional), Capital Max % spinner (renamed from Quantity), S&P 500 scope picker (All/Include/Exclude with searchable completer), Risk page (Target + Stop Loss with Fixed/Trailing type and % value, shield nav icon), StrategyConfig dataclass updated, execution_panel.py fixed for removed symbol/quantity fields. Code committed. **No FO assigned yet — create FO-GUI-013 (Strategy Builder) to formalise artifact chain.** **Next:** FO-EXE-001/002 (ExecutionEngine + PositionTracker — 18 SRDs Approved).
+**Current:** Strategy Builder Dialog (Phase-1 prototype) — 7 new executor table columns added (Trade Type, Start Date, End Date, Target, Target Type, Stop Loss, Stop Loss Type) with conditional display and 1-based row numbers. **No FO assigned yet — create FO-GUI-013 (Strategy Builder) to formalise artifact chain** (SRD/DD/MD/UTCD → Code → Tests → RN). Once FO-GUI-013 is approved, implement remaining UI polish and wiring before moving to execution logic. **Next:** FO-EXE-001/002 (ExecutionEngine + PositionTracker — 18 SRDs Approved).
 
 **FO-EXE-009 + FO-EXE-010 — COMPLETE (Session 44, 2026-05-18):**
 - 65 pass / 2 skip; skips are `UT-EXE-001.001.M02.T08/T09`, blocked on FO-EXE-001/002.

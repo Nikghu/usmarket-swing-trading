@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-18T17:26:44",
+  "generated": "2026-05-21T07:41:33",
   "subfolder": "monitoring",
   "root": "F:\\USMarket_Backtesting\\us_swing\\src\\us_swing\\monitoring",
   "tool_code": "INF",
@@ -197,23 +197,23 @@
               "signature": "def _compute_next_rollover(self) -> None",
               "docstring": "Set self.rolloverAt to the next local midnight (seconds since epoch).",
               "line_start": 60,
-              "line_end": 70
+              "line_end": 68
             },
             {
               "name": "shouldRollover",
               "signature": "def shouldRollover(self, record: logging.LogRecord) -> bool",
-              "line_start": 72,
-              "line_end": 73
+              "line_start": 70,
+              "line_end": 71
             },
             {
               "name": "doRollover",
               "signature": "def doRollover(self) -> None",
-              "line_start": 75,
-              "line_end": 93
+              "line_start": 73,
+              "line_end": 91
             }
           ],
           "line_start": 27,
-          "line_end": 93
+          "line_end": 91
         }
       ],
       "top_level_functions": [
@@ -221,21 +221,21 @@
           "name": "configure_logging",
           "signature": "def configure_logging(log_dir: Path, level: str = \"INFO\", retention_days: int = 30) -> None",
           "docstring": "Set up root logger with a daily dated file handler + stderr stream.",
-          "line_start": 98,
-          "line_end": 131
+          "line_start": 96,
+          "line_end": 130
         },
         {
           "name": "_formatter",
           "signature": "def _formatter() -> logging.Formatter",
-          "line_start": 134,
-          "line_end": 138
+          "line_start": 133,
+          "line_end": 137
         },
         {
           "name": "_install_excepthook",
           "signature": "def _install_excepthook() -> None",
           "docstring": "Replace sys.excepthook to log all uncaught exceptions at CRITICAL.",
-          "line_start": 141,
-          "line_end": 155
+          "line_start": 140,
+          "line_end": 154
         }
       ]
     }

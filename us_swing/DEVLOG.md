@@ -2,6 +2,20 @@
 
 ---
 
+## [20260521] GUI — Strategy Executor table columns refactored (prototype, no FO)
+
+- Type: Refactor
+- FO(s): N/A (Phase-1 prototype — FO-GUI-013 to be created)
+- RN: RN-GUI-1.2.2-20260521
+- Artifacts updated: Code (strategy_table_model.py new, execution_panel.py), RN, TRACE.md version bump, CONTEXT.md §0
+- Decisions: 
+  - Added 7 new columns to StrategyTableModel (Trade Type, Start Date, End Date, Target, Target Type, Stop Loss, Stop Loss Type)
+  - Conditional display: Target/Stop Loss show numeric values only when enabled, else "—"; type selectors show "Fixed"/"Trailing" only when enabled
+  - Row numbers via headerData() with Qt.Vertical orientation support (1-based indexing)
+  - Column constants exported from strategy_table_model for centralized width management in execution_panel
+
+---
+
 ## [20260520] GUI — Strategy Builder Dialog enhanced (prototype, no FO)
 
 - Type: Feature

@@ -23,13 +23,14 @@ panel reads `colors()["<role>"]` / `C.<TOKEN>` / `active_palette().<TOKEN>`.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Catppuccin Mocha — colour tokens + sizing
 # ─────────────────────────────────────────────────────────────────────────────
 
-class C:
+class _MOCHA:
     """Mocha colour tokens + universal widget sizing constants."""
     BG       = "#1e1e2e"
     SURFACE  = "#181825"
@@ -65,11 +66,11 @@ class C:
 
 
 STATE_COLORS: dict[str, str] = {
-    "NEW":           C.STATE_NEW,
-    "PARTIAL_ENTRY": C.STATE_PARTIAL_ENTRY,
-    "OPEN":          C.STATE_OPEN,
-    "PARTIAL_EXIT":  C.STATE_PARTIAL_EXIT,
-    "CLOSED":        C.STATE_CLOSED,
+    "NEW":           _MOCHA.STATE_NEW,
+    "PARTIAL_ENTRY": _MOCHA.STATE_PARTIAL_ENTRY,
+    "OPEN":          _MOCHA.STATE_OPEN,
+    "PARTIAL_EXIT":  _MOCHA.STATE_PARTIAL_EXIT,
+    "CLOSED":        _MOCHA.STATE_CLOSED,
 }
 
 
@@ -105,9 +106,9 @@ class _VS:
     PNL_POS_BG = "#1a2e2e"
     PNL_NEG_BG = "#2e1a1a"
 
-    BTN_H    = C.BTN_H
-    BTN_H_SM = C.BTN_H_SM
-    INPUT_H  = C.INPUT_H
+    BTN_H    = _MOCHA.BTN_H
+    BTN_H_SM = _MOCHA.BTN_H_SM
+    INPUT_H  = _MOCHA.INPUT_H
 
 
 VS_STATE_COLORS: dict[str, str] = {
@@ -1196,8 +1197,23 @@ def apply_theme(theme_id: str) -> None:
 
 
 def active_palette() -> type:
-    """Return C (Mocha) or _VS (VS Code Dark) colour tokens for the active theme."""
-    return _VS if load_theme_id() == "vscode" else C  # type: ignore[return-value]
+    """Return the active theme's colour token class (_MOCHA or _VS)."""
+    return _VS if load_theme_id() == "vscode" else _MOCHA  # type: ignore[return-value]
+
+
+class _ThemeProxy:
+    """Transparent proxy — C.BLUE always returns the active theme's token at call time.
+
+    Panels import C and use C.BLUE / C.OVERLAY / C.BTN_H as before.
+    No panel code needs to call active_palette() manually for inline
+    setStyleSheet() calls — C already does it automatically.
+    """
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(active_palette(), name)
+
+
+C = _ThemeProxy()
 
 
 def colors() -> dict[str, str]:
